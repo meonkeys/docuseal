@@ -6,7 +6,8 @@
     :attachments-index="attachmentsIndex"
     :with-label="!isAnonymousChecboxes && showFieldNames"
     :current-step="currentStepFields"
-    @focus-step="[saveStep(), goToStep($event, false, true), currentField.type !== 'checkbox' ? isFormVisible = true : '']"
+    :scroll-padding="scrollPadding"
+    @focus-step="[saveStep(), currentField.type !== 'checkbox' ? isFormVisible = true : '', goToStep($event, false, true)]"
   />
   <FormulaFieldAreas
     v-if="formulaFields.length"
@@ -310,6 +311,7 @@
             :key="currentField.uuid"
             v-model="values[currentField.uuid]"
             :field="currentField"
+            :dry-run="dryRun"
             :attachments-index="attachmentsIndex"
             :submitter-slug="submitterSlug"
             :show-field-names="showFieldNames"
@@ -326,6 +328,7 @@
             :remember-signature="rememberSignature"
             :attachments-index="attachmentsIndex"
             :button-text="buttonText"
+            :dry-run="dryRun"
             :with-disclosure="withDisclosure"
             :with-qr-button="withQrButton"
             :submitter="submitter"
@@ -340,6 +343,7 @@
             :key="currentField.uuid"
             v-model="values[currentField.uuid]"
             :field="currentField"
+            :dry-run="dryRun"
             :previous-value="previousInitialsValue"
             :attachments-index="attachmentsIndex"
             :show-field-names="showFieldNames"
@@ -353,6 +357,7 @@
             v-else-if="currentField.type === 'file'"
             :key="currentField.uuid"
             v-model="values[currentField.uuid]"
+            :dry-run="dryRun"
             :field="currentField"
             :attachments-index="attachmentsIndex"
             :submitter-slug="submitterSlug"
@@ -423,7 +428,7 @@
         :completed-button="completedRedirectUrl ? {} : completedButton"
         :completed-message="completedRedirectUrl ? {} : completedMessage"
         :with-send-copy-button="withSendCopyButton && !completedRedirectUrl"
-        :with-download-button="withDownloadButton && !completedRedirectUrl"
+        :with-download-button="withDownloadButton && !completedRedirectUrl && !dryRun"
         :with-confetti="withConfetti"
         :can-send-email="canSendEmail && !!submitter.email"
         :submitter-slug="submitterSlug"
@@ -527,6 +532,11 @@ export default {
     submitter: {
       type: Object,
       required: true
+    },
+    scrollPadding: {
+      type: String,
+      required: false,
+      default: '-80px'
     },
     canSendEmail: {
       type: Boolean,
@@ -697,6 +707,7 @@ export default {
       isFormVisible: this.expand !== false,
       showFillAllRequiredFields: false,
       currentStep: 0,
+      enableScrollIntoField: true,
       phoneVerifiedValues: {},
       orientation: screen?.orientation?.type,
       isSubmitting: false,
@@ -863,12 +874,14 @@ export default {
     this.$nextTick(() => {
       this.recalculateButtonDisabledKey = Math.random()
 
-      Promise.all([
-        this.maybeTrackEmailClick(),
-        this.maybeTrackSmsClick()
-      ]).finally(() => {
-        this.trackViewForm()
-      })
+      if (!this.dryRun) {
+        Promise.all([
+          this.maybeTrackEmailClick(),
+          this.maybeTrackSmsClick()
+        ]).finally(() => {
+          this.trackViewForm()
+        })
+      }
     })
   },
   methods: {
@@ -992,9 +1005,11 @@ export default {
         if (!this.isCompleted) {
           if (scrollToArea) {
             this.scrollIntoField(step[0])
-
-            this.$refs.form.querySelector('input[type="date"], input[type="number"], input[type="text"], select')?.focus()
           }
+
+          this.enableScrollIntoField = false
+          this.$refs.form.querySelector('input[type="date"], input[type="number"], input[type="text"], select')?.focus()
+          this.enableScrollIntoField = true
 
           if (clickUpload && !this.values[this.currentField.uuid] && ['file', 'image'].includes(this.currentField.type)) {
             this.$refs.form.querySelector('input[type="file"]')?.click()
@@ -1006,7 +1021,13 @@ export default {
       const currentFieldUuids = this.currentStepFields.map((f) => f.uuid)
       const currentFieldType = this.currentField.type
 
-      if (this.isCompleted) {
+      if (this.dryRun) {
+        currentFieldUuids.forEach((fieldUuid) => {
+          this.submittedValues[fieldUuid] = this.values[fieldUuid]
+        })
+
+        return Promise.resolve({})
+      } else if (this.isCompleted) {
         return Promise.resolve({})
       } else {
         return fetch(this.baseUrl + this.submitPath, {
@@ -1028,7 +1049,9 @@ export default {
       }
     },
     scrollIntoField (field) {
-      return this.$refs.areas.scrollIntoField(field)
+      if (this.enableScrollIntoField) {
+        return this.$refs.areas.scrollIntoField(field)
+      }
     },
     scrollIntoArea (area) {
       return this.$refs.areas.scrollIntoArea(area)
@@ -1054,7 +1077,7 @@ export default {
         const formData = new FormData(this.$refs.form)
         const isLastStep = this.currentStep === this.stepFields.length - 1
 
-        if (isLastStep && !emptyRequiredField && !this.dryRun) {
+        if (isLastStep && !emptyRequiredField) {
           formData.append('completed', 'true')
         }
 

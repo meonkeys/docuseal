@@ -4,6 +4,31 @@
     class="mx-auto pl-3 md:pl-4 h-full"
   >
     <div
+      v-if="pendingFieldAttachmentUuids.length"
+      class="top-1.5 sticky h-0 z-20 max-w-2xl mx-auto"
+    >
+      <div class="alert border-base-content/30 py-2 px-2.5">
+        <IconInfoCircle
+          class="stroke-info shrink-0 w-6 h-6"
+        />
+        <span>{{ t('uploaded_pdf_contains_form_fields_keep_or_remove_them') }}</span>
+        <div>
+          <button
+            class="btn btn-sm"
+            @click.prevent="removePendingFields"
+          >
+            {{ t('remove') }}
+          </button>
+          <button
+            class="btn btn-sm btn-neutral text-white"
+            @click.prevent="save"
+          >
+            {{ t('keep') }}
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
       v-if="$slots.buttons || withTitle"
       id="title_container"
       class="flex justify-between py-1.5 items-center pr-4 top-0 z-10"
@@ -61,26 +86,55 @@
               {{ t('send') }}
             </span>
           </a>
-          <button
+          <span
             v-if="editable"
-            class="base-button"
-            :class="{ disabled: isSaving }"
-            v-bind="isSaving ? { disabled: true } : {}"
-            @click.prevent="onSaveClick"
+            class="flex"
           >
-            <IconInnerShadowTop
-              v-if="isSaving"
-              width="22"
-              class="animate-spin"
-            />
-            <IconDeviceFloppy
-              v-else
-              width="22"
-            />
-            <span class="hidden md:inline">
-              {{ t('save') }}
-            </span>
-          </button>
+            <button
+              class="base-button !rounded-r-none !pr-2"
+              :class="{ disabled: isSaving }"
+              v-bind="isSaving ? { disabled: true } : {}"
+              @click.prevent="onSaveClick"
+            >
+              <IconInnerShadowTop
+                v-if="isSaving"
+                width="22"
+                class="animate-spin"
+              />
+              <IconDeviceFloppy
+                v-else
+                width="22"
+              />
+              <span class="hidden md:inline">
+                {{ t('save') }}
+              </span>
+            </button>
+            <div class="dropdown dropdown-end">
+              <label
+                tabindex="0"
+                class="base-button !rounded-l-none !pl-1 !pr-2 !border-l-neutral-500"
+              >
+                <span class="text-sm align-text-top">
+                  <IconChevronDown class="w-5 h-5 flex-shrink-0" />
+                </span>
+              </label>
+              <ul
+                tabindex="0"
+                class="dropdown-content p-2 mt-2 shadow menu text-base bg-base-100 rounded-box text-right"
+              >
+                <li>
+                  <a
+                    :href="`/templates/${template.id}/form`"
+                    data-turbo="false"
+                    class="flex items-center justify-center space-x-2"
+                  >
+                    <IconEye class="w-6 h-6 flex-shrink-0" />
+                    <span class="whitespace-nowrap">Save and Preview</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </span>
           <a
             v-else
             :href="`/templates/${template.id}`"
@@ -296,7 +350,7 @@ import Contenteditable from './contenteditable'
 import DocumentPreview from './preview'
 import DocumentControls from './controls'
 import MobileFields from './mobile_fields'
-import { IconUsersPlus, IconDeviceFloppy, IconWritingSign, IconInnerShadowTop } from '@tabler/icons-vue'
+import { IconUsersPlus, IconDeviceFloppy, IconChevronDown, IconEye, IconWritingSign, IconInnerShadowTop, IconInfoCircle } from '@tabler/icons-vue'
 import { v4 } from 'uuid'
 import { ref, computed } from 'vue'
 import { en as i18nEn } from './i18n'
@@ -307,6 +361,7 @@ export default {
     Upload,
     Document,
     Fields,
+    IconInfoCircle,
     MobileDrawField,
     IconWritingSign,
     MobileFields,
@@ -317,6 +372,8 @@ export default {
     IconInnerShadowTop,
     Contenteditable,
     IconUsersPlus,
+    IconChevronDown,
+    IconEye,
     IconDeviceFloppy
   },
   provide () {
@@ -512,7 +569,9 @@ export default {
       isSaving: false,
       selectedSubmitter: null,
       showDrawField: false,
+      pendingFieldAttachmentUuids: [],
       drawField: null,
+      copiedArea: null,
       drawFieldType: null,
       drawOption: null,
       dragField: null
@@ -593,6 +652,12 @@ export default {
         document.querySelector('form[action="/auth/stripe_connect"]')?.closest('.dropdown')?.querySelector('label')?.focus()
       }
     })
+
+    this.template.schema.forEach((item) => {
+      if (item.pending_fields) {
+        this.pendingFieldAttachmentUuids.push(item.attachment_uuid)
+      }
+    })
   },
   unmounted () {
     document.removeEventListener('keyup', this.onKeyUp)
@@ -606,6 +671,13 @@ export default {
   methods: {
     t (key) {
       return this.i18n[key] || i18nEn[key] || key
+    },
+    removePendingFields () {
+      this.template.fields = this.template.fields.filter((f) => {
+        return this.template.schema.find((item) => item.attachment_uuid === f.attachment_uuid && item.pending_fields)
+      })
+
+      this.save()
     },
     addField (type, area = null) {
       const field = {
@@ -627,7 +699,7 @@ export default {
 
       if (type === 'date') {
         field.preferences = {
-          format: Intl.DateTimeFormat().resolvedOptions().locale.endsWith('-US') ? 'MM/DD/YYYY' : 'DD/MM/YYYY'
+          format: Intl.DateTimeFormat().resolvedOptions().locale.endsWith('-US') || new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).format(new Date()).match(/\s(?:CST|CDT|PST|PDT|EST|EDT)$/) ? 'MM/DD/YYYY' : 'DD/MM/YYYY'
         }
       }
 
@@ -660,7 +732,7 @@ export default {
 
         if (type === 'date') {
           field.preferences = {
-            format: Intl.DateTimeFormat().resolvedOptions().locale.endsWith('-US') ? 'MM/DD/YYYY' : 'DD/MM/YYYY'
+            format: Intl.DateTimeFormat().resolvedOptions().locale.endsWith('-US') || new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).format(new Date()).match(/\s(?:CST|CDT|PST|PDT|EST|EDT)$/) ? 'MM/DD/YYYY' : 'DD/MM/YYYY'
           }
         }
 
@@ -747,7 +819,57 @@ export default {
         event.preventDefault()
 
         this.undo()
+      } else if ((event.ctrlKey || event.metaKey) && event.key === 'c' && document.activeElement === document.body) {
+        event.preventDefault()
+
+        this.copiedArea = this.selectedAreaRef?.value
+      } else if ((event.ctrlKey || event.metaKey) && event.key === 'v' && this.copiedArea && document.activeElement === document.body) {
+        event.preventDefault()
+
+        this.pasteField()
+      } else if (this.selectedAreaRef.value && ['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'].includes(event.key) && document.activeElement === document.body) {
+        event.preventDefault()
+
+        this.handleAreaArrows(event)
       }
+    },
+    handleAreaArrows (event) {
+      if (!this.editable) {
+        return
+      }
+
+      const area = this.selectedAreaRef.value
+      const documentRef = this.documentRefs.find((e) => e.document.uuid === area.attachment_uuid)
+      const page = documentRef.pageRefs[area.page].$refs.image
+      const rect = page.getBoundingClientRect()
+      const diff = (event.shiftKey ? 5.0 : 1.0)
+
+      if (event.key === 'ArrowRight' && event.altKey) {
+        area.w = Math.min(Math.max(area.w + diff / rect.width, 0), 1 - area.x)
+      } else if (event.key === 'ArrowLeft' && event.altKey) {
+        area.w = Math.min(Math.max(area.w - diff / rect.width, 0), 1 - area.x)
+      } else if (event.key === 'ArrowUp' && event.altKey) {
+        area.h = Math.min(Math.max(area.h - diff / rect.height, 0), 1 - area.y)
+      } else if (event.key === 'ArrowDown' && event.altKey) {
+        area.h = Math.min(Math.max(area.h + diff / rect.height, 0), 1 - area.y)
+      } else if (event.key === 'ArrowRight') {
+        area.x = Math.min(Math.max(area.x + diff / rect.width, 0), 1 - area.w)
+      } else if (event.key === 'ArrowLeft') {
+        area.x = Math.min(Math.max(area.x - diff / rect.width, 0), 1 - area.w)
+      } else if (event.key === 'ArrowUp') {
+        area.y = Math.min(Math.max(area.y - diff / rect.height, 0), 1 - area.h)
+      } else if (event.key === 'ArrowDown') {
+        area.y = Math.min(Math.max(area.y + diff / rect.height, 0), 1 - area.h)
+      }
+
+      this.debouncedSave()
+    },
+    debouncedSave () {
+      clearTimeout(this._saveTimeout)
+
+      this._saveTimeout = setTimeout(() => {
+        this.save()
+      }, 700)
     },
     removeArea (area) {
       const field = this.template.fields.find((f) => f.areas?.includes(area))
@@ -759,6 +881,39 @@ export default {
       }
 
       this.save()
+    },
+    pasteField () {
+      const field = this.template.fields.find((f) => f.areas?.includes(this.copiedArea))
+      const currentArea = this.selectedAreaRef?.value || this.copiedArea
+
+      if (field && currentArea) {
+        const area = {
+          ...JSON.parse(JSON.stringify(this.copiedArea)),
+          attachment_uuid: currentArea.attachment_uuid,
+          page: currentArea.page,
+          x: currentArea.x,
+          y: currentArea.y + currentArea.h * 1.3
+        }
+
+        if (['radio', 'multiple'].includes(field.type)) {
+          this.copiedArea.option_uuid ||= field.options[0].uuid
+          area.option_uuid = v4()
+
+          field.options.push({ uuid: area.option_uuid })
+
+          field.areas.push(area)
+        } else {
+          this.template.fields.push({
+            ...JSON.parse(JSON.stringify(field)),
+            uuid: v4(),
+            areas: [area]
+          })
+        }
+
+        this.selectedAreaRef.value = area
+
+        this.save()
+      }
     },
     pushUndo () {
       const stringData = JSON.stringify(this.template)
@@ -914,7 +1069,7 @@ export default {
 
         if (field.type === 'date') {
           field.preferences = {
-            format: Intl.DateTimeFormat().resolvedOptions().locale.endsWith('-US') ? 'MM/DD/YYYY' : 'DD/MM/YYYY'
+            format: Intl.DateTimeFormat().resolvedOptions().locale.endsWith('-US') || new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).format(new Date()).match(/\s(?:CST|CDT|PST|PDT|EST|EDT)$/) ? 'MM/DD/YYYY' : 'DD/MM/YYYY'
           }
         }
       }
@@ -990,6 +1145,8 @@ export default {
       }
 
       this.save()
+
+      document.activeElement?.blur()
     },
     updateFromUpload (data) {
       this.template.schema.push(...data.schema)
@@ -1022,6 +1179,18 @@ export default {
       }
 
       this.save()
+
+      data.documents.forEach((attachment) => {
+        if (attachment.metadata?.pdf?.fields?.length) {
+          this.pendingFieldAttachmentUuids.push(attachment.uuid)
+
+          attachment.metadata.pdf.fields.forEach((field) => {
+            field.submitter_uuid = this.selectedSubmitter.uuid
+
+            this.template.fields.push(field)
+          })
+        }
+      })
     },
     updateName (value) {
       this.template.name = value
@@ -1188,6 +1357,8 @@ export default {
       })
     },
     save ({ force } = { force: false }) {
+      this.pendingFieldAttachmentUuids = []
+
       if (this.onChange) {
         this.onChange(this.template)
       }

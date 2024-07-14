@@ -54,7 +54,7 @@
           </a>
         </span>
         <span
-          v-if="field.preferences?.format !== 'typed'"
+          v-if="field.preferences?.format !== 'typed' && field.preferences?.format !== 'drawn'"
           class="tooltip"
           :data-tip="t('take_photo')"
         >
@@ -264,6 +264,11 @@ export default {
       required: false,
       default: true
     },
+    dryRun: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
     withDisclosure: {
       type: Boolean,
       required: false,
@@ -450,13 +455,28 @@ export default {
       const context = canvas.getContext('2d')
 
       const fontFamily = 'Dancing Script'
-      const fontSize = '38px'
+      const initialFontSize = 44
       const fontStyle = 'italic'
       const fontWeight = ''
 
-      context.font = fontStyle + ' ' + fontWeight + ' ' + fontSize + ' ' + fontFamily
-      context.textAlign = 'center'
+      const setFontSize = (size) => {
+        context.font = `${fontStyle} ${fontWeight} ${size}px ${fontFamily}`
+      }
 
+      const adjustFontSizeToFit = (text, maxWidth, initialSize) => {
+        let size = initialSize
+
+        setFontSize(size)
+
+        while (context.measureText(text).width > maxWidth && size > 1) {
+          size -= 1
+          setFontSize(size)
+        }
+      }
+
+      adjustFontSizeToFit(e.target.value, canvas.width / scale, initialFontSize)
+
+      context.textAlign = 'center'
       context.clearRect(0, 0, canvas.width / scale, canvas.height / scale)
       context.fillText(e.target.value, canvas.width / 2 / scale, canvas.height / 2 / scale + 11)
     },
@@ -563,24 +583,39 @@ export default {
         cropCanvasAndExportToPNG(this.$refs.canvas, { errorOnTooSmall: true }).then(async (blob) => {
           const file = new File([blob], 'signature.png', { type: 'image/png' })
 
-          const formData = new FormData()
+          if (this.dryRun) {
+            const reader = new FileReader()
 
-          formData.append('file', file)
-          formData.append('submitter_slug', this.submitterSlug)
-          formData.append('name', 'attachments')
-          formData.append('remember_signature', this.rememberSignature)
+            reader.readAsDataURL(file)
 
-          return fetch(this.baseUrl + '/api/attachments', {
-            method: 'POST',
-            body: formData
-          }).then((resp) => resp.json()).then((attachment) => {
-            this.$emit('attached', attachment)
-            this.$emit('update:model-value', attachment.uuid)
+            reader.onloadend = () => {
+              const attachment = { url: reader.result, uuid: Math.random().toString() }
 
-            this.maybeSetSignedUuid(attachment.signed_uuid)
+              this.$emit('attached', attachment)
+              this.$emit('update:model-value', attachment.uuid)
 
-            return resolve(attachment)
-          })
+              resolve(attachment)
+            }
+          } else {
+            const formData = new FormData()
+
+            formData.append('file', file)
+            formData.append('submitter_slug', this.submitterSlug)
+            formData.append('name', 'attachments')
+            formData.append('remember_signature', this.rememberSignature)
+
+            return fetch(this.baseUrl + '/api/attachments', {
+              method: 'POST',
+              body: formData
+            }).then((resp) => resp.json()).then((attachment) => {
+              this.$emit('attached', attachment)
+              this.$emit('update:model-value', attachment.uuid)
+
+              this.maybeSetSignedUuid(attachment.signed_uuid)
+
+              return resolve(attachment)
+            })
+          }
         }).catch((error) => {
           if (error.message === 'Image too small' && this.field.required === false) {
             return resolve({})

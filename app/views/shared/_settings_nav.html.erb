@@ -86,6 +86,7 @@
             <%= link_to 'SSO', settings_sso_index_path, class: 'text-base hover:bg-base-300' %>
           </li>
         <% end %>
+        <%= render 'shared/settings_nav_extra2' %>
         <% if (can?(:manage, EncryptedConfig) && current_user == true_user) || (current_user != true_user && current_account.testing?) %>
           <li>
             <%= form_for '', url: testing_account_path, method: current_account.testing? ? :delete : :get, html: { class: 'flex w-full' } do |f| %>
@@ -117,11 +118,13 @@
             <%= svg_icon('brand_discord', class: 'w-8 h-8') %>
           </a>
         </div>
-        <div class="tooltip" data-tip="Twitter">
-          <a href="<%= Docuseal::TWITTER_URL %>" target="_blank" class="btn btn-circle btn-primary btn-md">
-            <%= svg_icon('brand_twitter', class: 'w-8 h-8') %>
-          </a>
-        </div>
+        <%= content_for(:gpt_link) || capture do %>
+          <div class="tooltip" data-tip="AI Assistant">
+            <a href="<%= Docuseal::CHATGPT_URL %>" target="_blank" class="btn btn-circle btn-primary btn-md">
+              <%= svg_icon('brand_openai', class: 'w-8 h-8') %>
+            </a>
+          </div>
+        <% end %>
       </div>
       <a href="mailto:<%= Docuseal::SUPPORT_EMAIL %>" target="_blank" class="w-full block mt-4 underline text-center">
         <%= Docuseal::SUPPORT_EMAIL %>

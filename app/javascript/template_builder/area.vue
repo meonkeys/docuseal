@@ -164,16 +164,16 @@
       <span
         v-if="field"
         class="flex justify-center items-center space-x-1 h-full"
-        :class="{'w-full h-full': field.type == 'checkbox'}"
+        :class="{ 'w-full h-full': ['cells', 'checkbox'].includes(field.type) }"
       >
         <div
           v-if="isDefaultValuePresent || isContenteditable"
-          :class="{ 'w-full h-full': field.type == 'checkbox', 'text-[1.5vw] lg:text-base': !textOverflowChars, 'text-[1.0vw] lg:text-xs': textOverflowChars }"
+          :class="{ 'w-full h-full': ['cells', 'checkbox'].includes(field.type), 'text-[1.5vw] lg:text-base': !textOverflowChars, 'text-[1.0vw] lg:text-xs': textOverflowChars }"
         >
           <div
             ref="textContainer"
             class="flex items-center px-0.5"
-            :class="{'w-full h-full': field.type == 'checkbox'}"
+            :class="{ 'w-full h-full': ['cells', 'checkbox'].includes(field.type) }"
           >
             <IconCheck
               v-if="field.type == 'checkbox'"
@@ -184,6 +184,24 @@
               v-else-if="field.type === 'number' && !isContenteditable"
               class="whitespace-pre-wrap"
             >{{ formatNumber(field.default_value, field.preferences?.format) }}</span>
+            <span
+              v-else-if="field.default_value === '{{date}}'"
+            >
+              {{ t('signing_date') }}
+            </span>
+            <div
+              v-else-if="field.type === 'cells' && field.default_value"
+              class="w-full flex items-center"
+            >
+              <div
+                v-for="(char, index) in field.default_value"
+                :key="index"
+                class="text-center flex-none"
+                :style="{ width: (area.cell_w / area.w * 100) + '%' }"
+              >
+                {{ char }}
+              </div>
+            </div>
             <span
               v-else
               ref="defaultValue"
@@ -211,7 +229,7 @@
       ref="touchTarget"
       class="absolute top-0 bottom-0 right-0 left-0"
       :class="isDragged ? 'cursor-grab' : 'cursor-pointer'"
-      @dblclick="maybeFocusDefaultValue"
+      @dblclick="maybeToggleDefaultValue"
     />
     <span
       v-if="field?.type && editable"
@@ -320,6 +338,7 @@ export default {
       isShowDescriptionModal: false,
       isResize: false,
       isDragged: false,
+      isMoved: false,
       renderDropdown: false,
       isNameFocus: false,
       textOverflowChars: 0,
@@ -330,7 +349,11 @@ export default {
     fieldNames: FieldType.computed.fieldNames,
     fieldIcons: FieldType.computed.fieldIcons,
     isDefaultValuePresent () {
-      return this.field?.default_value || this.field?.default_value === 0
+      if (this.field?.type === 'radio' && this.field?.areas?.length > 1) {
+        return false
+      } else {
+        return this.field?.default_value || this.field?.default_value === 0
+      }
     },
     modalContainerEl () {
       return this.$el.getRootNode().querySelector('#docuseal_modal_container')
@@ -454,7 +477,7 @@ export default {
     closeDropdown () {
       document.activeElement.blur()
     },
-    maybeFocusDefaultValue () {
+    maybeToggleDefaultValue () {
       if (['text', 'number'].includes(this.field.type)) {
         this.isContenteditable = true
 
@@ -468,6 +491,16 @@ export default {
             )
           }
         })
+      } else if (this.field.type === 'checkbox') {
+        this.field.readonly = !this.field.readonly
+        this.field.default_value === true ? delete this.field.default_value : this.field.default_value = true
+
+        this.save()
+      } else if (this.field.type === 'date') {
+        this.field.readonly = !this.field.readonly
+        this.field.default_value === '{{date}}' ? delete this.field.default_value : this.field.default_value = '{{date}}'
+
+        this.save()
       }
     },
     formatNumber (number, format) {
@@ -513,7 +546,15 @@ export default {
       this.save()
     },
     onPaste (e) {
-      e.target.innerText = (e.clipboardData || window.clipboardData).getData('text/plain')
+      const text = (e.clipboardData || window.clipboardData).getData('text/plain')
+
+      const selection = window.getSelection()
+
+      if (selection.rangeCount) {
+        selection.deleteFromDocument()
+        selection.getRangeAt(0).insertNode(document.createTextNode(text))
+        selection.collapseToEnd()
+      }
     },
     onResizeCell (e) {
       if (e.target.id === 'mask') {
@@ -650,6 +691,10 @@ export default {
       this.$emit('start-drag')
     },
     touchDrag (e) {
+      if (!this.editable) {
+        return
+      }
+
       const page = this.$parent.$refs.mask.previousSibling
       const rect = page.getBoundingClientRect()
 
@@ -691,6 +736,12 @@ export default {
       this.$emit('start-drag')
     },
     mouseMove (e) {
+      if (!this.editable) {
+        return
+      }
+
+      this.isMoved = true
+
       const page = this.$parent.$refs.mask.previousSibling
       const rect = page.getBoundingClientRect()
 
@@ -701,11 +752,12 @@ export default {
       this.$el.getRootNode().removeEventListener('mousemove', this.mouseMove)
       this.$el.getRootNode().removeEventListener('mouseup', this.stopMouseMove)
 
-      if (this.isDragged) {
+      if (this.isMoved) {
         this.save()
       }
 
       this.isDragged = false
+      this.isMoved = false
 
       this.$emit('stop-drag')
     },
