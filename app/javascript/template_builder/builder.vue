@@ -177,7 +177,7 @@
           @change="save"
         />
         <div
-          class="sticky bottom-0 py-2"
+          class="sticky bottom-0 py-2 space-y-2"
           :style="{ backgroundColor }"
         >
           <Upload
@@ -186,6 +186,22 @@
             :template-id="template.id"
             @success="updateFromUpload"
           />
+          <button
+            v-if="sortedDocuments.length && editable && withAddPageButton"
+            id="add_blank_page_button"
+            class="btn btn-outline w-full"
+            @click.prevent="addBlankPage"
+          >
+            <IconInnerShadowTop
+              v-if="isLoadingBlankPage"
+              class="animate-spin w-5 h-5"
+            />
+            <IconPlus
+              v-else
+              class="w-5 h-5"
+            />
+            {{ t('add_blank_page') }}
+          </button>
         </div>
       </div>
       <div
@@ -196,12 +212,30 @@
           ref="documents"
           class="pr-3.5 pl-0.5"
         >
-          <Dropzone
-            v-if="!sortedDocuments.length && withUploadButton"
-            :template-id="template.id"
-            :accept-file-types="acceptFileTypes"
-            @success="updateFromUpload"
-          />
+          <template v-if="!sortedDocuments.length && (withUploadButton || withAddPageButton)">
+            <Dropzone
+              v-if="withUploadButton"
+              :template-id="template.id"
+              :accept-file-types="acceptFileTypes"
+              @success="updateFromUpload"
+            />
+            <button
+              v-if="withAddPageButton"
+              id="add_blank_page_button"
+              class="btn btn-outline w-full mt-4"
+              @click.prevent="addBlankPage"
+            >
+              <IconInnerShadowTop
+                v-if="isLoadingBlankPage"
+                class="animate-spin w-5 h-5"
+              />
+              <IconPlus
+                v-else
+                class="w-5 h-5"
+              />
+              {{ t('add_blank_page') }}
+            </button>
+          </template>
           <template v-else>
             <template
               v-for="document in sortedDocuments"
@@ -213,9 +247,11 @@
                 :selected-submitter="selectedSubmitter"
                 :document="document"
                 :is-drag="!!dragField"
+                :input-mode="inputMode"
                 :default-fields="[...defaultRequiredFields, ...defaultFields]"
                 :allow-draw="!onlyDefinedFields"
                 :default-submitters="defaultSubmitters"
+                :with-field-placeholder="withFieldPlaceholder"
                 :draw-field="drawField"
                 :draw-field-type="drawFieldType"
                 :editable="editable"
@@ -242,7 +278,7 @@
             </template>
             <div
               v-if="sortedDocuments.length && isBreakpointLg && editable"
-              class="pb-4"
+              class="pb-4 space-y-2"
             >
               <Upload
                 v-if="withUploadButton"
@@ -250,6 +286,22 @@
                 :accept-file-types="acceptFileTypes"
                 @success="updateFromUpload"
               />
+              <button
+                v-if="withAddPageButton"
+                id="add_blank_page_button"
+                class="btn btn-outline w-full mt-4"
+                @click.prevent="addBlankPage"
+              >
+                <IconInnerShadowTop
+                  v-if="isLoadingBlankPage"
+                  class="animate-spin w-5 h-5"
+                />
+                <IconPlus
+                  v-else
+                  class="w-5 h-5"
+                />
+                {{ t('add_blank_page') }}
+              </button>
             </div>
           </template>
         </div>
@@ -277,7 +329,7 @@
                 {{ t('cancel') }}
               </button>
               <a
-                v-if="!drawField && !drawOption && !['stamp', 'signature', 'initials'].includes(drawField?.type || drawFieldType)"
+                v-if="!drawField && !drawOption && !['stamp', 'signature', 'initials', 'heading'].includes(drawField?.type || drawFieldType)"
                 href="#"
                 class="link block mt-3 text-sm"
                 @click.prevent="[addField(drawFieldType), drawField = null, drawOption = null, withSelectedFieldType ? '' : drawFieldType = '', showDrawField = false]"
@@ -350,7 +402,7 @@ import Contenteditable from './contenteditable'
 import DocumentPreview from './preview'
 import DocumentControls from './controls'
 import MobileFields from './mobile_fields'
-import { IconUsersPlus, IconDeviceFloppy, IconChevronDown, IconEye, IconWritingSign, IconInnerShadowTop, IconInfoCircle } from '@tabler/icons-vue'
+import { IconPlus, IconUsersPlus, IconDeviceFloppy, IconChevronDown, IconEye, IconWritingSign, IconInnerShadowTop, IconInfoCircle } from '@tabler/icons-vue'
 import { v4 } from 'uuid'
 import { ref, computed } from 'vue'
 import { en as i18nEn } from './i18n'
@@ -363,6 +415,7 @@ export default {
     Fields,
     IconInfoCircle,
     MobileDrawField,
+    IconPlus,
     IconWritingSign,
     MobileFields,
     Logo,
@@ -405,6 +458,11 @@ export default {
       required: false,
       default: () => ({})
     },
+    withFieldPlaceholder: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
     backgroundColor: {
       type: String,
       required: false,
@@ -415,10 +473,20 @@ export default {
       required: false,
       default: true
     },
+    inputMode: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
     withHelp: {
       type: Boolean,
       required: false,
       default: true
+    },
+    withAddPageButton: {
+      type: Boolean,
+      required: false,
+      default: false
     },
     autosave: {
       type: Boolean,
@@ -566,6 +634,7 @@ export default {
     return {
       documentRefs: [],
       isBreakpointLg: false,
+      isLoadingBlankPage: false,
       isSaving: false,
       selectedSubmitter: null,
       showDrawField: false,
@@ -1063,7 +1132,7 @@ export default {
           field.options = [{ value: '', uuid: v4() }]
         }
 
-        if (field.type === 'stamp') {
+        if (['stamp', 'heading'].includes(field.type)) {
           field.readonly = true
         }
 
@@ -1147,6 +1216,44 @@ export default {
       this.save()
 
       document.activeElement?.blur()
+
+      if (field.type === 'heading') {
+        this.$nextTick(() => {
+          const documentRef = this.documentRefs.find((e) => e.document.uuid === area.attachment_uuid)
+          const areaRef = documentRef.pageRefs[area.page].areaRefs.find((ref) => ref.area === this.selectedAreaRef.value)
+
+          areaRef.focusValueInput()
+        })
+      }
+    },
+    addBlankPage () {
+      this.isLoadingBlankPage = true
+
+      const canvas = document.createElement('canvas')
+
+      canvas.width = 816
+      canvas.height = 1056
+
+      const ctx = canvas.getContext('2d')
+
+      ctx.fillStyle = 'white'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      canvas.toBlob((blob) => {
+        const file = new File([blob], `Page ${this.template.schema.length + 1}.png`, { type: blob.type, lastModified: Date.now() })
+
+        const formData = new FormData()
+        formData.append('files[]', file)
+
+        this.baseFetch(`/templates/${this.template.id}/documents`, {
+          method: 'POST',
+          body: formData
+        }).then(async (resp) => {
+          this.updateFromUpload(await resp.json())
+        }).finally(() => {
+          this.isLoadingBlankPage = false
+        })
+      }, 'image/png')
     },
     updateFromUpload (data) {
       this.template.schema.push(...data.schema)

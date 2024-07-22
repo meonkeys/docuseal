@@ -80,10 +80,10 @@ module Submissions
     emails
   end
 
-  def create_from_submitters(template:, user:, submissions_attrs:, source:, mark_as_sent: false,
+  def create_from_submitters(template:, user:, submissions_attrs:, source:,
                              submitters_order: DEFAULT_SUBMITTERS_ORDER, params: {})
     Submissions::CreateFromSubmitters.call(
-      template:, user:, submissions_attrs:, source:, mark_as_sent:, submitters_order:, params:
+      template:, user:, submissions_attrs:, source:, submitters_order:, params:
     )
   end
 
@@ -107,6 +107,7 @@ module Submissions
     return email.downcase if email.to_s.include?(',')
     return email.downcase if email.to_s.include?('.gob')
     return email.downcase if email.to_s.include?('.om')
+    return email.downcase if email.to_s.include?('.mm')
     return email.downcase unless email.to_s.include?('.')
 
     fixed_email = EmailTypo.call(email.delete_prefix('<'))

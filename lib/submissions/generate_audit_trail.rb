@@ -48,9 +48,11 @@ module Submissions
 
       document.sign(io, **sign_params)
 
+      Submissions::GenerateResultAttachments.maybe_enable_ltv(io, sign_params)
+
       ActiveStorage::Attachment.create!(
         blob: ActiveStorage::Blob.create_and_upload!(
-          io: StringIO.new(io.string), filename: "Audit Log - #{submission.template.name}.pdf"
+          io: io.tap(&:rewind), filename: "Audit Log - #{submission.template.name}.pdf"
         ),
         name: 'audit_trail',
         record: submission
@@ -222,6 +224,7 @@ module Submissions
 
         submission.template_fields.filter_map do |field|
           next if field['submitter_uuid'] != submitter.uuid
+          next if field['type'] == 'heading'
 
           submitter_field_counters[field['type']] += 1
 

@@ -4,11 +4,13 @@
       v-for="(image, index) in sortedPreviewImages"
       :key="image.id"
       :ref="setPageRefs"
+      :input-mode="inputMode"
       :number="index"
       :editable="editable"
       :areas="areasIndex[index]"
       :allow-draw="allowDraw"
       :is-drag="isDrag"
+      :with-field-placeholder="withFieldPlaceholder"
       :default-fields="defaultFields"
       :default-submitters="defaultSubmitters"
       :draw-field="drawField"
@@ -35,6 +37,11 @@ export default {
       type: Object,
       required: true
     },
+    inputMode: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
     areasIndex: {
       type: Object,
       required: false,
@@ -44,6 +51,11 @@ export default {
       type: Array,
       required: false,
       default: () => []
+    },
+    withFieldPlaceholder: {
+      type: Boolean,
+      required: false,
+      default: false
     },
     drawFieldType: {
       type: String,

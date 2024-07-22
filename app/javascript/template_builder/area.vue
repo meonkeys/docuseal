@@ -9,7 +9,7 @@
     <div
       v-if="isSelected || isDraw"
       class="top-0 bottom-0 right-0 left-0 absolute border border-1.5 pointer-events-none"
-      :class="borderColors[submitterIndex]"
+      :class="field.type === 'heading' ? '' : borderColors[submitterIndex]"
     />
     <div
       v-if="field.type === 'cells' && (isSelected || isDraw)"
@@ -19,7 +19,7 @@
         v-for="(cellW, index) in cells"
         :key="index"
         class="absolute top-0 bottom-0 border-r"
-        :class="borderColors[submitterIndex]"
+        :class="field.type === 'heading' ? '' : borderColors[submitterIndex]"
         :style="{ left: (cellW / area.w * 100) + '%' }"
       >
         <span
@@ -31,14 +31,14 @@
       </div>
     </div>
     <div
-      v-if="field?.type"
-      class="absolute bg-white rounded-t border overflow-visible whitespace-nowrap group-hover:flex group-hover:z-10"
-      :class="{ 'flex z-10': isNameFocus || isSelected, invisible: !isNameFocus && !isSelected }"
+      v-if="field?.type && (isSelected || isNameFocus)"
+      class="absolute bg-white rounded-t border overflow-visible whitespace-nowrap flex z-10"
       style="top: -25px; height: 25px"
       @mousedown.stop
       @pointerdown.stop
     >
       <FieldSubmitter
+        v-if="field.type != 'heading'"
         v-model="field.submitter_uuid"
         class="border-r"
         :compact="true"
@@ -61,7 +61,7 @@
       <span
         v-if="field.type !== 'checkbox' || field.name"
         ref="name"
-        :contenteditable="editable && !defaultField"
+        :contenteditable="editable && !defaultField && field.type !== 'heading'"
         dir="auto"
         class="pr-1 cursor-text outline-none block"
         style="min-width: 2px"
@@ -71,11 +71,11 @@
         @blur="onNameBlur"
       >{{ optionIndexText }} {{ (defaultField ? (field.title || field.name) : field.name) || defaultName }}</span>
       <div
-        v-if="isSettingsFocus || isContenteditable || (isNameFocus && !['checkbox', 'phone'].includes(field.type))"
+        v-if="isSettingsFocus || (isValueInput && field.type !== 'heading') || (isNameFocus && !['checkbox', 'phone'].includes(field.type))"
         class="flex items-center ml-1.5"
       >
         <input
-          v-if="!isContenteditable"
+          v-if="!isValueInput"
           :id="`required-checkbox-${field.uuid}`"
           v-model="field.required"
           type="checkbox"
@@ -83,14 +83,14 @@
           @mousedown.prevent
         >
         <label
-          v-if="!isContenteditable"
+          v-if="!isValueInput"
           :for="`required-checkbox-${field.uuid}`"
           class="label text-xs"
           @click.prevent="field.required = !field.required"
           @mousedown.prevent
         >{{ t('required') }}</label>
         <input
-          v-if="isContenteditable"
+          v-if="isValueInput"
           :id="`readonly-checkbox-${field.uuid}`"
           type="checkbox"
           class="checkbox checkbox-xs no-animation rounded"
@@ -99,14 +99,14 @@
           @mousedown.prevent
         >
         <label
-          v-if="isContenteditable"
+          v-if="isValueInput"
           :for="`readonly-checkbox-${field.uuid}`"
           class="label text-xs"
           @click.prevent="field.readonly = !(field.readonly ?? true)"
           @mousedown.prevent
         >{{ t('editable') }}</label>
         <span
-          v-if="field.type !== 'payment' && !isContenteditable"
+          v-if="field.type !== 'payment' && !isValueInput"
           class="dropdown dropdown-end"
           @mouseenter="renderDropdown = true"
           @touchstart="renderDropdown = true"
@@ -157,17 +157,19 @@
       </button>
     </div>
     <div
+      ref="touchValueTarget"
       class="flex items-center h-full w-full"
       dir="auto"
-      :class="[isContenteditable ? 'bg-opacity-50' : 'bg-opacity-80', bgColors[submitterIndex], isDefaultValuePresent || isContenteditable ? (alignClasses[field.preferences?.align] || '') : 'justify-center']"
+      :class="[isValueInput ? 'bg-opacity-50' : 'bg-opacity-80', field.type === 'heading' ? 'bg-gray-50' : bgColors[submitterIndex], isDefaultValuePresent || isValueInput || (withFieldPlaceholder && field.areas) ? (alignClasses[field.preferences?.align] || '') : 'justify-center']"
+      @click="focusValueInput"
     >
       <span
         v-if="field"
-        class="flex justify-center items-center space-x-1 h-full"
-        :class="{ 'w-full h-full': ['cells', 'checkbox'].includes(field.type) }"
+        class="flex justify-center items-center space-x-1"
+        :class="{ 'w-full': ['cells', 'checkbox'].includes(field.type), 'h-full': !isValueInput }"
       >
         <div
-          v-if="isDefaultValuePresent || isContenteditable"
+          v-if="isDefaultValuePresent || isValueInput || (withFieldPlaceholder && field.areas && field.type !== 'checkbox')"
           :class="{ 'w-full h-full': ['cells', 'checkbox'].includes(field.type), 'text-[1.5vw] lg:text-base': !textOverflowChars, 'text-[1.0vw] lg:text-xs': textOverflowChars }"
         >
           <div
@@ -181,7 +183,7 @@
               :class="{ '!w-auto !h-full': area.w > area.h, '!w-full !h-auto': area.w <= area.h }"
             />
             <span
-              v-else-if="field.type === 'number' && !isContenteditable"
+              v-else-if="field.type === 'number' && !isValueInput && (field.default_value || field.default_value == 0)"
               class="whitespace-pre-wrap"
             >{{ formatNumber(field.default_value, field.preferences?.format) }}</span>
             <span
@@ -205,13 +207,13 @@
             <span
               v-else
               ref="defaultValue"
-              :contenteditable="isContenteditable"
+              :contenteditable="isValueInput"
               class="whitespace-pre-wrap outline-none empty:before:content-[attr(placeholder)] before:text-gray-400"
-              :class="{ 'cursor-text': isContenteditable }"
-              :placeholder="t('type_value')"
+              :class="{ 'cursor-text': isValueInput }"
+              :placeholder="withFieldPlaceholder && !isValueInput ? field.name || defaultName : t('type_value')"
               @blur="onDefaultValueBlur"
               @paste.prevent="onPaste"
-              @keydown.enter.prevent="onDefaultValueEnter"
+              @keydown.enter="onDefaultValueEnter"
             >{{ field.default_value }}</span>
           </div>
         </div>
@@ -225,11 +227,12 @@
       </span>
     </div>
     <div
-      v-if="!isContenteditable"
+      v-if="!isValueInput"
       ref="touchTarget"
       class="absolute top-0 bottom-0 right-0 left-0"
       :class="isDragged ? 'cursor-grab' : 'cursor-pointer'"
       @dblclick="maybeToggleDefaultValue"
+      @click="maybeToggleCheckboxValue"
     />
     <span
       v-if="field?.type && editable"
@@ -302,6 +305,11 @@ export default {
       type: Object,
       required: true
     },
+    inputMode: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
     isDraw: {
       type: Boolean,
       required: false,
@@ -311,6 +319,11 @@ export default {
       type: Object,
       required: false,
       default: null
+    },
+    withFieldPlaceholder: {
+      type: Boolean,
+      required: false,
+      default: false
     },
     defaultSubmitters: {
       type: Array,
@@ -354,6 +367,9 @@ export default {
       } else {
         return this.field?.default_value || this.field?.default_value === 0
       }
+    },
+    isValueInput () {
+      return (this.field.type === 'heading' && this.isSelected) || this.isContenteditable || (this.inputMode && ['text', 'number', 'date'].includes(this.field.type))
     },
     modalContainerEl () {
       return this.$el.getRootNode().querySelector('#docuseal_modal_container')
@@ -481,16 +497,7 @@ export default {
       if (['text', 'number'].includes(this.field.type)) {
         this.isContenteditable = true
 
-        this.$nextTick(() => {
-          this.$refs.defaultValue.focus()
-
-          if (this.$refs.defaultValue.innerText.length) {
-            window.getSelection().collapse(
-              this.$refs.defaultValue.firstChild,
-              this.$refs.defaultValue.innerText.length
-            )
-          }
-        })
+        this.$nextTick(() => this.focusValueInput())
       } else if (this.field.type === 'checkbox') {
         this.field.readonly = !this.field.readonly
         this.field.default_value === true ? delete this.field.default_value : this.field.default_value = true
@@ -501,6 +508,26 @@ export default {
         this.field.default_value === '{{date}}' ? delete this.field.default_value : this.field.default_value = '{{date}}'
 
         this.save()
+      }
+    },
+    maybeToggleCheckboxValue () {
+      if (this.inputMode && this.field.type === 'checkbox') {
+        this.field.readonly = !this.field.readonly
+        this.field.default_value === true ? delete this.field.default_value : this.field.default_value = true
+
+        this.save()
+      }
+    },
+    focusValueInput (e) {
+      if (this.$refs.defaultValue !== document.activeElement) {
+        this.$refs.defaultValue.focus()
+
+        if (this.$refs.defaultValue.innerText.length && this.$refs.defaultValue !== e?.target) {
+          window.getSelection().collapse(
+            this.$refs.defaultValue.firstChild,
+            this.$refs.defaultValue.innerText.length
+          )
+        }
       }
     },
     formatNumber (number, format) {
@@ -548,7 +575,7 @@ export default {
     onPaste (e) {
       const text = (e.clipboardData || window.clipboardData).getData('text/plain')
 
-      const selection = window.getSelection()
+      const selection = this.$el.getRootNode().getSelection()
 
       if (selection.rangeCount) {
         selection.deleteFromDocument()
@@ -570,6 +597,10 @@ export default {
 
       if (!['radio', 'multiple', 'select'].includes(this.field.type)) {
         delete this.field.options
+      }
+
+      if (['heading'].includes(this.field.type)) {
+        this.field.readonly = true
       }
 
       if (['select', 'multiple', 'radio'].includes(this.field.type)) {
@@ -633,7 +664,11 @@ export default {
       this.save()
     },
     onDefaultValueEnter (e) {
-      this.$refs.defaultValue.blur()
+      if (this.field.type !== 'heading') {
+        e.preventDefault()
+
+        this.$refs.defaultValue.blur()
+      }
     },
     onNameEnter (e) {
       this.$refs.name.blur()
@@ -652,24 +687,8 @@ export default {
         this.area.y = (e.offsetY - this.dragFrom.y) / e.target.clientHeight
       }
     },
-    startDrag (e) {
-      this.selectedAreaRef.value = this.area
-
-      if (!this.editable) {
-        return
-      }
-
-      const rect = e.target.getBoundingClientRect()
-
-      this.dragFrom = { x: e.clientX - rect.left, y: e.clientY - rect.top }
-
-      this.$el.getRootNode().addEventListener('mousemove', this.drag)
-      this.$el.getRootNode().addEventListener('mouseup', this.stopDrag)
-
-      this.$emit('start-drag')
-    },
     startTouchDrag (e) {
-      if (e.target !== this.$refs.touchTarget) {
+      if (e.target !== this.$refs.touchTarget && e.target !== this.$refs.touchValueTarget) {
         return
       }
 
@@ -714,11 +733,13 @@ export default {
       this.$emit('stop-drag')
     },
     startMouseMove (e) {
-      if (e.target !== this.$refs.touchTarget) {
+      if (e.target !== this.$refs.touchTarget && e.target !== this.$refs.touchValueTarget) {
         return
       }
 
-      document.activeElement?.blur()
+      if (document.activeElement !== this.$refs.defaultValue) {
+        document.activeElement?.blur()
+      }
 
       e.preventDefault()
 
@@ -727,6 +748,10 @@ export default {
       const rect = e.target.getBoundingClientRect()
 
       this.selectedAreaRef.value = this.area
+
+      if (this.field.type === 'heading') {
+        this.$nextTick(() => this.focusValueInput())
+      }
 
       this.dragFrom = { x: rect.left - e.clientX, y: rect.top - e.clientY }
 
