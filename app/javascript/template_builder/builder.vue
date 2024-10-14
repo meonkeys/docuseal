@@ -58,6 +58,7 @@
         />
         <template v-else>
           <a
+            v-if="withSignYourselfButton"
             :href="template.submitters.length > 1 ? `/templates/${template.id}/submissions/new?selfsign=true` : `/d/${template.slug}`"
             class="btn btn-primary btn-ghost text-base hidden md:flex"
             :target="template.submitters.length > 1 ? '' : '_blank'"
@@ -73,6 +74,7 @@
             </span>
           </a>
           <a
+            v-if="withSendButton"
             :href="`/templates/${template.id}/submissions/new?with_link=true`"
             data-turbo-frame="modal"
             class="white-button md:!px-6"
@@ -129,7 +131,18 @@
                     class="flex items-center justify-center space-x-2"
                   >
                     <IconEye class="w-6 h-6 flex-shrink-0" />
-                    <span class="whitespace-nowrap">Save and Preview</span>
+                    <span class="whitespace-nowrap">{{ t('save_and_preview') }}</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    :href="`/templates/${template.id}/preferences`"
+                    data-turbo-frame="modal"
+                    class="flex space-x-2"
+                    @click="closeDropdown"
+                  >
+                    <IconAdjustments class="w-6 h-6 flex-shrink-0" />
+                    <span class="whitespace-nowrap">{{ t('preferences') }}</span>
                   </a>
                 </li>
               </ul>
@@ -319,7 +332,7 @@
         >
           <div class="bg-base-200 rounded-lg p-5 text-center space-y-4">
             <p>
-              {{ t('draw_field_on_the_document').replace('{field}', drawField?.name || '') }}
+              {{ t('draw_field_on_the_document') }}
             </p>
             <div>
               <button
@@ -402,10 +415,10 @@ import Contenteditable from './contenteditable'
 import DocumentPreview from './preview'
 import DocumentControls from './controls'
 import MobileFields from './mobile_fields'
-import { IconPlus, IconUsersPlus, IconDeviceFloppy, IconChevronDown, IconEye, IconWritingSign, IconInnerShadowTop, IconInfoCircle } from '@tabler/icons-vue'
+import { IconPlus, IconUsersPlus, IconDeviceFloppy, IconChevronDown, IconEye, IconWritingSign, IconInnerShadowTop, IconInfoCircle, IconAdjustments } from '@tabler/icons-vue'
 import { v4 } from 'uuid'
 import { ref, computed } from 'vue'
-import { en as i18nEn } from './i18n'
+import * as i18n from './i18n'
 
 export default {
   name: 'TemplateBuilder',
@@ -426,6 +439,7 @@ export default {
     Contenteditable,
     IconUsersPlus,
     IconChevronDown,
+    IconAdjustments,
     IconEye,
     IconDeviceFloppy
   },
@@ -435,6 +449,7 @@ export default {
       save: this.save,
       t: this.t,
       currencies: this.currencies,
+      locale: this.locale,
       baseFetch: this.baseFetch,
       fieldTypes: this.fieldTypes,
       backgroundColor: this.backgroundColor,
@@ -468,7 +483,22 @@ export default {
       required: false,
       default: ''
     },
+    locale: {
+      type: String,
+      required: false,
+      default: ''
+    },
     editable: {
+      type: Boolean,
+      required: false,
+      default: true
+    },
+    withSendButton: {
+      type: Boolean,
+      required: false,
+      default: true
+    },
+    withSignYourselfButton: {
       type: Boolean,
       required: false,
       default: true
@@ -649,6 +679,23 @@ export default {
   computed: {
     selectedAreaRef: () => ref(),
     fieldsDragFieldRef: () => ref(),
+    language () {
+      return this.locale.split('-')[0].toLowerCase()
+    },
+    defaultDateFormat () {
+      const isUsBrowser = Intl.DateTimeFormat().resolvedOptions().locale.endsWith('-US')
+      const isUsTimezone = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).format(new Date()).match(/\s(?:CST|CDT|PST|PDT|EST|EDT)$/)
+
+      return this.localeDateFormats[this.locale] || ((isUsBrowser || isUsTimezone) ? 'MM/DD/YYYY' : 'DD/MM/YYYY')
+    },
+    localeDateFormats () {
+      return {
+        'de-DE': 'DD.MM.YYYY',
+        'fr-FR': 'DD/MM/YYYY',
+        'it-IT': 'DD/MM/YYYY',
+        'es-ES': 'DD/MM/YYYY'
+      }
+    },
     fieldAreasIndex () {
       const areas = {}
 
@@ -738,8 +785,11 @@ export default {
     this.documentRefs = []
   },
   methods: {
+    closeDropdown () {
+      document.activeElement.blur()
+    },
     t (key) {
-      return this.i18n[key] || i18nEn[key] || key
+      return this.i18n[key] || i18n[this.language]?.[key] || i18n.en[key] || key
     },
     removePendingFields () {
       this.template.fields = this.template.fields.filter((f) => {
@@ -768,7 +818,7 @@ export default {
 
       if (type === 'date') {
         field.preferences = {
-          format: Intl.DateTimeFormat().resolvedOptions().locale.endsWith('-US') || new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).format(new Date()).match(/\s(?:CST|CDT|PST|PDT|EST|EDT)$/) ? 'MM/DD/YYYY' : 'DD/MM/YYYY'
+          format: this.defaultDateFormat
         }
       }
 
@@ -801,7 +851,7 @@ export default {
 
         if (type === 'date') {
           field.preferences = {
-            format: Intl.DateTimeFormat().resolvedOptions().locale.endsWith('-US') || new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).format(new Date()).match(/\s(?:CST|CDT|PST|PDT|EST|EDT)$/) ? 'MM/DD/YYYY' : 'DD/MM/YYYY'
+            format: this.defaultDateFormat
           }
         }
 
@@ -1138,7 +1188,7 @@ export default {
 
         if (field.type === 'date') {
           field.preferences = {
-            format: Intl.DateTimeFormat().resolvedOptions().locale.endsWith('-US') || new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).format(new Date()).match(/\s(?:CST|CDT|PST|PDT|EST|EDT)$/) ? 'MM/DD/YYYY' : 'DD/MM/YYYY'
+            format: this.defaultDateFormat
           }
         }
       }
@@ -1305,7 +1355,7 @@ export default {
       this.save()
     },
     onDocumentRemove (item) {
-      if (window.confirm(this.t('are_you_sure'))) {
+      if (window.confirm(this.t('are_you_sure_'))) {
         this.template.schema.splice(this.template.schema.indexOf(item), 1)
       }
 
@@ -1404,7 +1454,7 @@ export default {
       if (!this.template.fields.length) {
         e.preventDefault()
 
-        alert('Please draw fields to prepare the document.')
+        alert(this.t('please_draw_fields_to_prepare_the_document'))
       } else {
         const submitterWithoutFields =
           this.template.submitters.find((submitter) => !this.template.fields.some((f) => f.submitter_uuid === submitter.uuid))
@@ -1412,7 +1462,7 @@ export default {
         if (submitterWithoutFields) {
           e.preventDefault()
 
-          alert(`Please add fields for the ${submitterWithoutFields.name}. Or, remove the ${submitterWithoutFields.name} if not needed.`)
+          alert(this.t('please_add_fields_for_the_submitter_name_or_remove_the_submitter_name_if_not_needed').replaceAll('{submitter_name}', submitterWithoutFields.name))
         }
       }
     },
@@ -1428,13 +1478,13 @@ export default {
       }
 
       if (!this.template.fields.length) {
-        alert('Please draw fields to prepare the document.')
+        alert(this.t('please_draw_fields_to_prepare_the_document'))
       } else {
         const submitterWithoutFields =
           this.template.submitters.find((submitter) => !this.template.fields.some((f) => f.submitter_uuid === submitter.uuid))
 
         if (submitterWithoutFields) {
-          alert(`Please add fields for the ${submitterWithoutFields.name}. Or, remove the ${submitterWithoutFields.name} if not needed.`)
+          alert(this.t('please_add_fields_for_the_submitter_name_or_remove_the_submitter_name_if_not_needed').replaceAll('{submitter_name}', submitterWithoutFields.name))
         } else {
           this.isSaving = true
 

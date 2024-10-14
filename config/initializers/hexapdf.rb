@@ -1,6 +1,19 @@
 # frozen_string_literal: true
 
 module HexaPDF
+  module DigitalSignature
+    class Signatures
+      private
+
+      def generate_field_name
+        index = (@document.acro_form.each_field
+                 .map { |field| field.full_field_name.to_s.scan(/\ASignature(\d+)/).first&.first.to_i }
+                 .max || 0) + 1
+        "Signature#{index}"
+      end
+    end
+  end
+
   module Encryption
     class SecurityHandler
       def encrypt_string(str, obj)
@@ -9,6 +22,20 @@ module HexaPDF
 
         key = object_key(obj.oid, obj.gen, string_algorithm)
         string_algorithm.encrypt(key, str).dup
+      end
+    end
+
+    module AES
+      module ClassMethods
+        def unpad(data)
+          padding_length = data.getbyte(-1)
+          if !padding_length || padding_length > BLOCK_SIZE || padding_length.zero? ||
+             data[-padding_length, padding_length].each_byte.any? { |byte| byte != padding_length }
+            data
+          else
+            data[0...-padding_length]
+          end
+        end
       end
     end
   end

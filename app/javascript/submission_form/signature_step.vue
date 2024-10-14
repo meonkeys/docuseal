@@ -194,6 +194,54 @@
       type="text"
       @input="updateWrittenSignature"
     >
+    <select
+      v-if="requireSigningReason && !isOtherReason"
+      class="select base-input !text-2xl w-full mt-6 text-center"
+      :class="{ 'text-gray-300': !reason }"
+      required
+      :name="`values[${field.preferences.reason_field_uuid}]`"
+      @change="$event.target.value === 'other' ? [reason = '', isOtherReason = true] : $emit('update:reason', $event.target.value)"
+    >
+      <option
+        value=""
+        disabled
+        :selected="!reason"
+        class="text-gray-300"
+      >
+        {{ t('select_a_reason') }}
+      </option>
+      <option
+        v-for="(label, option) in defaultReasons"
+        :key="option"
+        :value="option"
+        :selected="reason === option"
+        class="text-base-content"
+      >
+        {{ label }}
+      </option>
+      <option
+        value="other"
+        class="text-base-content"
+      >
+        {{ t('other') }}
+      </option>
+    </select>
+    <input
+      v-if="requireSigningReason && isOtherReason"
+      class="base-input !text-2xl w-full mt-6"
+      required
+      :name="`values[${field.preferences.reason_field_uuid}]`"
+      :placeholder="t('type_here_')"
+      :value="reason"
+      type="text"
+      @input="$emit('update:reason', $event.target.value)"
+    >
+    <input
+      v-if="requireSigningReason"
+      hidden
+      name="with_reason"
+      :value="field.preferences.reason_field_uuid"
+    >
     <div
       v-if="isShowQr"
       dir="auto"
@@ -231,6 +279,7 @@ import { cropCanvasAndExportToPNG } from './crop_canvas'
 import SignaturePad from 'signature_pad'
 import AppearsOn from './appears_on'
 import MarkdownContent from './markdown_content'
+import { v4 } from 'uuid'
 
 let isFontLoaded = false
 
@@ -254,6 +303,11 @@ export default {
     field: {
       type: Object,
       required: true
+    },
+    requireSigningReason: {
+      type: Boolean,
+      required: false,
+      default: false
     },
     submitter: {
       type: Object,
@@ -304,17 +358,23 @@ export default {
       required: false,
       default: ''
     },
+    reason: {
+      type: String,
+      required: false,
+      default: ''
+    },
     modelValue: {
       type: String,
       required: false,
       default: ''
     }
   },
-  emits: ['attached', 'update:model-value', 'start', 'minimize'],
+  emits: ['attached', 'update:model-value', 'start', 'minimize', 'update:reason'],
   data () {
     return {
       isSignatureStarted: !!this.previousValue,
       isShowQr: false,
+      isOtherReason: false,
       isUsePreviousValue: true,
       isTextSignature: this.field.preferences?.format === 'typed',
       uploadImageInputKey: Math.random().toString()
@@ -324,12 +384,26 @@ export default {
     submitterSlug () {
       return this.submitter.slug
     },
+    defaultReasons () {
+      return {
+        [this.t('approved_by')]: this.t('approved'),
+        [this.t('reviewed_by')]: this.t('reviewed'),
+        [this.t('authored_by')]: this.t('authored_by_me')
+      }
+    },
     computedPreviousValue () {
       if (this.isUsePreviousValue) {
         return this.previousValue
       } else {
         return null
       }
+    }
+  },
+  created () {
+    if (this.requireSigningReason) {
+      this.field.preferences ||= {}
+      this.field.preferences.reason_field_uuid ||= v4()
+      this.isOtherReason = this.reason && !this.defaultReasons[this.reason]
     }
   },
   async mounted () {
@@ -501,8 +575,11 @@ export default {
       this.remove()
       this.isSignatureStarted = true
 
-      const file = event.target.files[0]
+      this.drawOnCanvas(event.target.files[0], this.$refs.canvas)
 
+      this.uploadImageInputKey = Math.random().toString()
+    },
+    drawOnCanvas (file, canvas) {
       if (file && file.type.match('image.*')) {
         const reader = new FileReader()
 
@@ -512,7 +589,6 @@ export default {
           img.src = event.target.result
 
           img.onload = () => {
-            const canvas = this.$refs.canvas
             const context = canvas.getContext('2d')
 
             const aspectRatio = img.width / img.height
@@ -547,8 +623,6 @@ export default {
         }
 
         reader.readAsDataURL(file)
-
-        this.uploadImageInputKey = Math.random().toString()
       }
     },
     maybeSetSignedUuid (signedUuid) {

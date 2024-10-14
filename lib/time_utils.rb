@@ -32,6 +32,14 @@ module TimeUtils
     tz_info.abbreviation(time)
   end
 
+  def parse_time_value(value)
+    if value.is_a?(Integer)
+      Time.zone.at(value.to_s.first(10).to_i)
+    elsif value.present?
+      Time.zone.parse(value)
+    end
+  end
+
   def parse_date_string(string, pattern)
     pattern = pattern.sub(/Y+/, YEAR_FORMATS)
                      .sub(/M+/, MONTH_FORMATS)
@@ -50,9 +58,7 @@ module TimeUtils
                         .sub(/Y+/, YEAR_FORMATS[format[/Y+/]])
 
     I18n.l(date, format: i18n_format, locale:)
-  rescue Date::Error => e
-    Rollbar.warning("#{e}: #{string}") if defined?(Rollbar)
-
+  rescue Date::Error
     string
   end
 end

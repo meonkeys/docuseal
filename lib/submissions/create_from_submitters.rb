@@ -17,6 +17,7 @@ module Submissions
         submission = template.submissions.new(created_by_user: user, source:,
                                               account_id: user.account_id,
                                               preferences: set_submission_preferences,
+                                              expire_at: attrs[:expire_at],
                                               template_submitters: [], submitters_order:)
 
         maybe_set_template_fields(submission, attrs[:submitters])
@@ -38,7 +39,18 @@ module Submissions
 
         next if submission.submitters.blank?
 
+        maybe_add_invite_submitters(submission, template)
+
         submission.tap(&:save!)
+      end
+    end
+
+    def maybe_add_invite_submitters(submission, template)
+      template.submitters.each do |item|
+        next if item['invite_by_uuid'].blank? ||
+                submission.template_submitters.any? { |e| e['uuid'] == item['uuid'] }
+
+        submission.template_submitters << item
       end
     end
 
@@ -119,7 +131,6 @@ module Submissions
       field['title'] = attrs['title'] if attrs['title'].present?
       field['description'] = attrs['description'] if attrs['description'].present?
       field['readonly'] = attrs['readonly'] if attrs.key?('readonly')
-      field['redacted'] = attrs['redacted'] if attrs.key?('redacted')
       field['required'] = attrs['required'] if attrs.key?('required')
 
       if attrs.key?('default_value') && !field['type'].in?(%w[signature image initials file])
@@ -154,16 +165,14 @@ module Submissions
       submitter_preferences = Submitters.normalize_preferences(submission.account, user, attrs)
       values = attrs[:values] || {}
 
-      phone_field_uuid =
-        (submission.template_fields || submission.template.fields).find do |f|
-          values[f['uuid']].present? && f['type'] == 'phone'
-        end&.dig('uuid')
+      phone_field_uuid = find_phone_field(submission, values)&.dig('uuid')
 
       submitter =
         submission.submitters.new(
           email:,
           phone: (attrs[:phone] || values[phone_field_uuid]).to_s.gsub(/[^0-9+]/, ''),
           name: attrs[:name],
+          account_id: user.account_id,
           external_id: attrs[:external_id].presence || attrs[:application_key],
           completed_at: attrs[:completed].present? ? Time.current : nil,
           values: values.except(phone_field_uuid),
@@ -180,6 +189,12 @@ module Submissions
       assign_completed_attributes(submitter) if submitter.completed_at?
 
       submitter
+    end
+
+    def find_phone_field(submission, values)
+      (submission.template_fields || submission.template.fields).find do |f|
+        values[f['uuid']].present? && f['type'] == 'phone'
+      end
     end
 
     def assign_completed_attributes(submitter)

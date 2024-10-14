@@ -24,6 +24,11 @@ import SubmitForm from './elements/submit_form'
 import PromptPassword from './elements/prompt_password'
 import EmailsTextarea from './elements/emails_textarea'
 import ToggleOnSubmit from './elements/toggle_on_submit'
+import PasswordInput from './elements/password_input'
+import SearchInput from './elements/search_input'
+import ToggleAttribute from './elements/toggle_attribute'
+import LinkedInput from './elements/linked_input'
+import CheckboxGroup from './elements/checkbox_group'
 
 import * as TurboInstantClick from './lib/turbo_instant_click'
 
@@ -85,9 +90,16 @@ safeRegisterElement('prompt-password', PromptPassword)
 safeRegisterElement('emails-textarea', EmailsTextarea)
 safeRegisterElement('toggle-cookies', ToggleCookies)
 safeRegisterElement('toggle-on-submit', ToggleOnSubmit)
+safeRegisterElement('password-input', PasswordInput)
+safeRegisterElement('search-input', SearchInput)
+safeRegisterElement('toggle-attribute', ToggleAttribute)
+safeRegisterElement('linked-input', LinkedInput)
+safeRegisterElement('checkbox-group', CheckboxGroup)
 
 safeRegisterElement('template-builder', class extends HTMLElement {
   connectedCallback () {
+    document.addEventListener('turbo:submit-end', this.onSubmit)
+
     this.appElem = document.createElement('div')
 
     this.appElem.classList.add('md:h-screen')
@@ -95,6 +107,7 @@ safeRegisterElement('template-builder', class extends HTMLElement {
     this.app = createApp(TemplateBuilder, {
       template: reactive(JSON.parse(this.dataset.template)),
       backgroundColor: '#faf7f5',
+      locale: this.dataset.locale,
       withPhone: this.dataset.withPhone === 'true',
       withLogo: this.dataset.withLogo !== 'false',
       editable: this.dataset.editable !== 'false',
@@ -102,17 +115,29 @@ safeRegisterElement('template-builder', class extends HTMLElement {
       withPayment: this.dataset.withPayment === 'true',
       isPaymentConnected: this.dataset.isPaymentConnected === 'true',
       withFormula: this.dataset.withFormula === 'true',
+      withSendButton: this.dataset.withSendButton !== 'false',
+      withSignYourselfButton: this.dataset.withSignYourselfButton !== 'false',
       withConditions: this.dataset.withConditions === 'true',
       currencies: (this.dataset.currencies || '').split(',').filter(Boolean),
       acceptFileTypes: this.dataset.acceptFileTypes
     })
 
-    this.app.mount(this.appElem)
+    this.component = this.app.mount(this.appElem)
 
     this.appendChild(this.appElem)
   }
 
+  onSubmit = (e) => {
+    if (e.detail.success && e.detail?.formSubmission?.formElement?.id === 'submitters_form') {
+      e.detail.fetchResponse.response.json().then((data) => {
+        this.component.template.submitters = data.submitters
+      })
+    }
+  }
+
   disconnectedCallback () {
+    document.removeEventListener('turbo:submit-end', this.onSubmit)
+
     this.app?.unmount()
     this.appElem?.remove()
   }
@@ -125,7 +150,8 @@ safeRegisterElement('import-list', class extends HTMLElement {
     this.app = createApp(ImportList, {
       template: JSON.parse(this.dataset.template),
       multitenant: this.dataset.multitenant === 'true',
-      authenticityToken: document.querySelector('meta[name="csrf-token"]')?.content
+      authenticityToken: document.querySelector('meta[name="csrf-token"]')?.content,
+      i18n: JSON.parse(this.dataset.i18n || '{}')
     })
 
     this.app.mount(this.appElem)

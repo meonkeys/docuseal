@@ -4,7 +4,7 @@ class SubmitterMailer < ApplicationMailer
   MAX_ATTACHMENTS_SIZE = 10.megabytes
   SIGN_TTL = 1.hour + 20.minutes
 
-  DEFAULT_INVITATION_SUBJECT = 'You are invited to submit a form'
+  NO_REPLY_REGEXP = /no-?reply@/i
 
   def invitation_email(submitter)
     @current_account = submitter.submission.account
@@ -19,22 +19,27 @@ class SubmitterMailer < ApplicationMailer
 
     @email_config = AccountConfigs.find_for_account(@current_account, AccountConfig::SUBMITTER_INVITATION_EMAIL_KEY)
 
-    subject =
-      if @email_config || @subject
-        ReplaceEmailVariables.call(@subject || @email_config.value['subject'], submitter:)
-      else
-        DEFAULT_INVITATION_SUBJECT
-      end
-
     assign_message_metadata('submitter_invitation', @submitter)
 
-    mail(
-      to: @submitter.friendly_name,
-      from: from_address_for_submitter(submitter),
-      subject:,
-      reply_to: submitter.preferences['reply_to'].presence ||
-                (submitter.submission.created_by_user || submitter.template.author)&.friendly_name&.sub(/\+\w+@/, '@')
-    )
+    reply_to = build_submitter_reply_to(@submitter)
+
+    I18n.with_locale(@current_account.locale) do
+      subject =
+        if @email_config || @subject
+          ReplaceEmailVariables.call(@subject || @email_config.value['subject'], submitter:)
+        elsif @submitter.with_signature_fields?
+          I18n.t(:you_are_invited_to_sign_a_document)
+        else
+          I18n.t(:you_are_invited_to_submit_a_form)
+        end
+
+      mail(
+        to: @submitter.friendly_name,
+        from: from_address_for_submitter(submitter),
+        subject:,
+        reply_to:
+      )
+    end
   end
 
   def completed_email(submitter, user, to: nil)
@@ -61,18 +66,35 @@ class SubmitterMailer < ApplicationMailer
     @body = @submitter.template.preferences['completed_notification_email_body'].presence
     @body ||= @email_config.value['body'] if @email_config
 
-    subject =
-      if @subject.present?
-        ReplaceEmailVariables.call(@subject, submitter:)
-      else
-        build_completed_subject(submitter)
-      end
-
     assign_message_metadata('submitter_completed', @submitter)
 
-    mail(from: from_address_for_submitter(submitter),
-         to: to || (user.role == 'integration' ? user.friendly_name.sub(/\+\w+@/, '@') : user.friendly_name),
-         subject:)
+    I18n.with_locale(@current_account.locale) do
+      subject =
+        ReplaceEmailVariables.call(@subject.presence || I18n.t(:template_name_has_been_completed_by_submitters),
+                                   submitter:)
+
+      mail(from: from_address_for_submitter(submitter),
+           to: to || normalize_user_email(user),
+           subject:)
+    end
+  end
+
+  def declined_email(submitter, user)
+    @current_account = submitter.submission.account
+    @submitter = submitter
+    @submission = submitter.submission
+    @user = user
+
+    assign_message_metadata('submitter_declined', @submitter)
+
+    I18n.with_locale(@current_account.locale) do
+      mail(from: from_address_for_submitter(submitter),
+           to: user.role == 'integration' ? user.friendly_name.sub(/\+\w+@/, '@') : user.friendly_name,
+           reply_to: @submitter.friendly_name,
+           subject: I18n.t(:name_declined_by_submitter,
+                           name: @submission.template.name.truncate(20),
+                           submitter: @submitter.name || @submitter.email || @submitter.phone))
+    end
   end
 
   def documents_copy_email(submitter, to: nil, sig: false)
@@ -95,29 +117,34 @@ class SubmitterMailer < ApplicationMailer
     @body = @submitter.template.preferences['documents_copy_email_body'].presence
     @body ||= @email_config.value['body'] if @email_config
 
-    subject =
-      if @subject.present?
-        ReplaceEmailVariables.call(@subject, submitter:)
-      else
-        'Your document copy'
-      end
-
     assign_message_metadata('submitter_documents_copy', @submitter)
+    reply_to = build_submitter_reply_to(submitter)
 
-    mail(from: from_address_for_submitter(submitter),
-         to: to || @submitter.friendly_name,
-         reply_to: @submitter.preferences['reply_to'].presence ||
-                   (@submitter.submission.created_by_user ||
-                    @submitter.template.author)&.friendly_name&.sub(/\+\w+@/, '@'),
-         subject:)
+    I18n.with_locale(@current_account.locale) do
+      subject =
+        if @subject.present?
+          ReplaceEmailVariables.call(@subject, submitter:)
+        else
+          I18n.t(:your_document_copy)
+        end
+
+      mail(from: from_address_for_submitter(submitter),
+           to: to || @submitter.friendly_name,
+           reply_to:,
+           subject:)
+    end
   end
 
   private
 
-  def build_completed_subject(submitter)
-    submitters = submitter.submission.submitters.order(:completed_at)
-                          .map { |e| e.name || e.email || e.phone }.join(', ')
-    %(#{submitter.submission.template.name} has been completed by #{submitters})
+  def build_submitter_reply_to(submitter)
+    reply_to =
+      submitter.preferences['reply_to'].presence ||
+      (submitter.submission.created_by_user || submitter.template.author)&.friendly_name&.sub(/\+\w+@/, '@')
+
+    return nil if reply_to.to_s.match?(NO_REPLY_REGEXP)
+
+    reply_to
   end
 
   def add_completed_email_attachments!(submitter, with_audit_log: true, with_documents: true)
@@ -126,7 +153,7 @@ class SubmitterMailer < ApplicationMailer
     total_size = 0
     audit_trail_data = nil
 
-    if with_audit_log && submitter.submission.audit_trail.present?
+    if with_audit_log && submitter.submission.audit_trail.present? && documents.first&.name != 'combined_document'
       audit_trail_data = submitter.submission.audit_trail.download
 
       total_size = audit_trail_data.size
@@ -148,6 +175,10 @@ class SubmitterMailer < ApplicationMailer
     end
 
     documents
+  end
+
+  def normalize_user_email(user)
+    user.role == 'integration' ? user.friendly_name.sub(/\+\w+@/, '@') : user.friendly_name
   end
 
   def add_attachments_with_size_limit(storage_attachments, current_size)

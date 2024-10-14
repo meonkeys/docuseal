@@ -1,6 +1,6 @@
 <template>
   <template
-    v-for="step in steps"
+    v-for="(step, stepIndex) in steps"
     :key="step[0].uuid"
   >
     <template
@@ -18,19 +18,20 @@
           <FieldArea
             :ref="setAreaRef"
             v-model="values[field.uuid]"
+            :values="values"
             :field="field"
             :area="area"
-            :submittable="true"
+            :submittable="submittable"
             :field-index="fieldIndex"
             :scroll-padding="scrollPadding"
             :submitter="submitter"
             :with-field-placeholder="withFieldPlaceholder"
             :with-signature-id="withSignatureId"
             :is-active="currentStep === step"
-            :with-label="withLabel && !withFieldPlaceholder"
+            :with-label="withLabel && !withFieldPlaceholder && step.length < 2"
             :is-value-set="step.some((f) => f.uuid in values)"
             :attachments-index="attachmentsIndex"
-            @click="$emit('focus-step', step)"
+            @click="$emit('focus-step', stepIndex)"
           />
         </Teleport>
       </template>
@@ -56,6 +57,11 @@ export default {
       type: Boolean,
       required: false,
       default: false
+    },
+    submittable: {
+      type: Boolean,
+      required: false,
+      default: true
     },
     submitter: {
       type: Object,
@@ -126,9 +132,17 @@ export default {
           this.scrollInContainer(areaRef.$el)
         } else {
           const targetRect = areaRef.$refs.scrollToElem.getBoundingClientRect()
-          const root = this.$root.$el?.parentNode?.classList?.contains('ds') ? this.$root.$el : document.body
-          const rootRect = root.getBoundingClientRect()
           const scrollEl = this.scrollEl || window
+
+          let rootRect = {}
+
+          if (this.scrollEl === document.documentElement) {
+            rootRect = this.scrollEl.getBoundingClientRect()
+          } else {
+            const root = this.$root.$el?.parentNode?.classList?.contains('ds') ? this.$root.$el : document.body
+
+            rootRect = root.getBoundingClientRect()
+          }
 
           scrollEl.scrollTo({ top: targetRect.top - rootRect.top, behavior: 'smooth' })
         }

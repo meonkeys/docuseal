@@ -45,9 +45,11 @@ Rails.application.routes.draw do
     end
     resources :tools, only: %i[] do
       post :merge, on: :collection
+      post :verify, on: :collection
     end
     scope 'events' do
       resources :form_events, only: %i[index], path: 'form/:type'
+      resources :submission_events, only: %i[index], path: 'submission/:type'
     end
   end
 
@@ -67,6 +69,7 @@ Rails.application.routes.draw do
   resources :submissions_archived, only: %i[index], path: 'submissions/archived'
   resources :submissions, only: %i[index], controller: 'submissions_dashboard'
   resources :submissions, only: %i[show destroy]
+  resources :submitters, only: %i[edit update]
   resources :console_redirect, only: %i[index]
   resources :upgrade, only: %i[index], controller: 'console_redirect'
   resources :manage, only: %i[index], controller: 'console_redirect'
@@ -75,6 +78,7 @@ Rails.application.routes.draw do
   resources :submitters_autocomplete, only: %i[index]
   resources :template_folders_autocomplete, only: %i[index]
   resources :webhook_preferences, only: %i[create]
+  resources :webhook_secret, only: %i[index create]
   resource :templates_upload, only: %i[create]
   authenticated do
     resource :templates_upload, only: %i[show], path: 'new'
@@ -94,6 +98,7 @@ Rails.application.routes.draw do
     resource :form, only: %i[show], controller: 'templates_form_preview'
     resource :code_modal, only: %i[show], controller: 'templates_code_modal'
     resource :preferences, only: %i[show create], controller: 'templates_preferences'
+    resources :recipients, only: %i[create], controller: 'templates_recipients'
     resources :submissions_export, only: %i[index new]
   end
   resources :preview_document_page, only: %i[show], path: '/preview/:signed_uuid'
@@ -122,6 +127,9 @@ Rails.application.routes.draw do
 
   resources :submit_form, only: %i[show update], path: 's', param: 'slug' do
     resources :values, only: %i[index], controller: 'submit_form_values'
+    resources :download, only: %i[index], controller: 'submit_form_download'
+    resources :decline, only: %i[create], controller: 'submit_form_decline'
+    resources :invite, only: %i[create], controller: 'submit_form_invite'
     get :completed
   end
 
@@ -165,6 +173,8 @@ Rails.application.routes.draw do
       end
     end
   end
+
+  get '/js/:filename', to: 'embed_scripts#show', as: :embed_script
 
   ActiveSupport.run_load_hooks(:routes, self)
 end

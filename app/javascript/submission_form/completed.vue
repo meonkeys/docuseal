@@ -1,5 +1,6 @@
 <template>
   <div
+    id="form_completed"
     class="mx-auto max-w-md flex flex-col"
     dir="auto"
   >
@@ -10,7 +11,7 @@
         :height="30"
       />
       <span>
-        {{ completedMessage.title || t('form_has_been_completed') }}
+        {{ completedMessage.title || (hasSignatureFields ? (hasMultipleDocuments ? t('documents_have_been_signed') : t('document_has_been_signed')) : t('form_has_been_completed')) }}
       </span>
     </div>
     <div
@@ -88,7 +89,7 @@
       v-if="attribution"
       class="text-center mt-4"
     >
-      {{ t('signed_with') }}
+      {{ t('powered_by') }}
       <a
         href="https://www.docuseal.co/start"
         target="_blank"
@@ -128,6 +129,16 @@ export default {
       type: Boolean,
       required: false,
       default: true
+    },
+    hasSignatureFields: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
+    hasMultipleDocuments: {
+      type: Boolean,
+      required: false,
+      default: false
     },
     withDownloadButton: {
       type: Boolean,
@@ -181,6 +192,10 @@ export default {
         spread: 140
       })
     }
+
+    if (window.decline_button) {
+      window.decline_button.setAttribute('disabled', 'true')
+    }
   },
   methods: {
     sendCopyToEmail () {
@@ -208,7 +223,7 @@ export default {
             this.downloadUrls(urls)
           }
         } else {
-          alert('Failed to download files')
+          alert(this.t('failed_to_download_files'))
         }
       })
     },

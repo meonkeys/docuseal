@@ -2,10 +2,11 @@
 
 source 'https://rubygems.org'
 
-ruby '3.3.3'
+ruby '3.3.4'
 
 gem 'arabic-letter-connector', require: 'arabic-letter-connector/logic'
 gem 'aws-sdk-s3', require: false
+gem 'aws-sdk-secretsmanager', require: false
 gem 'azure-storage-blob', require: false
 gem 'bootsnap', require: false
 gem 'cancancan'
@@ -38,7 +39,7 @@ gem 'ruby-vips'
 gem 'rubyXL'
 gem 'shakapacker'
 gem 'sidekiq'
-gem 'sqlite3', require: false, force_ruby_platform: true
+gem 'sqlite3', require: false
 gem 'strip_attributes'
 gem 'turbo-rails'
 gem 'twitter_cldr', require: false

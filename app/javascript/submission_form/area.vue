@@ -3,7 +3,7 @@
     class="field-area flex absolute lg:text-base -outline-offset-1"
     dir="auto"
     :style="computedStyle"
-    :class="{ 'text-[1.6vw] lg:text-base': !textOverflowChars, 'text-[1.0vw] lg:text-xs': textOverflowChars, 'cursor-default': !submittable, 'border border-red-100 bg-red-100 cursor-pointer': submittable, 'border border-red-100': !isActive && submittable, 'bg-opacity-80': !isActive && !isValueSet && submittable, 'field-area-active outline-red-500 outline-dashed outline-2 z-10': isActive && submittable, 'bg-opacity-40': (isActive || isValueSet) && submittable }"
+    :class="{ 'font-serif': field.preferences?.font === 'Times', 'text-[1.6vw] lg:text-base': !textOverflowChars, 'text-[1.0vw] lg:text-xs': textOverflowChars, 'cursor-default': !submittable, 'border border-red-100 bg-red-100 cursor-pointer': submittable, 'border border-red-100': !isActive && submittable, 'bg-opacity-80': !isActive && !isValueSet && submittable, 'field-area-active outline-red-500 outline-dashed outline-2 z-10': isActive && submittable, 'bg-opacity-40': (isActive || isValueSet) && submittable }"
   >
     <div
       v-if="(!withFieldPlaceholder || !field.name || field.type === 'cells') && !isActive && !isValueSet && field.type !== 'checkbox' && submittable && !area.option_uuid"
@@ -29,12 +29,12 @@
         {{ optionValue(option) }}
       </template>
       <template v-else>
-        {{ field.name || fieldNames[field.type] }}
+        {{ field.title || field.name || fieldNames[field.type] }}
         <template v-if="field.type === 'checkbox' && !field.name">
           {{ fieldIndex + 1 }}
         </template>
         <template v-else-if="!field.required && field.type !== 'checkbox'">
-          (optional)
+          ({{ t('optional') }})
         </template>
       </template>
     </div>
@@ -75,7 +75,7 @@
           ID: {{ signature.uuid }}
         </div>
         <div>
-          {{ t('reason') }}: {{ t('digitally_signed_by') }} {{ submitter.name }}
+          {{ t('reason') }}: {{ values[field.preferences?.reason_field_uuid] || t('digitally_signed_by') }} {{ submitter.name }}
           <template v-if="submitter.email">
             &lt;{{ submitter.email }}&gt;
           </template>
@@ -226,7 +226,8 @@ export default {
     },
     submitter: {
       type: Object,
-      required: true
+      required: false,
+      default: () => ({})
     },
     withSignatureId: {
       type: Boolean,
@@ -257,6 +258,11 @@ export default {
       type: [Array, String, Number, Object, Boolean],
       required: false,
       default: ''
+    },
+    values: {
+      type: Object,
+      required: false,
+      default: () => ({})
     },
     isActive: {
       type: Boolean,

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module ActionMailerConfigsInterceptor
-  OPEN_TIMEOUT = 15
-  READ_TIMEOUT = 25
+  OPEN_TIMEOUT = ENV.fetch('SMTP_OPEN_TIMEOUT', '15').to_i
+  READ_TIMEOUT = ENV.fetch('SMTP_READ_TIMEOUT', '25').to_i
 
   module_function
 
@@ -43,9 +43,9 @@ module ActionMailerConfigsInterceptor
       address: value['host'],
       port: value['port'],
       domain: value['domain'],
-      openssl_verify_mode: OpenSSL::SSL::VERIFY_NONE,
-      authentication: value.fetch('authentication', 'plain'),
-      enable_starttls_auto: true,
+      openssl_verify_mode: value['security'] == 'noverify' ? OpenSSL::SSL::VERIFY_NONE : nil,
+      authentication: value['password'].present? ? value.fetch('authentication', 'plain') : nil,
+      enable_starttls_auto: value['security'] != 'tls',
       open_timeout: OPEN_TIMEOUT,
       read_timeout: READ_TIMEOUT,
       ssl: value['security'] == 'ssl',

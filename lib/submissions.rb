@@ -67,6 +67,7 @@ module Submissions
 
       submission.submitters.new(email: normalize_email(email),
                                 uuid: template.submitters.first['uuid'],
+                                account_id: user.account_id,
                                 preferences:,
                                 sent_at: mark_as_sent ? Time.current : nil)
 
@@ -109,13 +110,15 @@ module Submissions
     return email.downcase if email.to_s.include?('.om')
     return email.downcase if email.to_s.include?('.mm')
     return email.downcase if email.to_s.include?('.cm')
+    return email.downcase if email.to_s.include?('.et')
+    return email.downcase if email.to_s.include?('.mo')
+    return email.downcase if email.to_s.include?('.nz')
+    return email.downcase if email.to_s.include?('.za')
     return email.downcase unless email.to_s.include?('.')
 
     fixed_email = EmailTypo.call(email.delete_prefix('<'))
 
-    if defined?(Rollbar) && fixed_email != email.downcase.delete_prefix('<').strip
-      Rollbar.warning("Fixed email #{email}")
-    end
+    Rails.logger.info("Fixed email #{email.split('@').last}") if fixed_email != email.downcase.delete_prefix('<').strip
 
     fixed_email
   end

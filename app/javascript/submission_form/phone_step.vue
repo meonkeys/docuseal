@@ -61,30 +61,55 @@
           </a>
         </div>
       </div>
-      <input
+      <div
         v-show="!isCodeSent"
-        :id="field.uuid"
-        ref="phone"
-        :value="modelValue || defaultValue"
-        :readonly="!!defaultValue"
-        class="base-input !text-2xl w-full"
-        autocomplete="tel"
-        pattern="^\+[0-9\s\-]+$"
-        type="tel"
-        inputmode="tel"
-        :required="field.required"
-        placeholder="+1 234 567-8900"
-        :name="`values[${field.uuid}]`"
-        @invalid="$event.target.value ? $event.target.setCustomValidity(`${t('use_international_format')}...`) : ''"
-        @input="[$event.target.setCustomValidity(''), $emit('update:model-value', $event.target.value)]"
-        @focus="$emit('focus')"
+        class="flex w-full rounded-full outline-neutral-content outline-2 outline-offset-2 focus-within:outline"
       >
+        <div class="relative inline-block">
+          <div class="btn bg-base-200 border border-neutral-300 text-2xl whitespace-nowrap font-normal rounded-l-full">
+            {{ selectedCountry.flag }} +{{ selectedCountry.dial }}
+          </div>
+          <select
+            class="absolute top-0 bottom-0 right-0 left-0 opacity-0 w-full h-full cursor-pointer"
+            :disabled="!!defaultValue"
+            @change="onCountrySelect(countries.find((country) => country.flag === $event.target.value))"
+          >
+            <option
+              v-for="(country, index) in countries"
+              :key="index"
+              :value="country.flag"
+            >
+              {{ country.flag }} {{ country.name }}
+            </option>
+          </select>
+        </div>
+        <input
+          :name="`values[${field.uuid}]`"
+          :value="fullInternationalPhoneValue"
+          hidden
+        >
+        <input
+          :id="field.uuid"
+          ref="phone"
+          :value="phoneValue"
+          :readonly="!!defaultValue"
+          class="base-input !text-2xl !rounded-l-none !border-l-0 !outline-none w-full"
+          autocomplete="tel"
+          type="tel"
+          inputmode="tel"
+          :required="field.required"
+          placeholder="234 567-8900"
+          @input="onPhoneInput"
+          @focus="$emit('focus')"
+        >
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import MarkdownContent from './markdown_content'
+import phoneData from './phone_data'
 
 function throttle (func, delay) {
   let lastCallTime = 0
@@ -144,13 +169,73 @@ export default {
   data () {
     return {
       isCodeSent: false,
-      isResendLoading: false
+      isResendLoading: false,
+      phoneValue: this.modelValue || this.defaultValue || '',
+      selectedCountry: {}
+    }
+  },
+  computed: {
+    countries () {
+      return phoneData.map(([name, dial, flag, tz]) => {
+        return { name, dial, flag, tz }
+      })
+    },
+    countriesDialIndex () {
+      return this.countries.reduce((acc, item) => {
+        acc[item.dial] ||= item
+
+        return acc
+      }, {})
+    },
+    dialCodesRegexp () {
+      const dialCodes = this.countries.map((country) => country.dial).sort((a, b) => b.length - a.length)
+
+      return new RegExp(`^\\+(${dialCodes.join('|')})`)
+    },
+    detectedPhoneValueDialCode () {
+      return (this.phoneValue || '').replace(/[^\d+]/g, '').match(this.dialCodesRegexp)?.[1]
+    },
+    fullInternationalPhoneValue () {
+      if (this.detectedPhoneValueDialCode) {
+        return this.phoneValue
+      } else if (this.phoneValue) {
+        return ['+', this.selectedCountry.dial, this.phoneValue].filter(Boolean).join('')
+      } else {
+        return ''
+      }
+    }
+  },
+  mounted () {
+    const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+    if (this.detectedPhoneValueDialCode) {
+      this.selectedCountry = this.countriesDialIndex[this.detectedPhoneValueDialCode]
+    } else if (browserTimeZone) {
+      const tz = browserTimeZone.split('/')[1]
+
+      this.selectedCountry = this.countries.find((country) => country.tz.includes(tz)) || this.countries[0]
     }
   },
   methods: {
     emitSubmit: throttle(function (e) {
       this.$emit('submit')
     }, 1000),
+    onCountrySelect (country) {
+      if (this.selectedCountry.flag !== country.flag) {
+        this.phoneValue = this.phoneValue.replace(`+${this.selectedCountry.dial}`, `+${country.dial}`)
+      }
+
+      this.selectedCountry = country
+
+      this.$refs.phone.focus()
+    },
+    onPhoneInput (e) {
+      this.phoneValue = e.target.value
+
+      if (this.detectedPhoneValueDialCode) {
+        this.selectedCountry = this.countriesDialIndex[this.detectedPhoneValueDialCode]
+      }
+    },
     onInputCode (e) {
       if (e.target.value.length === 6) {
         this.emitSubmit()
@@ -171,14 +256,14 @@ export default {
         body: JSON.stringify({
           submitter_slug: this.submitterSlug,
           locale: this.locale,
-          phone: this.$refs.phone.value
+          phone: this.fullInternationalPhoneValue
         }),
         headers: { 'Content-Type': 'application/json' }
       }).then(async (resp) => {
         if (resp.status === 422) {
           const data = await resp.json()
 
-          alert(this.t('number_phone_is_invalid').replace('{number}', this.$refs.phone.value))
+          alert(this.t('number_phone_is_invalid').replace('{number}', this.fullInternationalPhoneValue))
 
           return Promise.reject(new Error(data.error))
         }
@@ -189,13 +274,13 @@ export default {
         return Promise.resolve({})
       }
 
-      if (!this.$refs.phone.value.toString().startsWith('+')) {
+      if (!this.fullInternationalPhoneValue.toString().startsWith('+')) {
         alert(this.t('use_international_format'))
 
         return Promise.reject(new Error('phone invalid'))
       } else if (!this.isCodeSent) {
         return this.sendVerificationCode().then(() => {
-          this.$emit('update:model-value', this.$refs.phone.value)
+          this.$emit('update:model-value', this.fullInternationalPhoneValue)
 
           this.isCodeSent = true
 

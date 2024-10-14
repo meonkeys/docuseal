@@ -19,10 +19,14 @@ module Api
 
       submissions = paginate(submissions.preload(:created_by_user, :submitters,
                                                  template: :folder,
+                                                 combined_document_attachment: :blob,
                                                  audit_trail_attachment: :blob))
 
       render json: {
-        data: submissions.as_json(Submissions::SerializeForApi::SERIALIZE_PARAMS),
+        data: submissions.map do |s|
+          Submissions::SerializeForApi.call(s, s.submitters, params,
+                                            with_events: false, with_documents: false, with_values: false)
+        end,
         pagination: {
           count: submissions.size,
           next: submissions.last&.id,
@@ -76,7 +80,7 @@ module Api
       end
 
       render json: build_create_json(submissions)
-    rescue Submitters::NormalizeValues::BaseError => e
+    rescue Submitters::NormalizeValues::BaseError, DownloadUtils::UnableToDownload => e
       Rollbar.warning(e) if defined?(Rollbar)
 
       render json: { error: e.message }, status: :unprocessable_entity
@@ -147,13 +151,14 @@ module Api
     def submissions_params
       permitted_attrs = [
         :send_email, :send_sms, :bcc_completed, :completed_redirect_url, :reply_to, :go_to_last,
+        :expire_at,
         {
           message: %i[subject body],
           submitters: [[:send_email, :send_sms, :completed_redirect_url, :uuid, :name, :email, :role,
                         :completed, :phone, :application_key, :external_id, :reply_to, :go_to_last,
                         { metadata: {}, values: {}, readonly_fields: [], message: %i[subject body],
                           fields: [:name, :uuid, :default_value, :value, :title, :description,
-                                   :readonly, :redacted, :validation_pattern, :invalid_message,
+                                   :readonly, :validation_pattern, :invalid_message,
                                    { default_value: [], value: [], preferences: {} }] }]]
         }
       ]

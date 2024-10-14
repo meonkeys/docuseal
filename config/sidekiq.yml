@@ -1,10 +1,11 @@
 queues:
   - [default, 1]
   - [webhooks, 1]
+  - [images, 1]
   - [mailers, 1]
   - [recurrent, 1]
   - [rollbar, 1]
 
 production:
   :concurrency: 15
-  :max_retries: 5
+  :max_retries: 3

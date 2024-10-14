@@ -18,8 +18,8 @@ module Submissions
       pdf.trailer.info[:Creator] = "#{Docuseal.product_name} (#{Docuseal::PRODUCT_URL})"
 
       sign_params = {
-        reason: sign_reason,
-        **Submissions::GenerateResultAttachments.build_signing_params(pkcs, tsa_url)
+        reason: Submissions::GenerateResultAttachments.single_sign_reason(submitter),
+        **Submissions::GenerateResultAttachments.build_signing_params(submitter, pkcs, tsa_url)
       }
 
       pdf.sign(io, **sign_params)
@@ -38,7 +38,9 @@ module Submissions
     def build_combined_pdf(submitter)
       pdfs_index = Submissions::GenerateResultAttachments.generate_pdfs(submitter)
 
-      audit_trail = Submissions::GenerateAuditTrail.build_audit_trail(submitter.submission)
+      audit_trail = I18n.with_locale(submitter.account.locale) do
+        Submissions::GenerateAuditTrail.build_audit_trail(submitter.submission)
+      end
 
       audit_trail.dispatch_message(:complete_objects)
 
@@ -55,10 +57,6 @@ module Submissions
       audit_trail.pages.each { |page| result.pages << result.import(page) }
 
       result
-    end
-
-    def sign_reason
-      'Signed with DocuSeal.co'
     end
   end
 end

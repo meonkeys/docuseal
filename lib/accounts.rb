@@ -111,12 +111,18 @@ module Accounts
 
         data
       else
+        return Docuseal.default_pkcs if Docuseal::CERTS.present?
+
         EncryptedConfig.find_by(account:, key: EncryptedConfig::ESIGN_CERTS_KEY)&.value ||
           EncryptedConfig.find_by(key: EncryptedConfig::ESIGN_CERTS_KEY).value
       end
 
     if (default_cert = cert_data['custom']&.find { |e| e['status'] == 'default' })
-      OpenSSL::PKCS12.new(Base64.urlsafe_decode64(default_cert['data']), default_cert['password'].to_s)
+      if default_cert['name'] == Docuseal::AATL_CERT_NAME
+        Docuseal.default_pkcs
+      else
+        OpenSSL::PKCS12.new(Base64.urlsafe_decode64(default_cert['data']), default_cert['password'].to_s)
+      end
     else
       GenerateCertificate.load_pkcs(cert_data)
     end
@@ -135,6 +141,33 @@ module Accounts
 
       url
     end.presence
+  end
+
+  def load_trusted_certs(account)
+    cert_data =
+      if Docuseal.multitenant?
+        value = EncryptedConfig.find_by(account:, key: EncryptedConfig::ESIGN_CERTS_KEY)&.value || {}
+
+        Docuseal::CERTS.merge(value)
+      elsif Docuseal::CERTS.present?
+        Docuseal::CERTS
+      else
+        EncryptedConfig.find_by(key: EncryptedConfig::ESIGN_CERTS_KEY)&.value || {}
+      end
+
+    default_pkcs = GenerateCertificate.load_pkcs(cert_data)
+
+    custom_certs = cert_data.fetch('custom', []).filter_map do |e|
+      next if e['data'].blank?
+
+      OpenSSL::PKCS12.new(Base64.urlsafe_decode64(e['data']), e['password'].to_s)
+    end
+
+    [default_pkcs.certificate,
+     *default_pkcs.ca_certs,
+     *custom_certs.map(&:certificate),
+     *custom_certs.flat_map(&:ca_certs).compact,
+     *Docuseal.trusted_certs]
   end
 
   def can_send_emails?(_account, **_params)

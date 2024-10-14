@@ -3,7 +3,7 @@
     <div v-if="selectedSheetIndex === null && spreadsheet">
       <form @submit.prevent="[selectedSheetIndex = $refs.selectWorksheet.value, buildDefaultMappings()]">
         <label class="label">
-          Select Worksheet
+          {{ t('select_worksheet') }}
         </label>
         <select
           ref="selectWorksheet"
@@ -18,7 +18,7 @@
           </option>
         </select>
         <button class="base-button mt-4 w-full">
-          Open
+          {{ t('open') }}
         </button>
       </form>
     </div>
@@ -36,10 +36,10 @@
         </div>
         <div class="flex">
           <div class="relative w-full py-2 px-2 text-sm">
-            Recipient field
+            {{ t('recipient_field') }}
           </div>
           <div class="relative w-full py-2 pl-4 text-sm">
-            Spreadsheet column
+            {{ t('spreadsheet_column') }}
           </div>
         </div>
         <div
@@ -50,6 +50,7 @@
           <div class="flex">
             <select
               class="base-select !select-sm !h-10"
+              :class="{ '!text-gray-300': !mapping.field_name }"
               required
               @change="mapping.field_name = $event.target.value"
             >
@@ -58,13 +59,14 @@
                 value=""
                 :selected="!mapping.field_name"
               >
-                Select Field
+                {{ t('select_field') }}
               </option>
               <option
                 v-for="(field, index) in selectFieldsForSubmitter(submitter)"
                 :key="index"
                 :value="field.name"
                 :selected="mapping.field_name === field.name"
+                class="text-base-content"
               >
                 {{ field.name }}
               </option>
@@ -75,6 +77,7 @@
             <div class="w-full relative">
               <select
                 class="base-select !select-sm !h-10"
+                :class="{ '!text-gray-300': !mapping.column_index }"
                 required
                 @change="mapping.column_index = parseInt($event.target.value)"
               >
@@ -83,7 +86,7 @@
                   value=""
                   :selected="mapping.column_index == null"
                 >
-                  Select Column
+                  {{ t('select_column') }}
                 </option>
                 <template
                   v-for="(column, index) in columns"
@@ -93,6 +96,7 @@
                     v-if="column"
                     :value="index"
                     :selected="index === mapping.column_index"
+                    class="text-base-content"
                   >
                     {{ column }}
                   </option>
@@ -118,8 +122,8 @@
             </div>
             <div class="flex items-center pl-1">
               <span
-                class="tooltip tooltip-top"
-                data-tip="Remove"
+                class="tooltip tooltip-left"
+                :data-tip="t('remove')"
               >
                 <button
                   :disabled="mappings.filter((m) => m.submitter_uuid === submitter.uuid).length < 2"
@@ -138,7 +142,7 @@
             @click.prevent="addMapping(submitter)"
           >
             <IconPlus class="w-4 h-4" />
-            New Field Mapping
+            {{ t('new_field_mapping') }}
           </button>
         </div>
       </div>
@@ -152,7 +156,7 @@
       <div
         class="px-3 border-y py-2 border-base-300 text-center w-full text-sm font-semibold"
       >
-        Total entries: {{ submissionsData.length }}
+        {{ t('total_entries') }}: {{ submissionsData.length }}
         <template v-if="multitenant && submissionsData.length >= 1000">
           / 1000
         </template>
@@ -187,10 +191,10 @@
               <div
                 class="font-medium text-lg mb-1"
               >
-                Upload CSV or XLSX Spreadsheet
+                {{ t('upload_csv_or_xlsx_spreadsheet') }}
               </div>
               <div class="text-sm">
-                <span class="font-medium">Click to Upload</span> or drag and drop files.
+                <span class="font-medium">{{ t('click_to_upload') }}</span> {{ t('or_drag_and_drop_files') }}
               </div>
             </div>
           </div>
@@ -210,11 +214,11 @@
         </label>
       </div>
       <div class="text-center mt-2">
-        Or <a
+        {{ t('or') }} <a
           :download="`${template.name}.csv`"
           :href="`data:text/csv;base64,${csvBase64}`"
           class="link font-medium"
-        >download</a> a spreadsheet to fill and import
+        >{{ t('download') }}</a> {{ t('a_sample_spreadsheet_to_fill_and_import') }}
       </div>
     </div>
   </div>
@@ -248,6 +252,11 @@ export default {
       type: String,
       required: false,
       default: ''
+    },
+    i18n: {
+      type: Object,
+      required: false,
+      default: () => ({})
     }
   },
   data () {
@@ -354,6 +363,9 @@ export default {
     }
   },
   methods: {
+    t (key) {
+      return this.i18n[key] || key
+    },
     onDropFiles (e) {
       this.uploadFile(e.dataTransfer.files[0])
     },

@@ -21,6 +21,8 @@ module Submissions
     A4_SIZE = [595, 842].freeze
     SUPPORTED_IMAGE_TYPES = ['image/png', 'image/jpeg'].freeze
 
+    TESTING_FOOTER = 'Testing Document - NOT LEGALLY BINDING'
+
     MISSING_GLYPH_REPLACE = {
       '▪' => '-',
       '✔️' => 'V',
@@ -56,13 +58,15 @@ module Submissions
         submitter.submission.template_schema.map do |item|
           pdf = pdfs_index[item['attachment_uuid']]
 
-          attachment = build_pdf_attachment(pdf:, submitter:, pkcs:, tsa_url:,
-                                            uuid: item['attachment_uuid'],
-                                            name: item['name'])
+          if original_documents.find { |a| a.uuid == item['attachment_uuid'] }.image?
+            pdf = normalize_image_pdf(pdf)
 
-          image_pdfs << pdf if original_documents.find { |a| a.uuid == item['attachment_uuid'] }.image?
+            image_pdfs << pdf
+          end
 
-          attachment
+          build_pdf_attachment(pdf:, submitter:, pkcs:, tsa_url:,
+                               uuid: item['attachment_uuid'],
+                               name: item['name'])
         end
 
       return result_attachments.map { |e| e.tap(&:save!) } if image_pdfs.size < 2
@@ -71,6 +75,8 @@ module Submissions
         image_pdfs.each_with_object(HexaPDF::Document.new) do |pdf, doc|
           pdf.pages.each { |page| doc.pages << doc.import(page) }
         end
+
+      images_pdf = normalize_image_pdf(images_pdf)
 
       images_pdf_attachment =
         build_pdf_attachment(
@@ -100,18 +106,41 @@ module Submissions
 
       pdfs_index = build_pdfs_index(submitter, flatten: is_flatten)
 
-      if with_signature_id
+      if with_signature_id || submitter.account.testing?
         pdfs_index.each_value do |pdf|
           next if pdf.trailer.info[:DocumentID].present?
 
-          pdf.trailer.info[:DocumentID] = Digest::MD5.hexdigest(submitter.submission.slug).upcase
+          font = pdf.fonts.add(FONT_NAME)
+
+          document_id = Digest::MD5.hexdigest(submitter.submission.slug).upcase
+
+          pdf.trailer.info[:DocumentID] = document_id
           pdf.pages.each do |page|
             font_size = (([page.box.width, page.box.height].min / A4_SIZE[0].to_f) * 9).to_i
             cnv = page.canvas(type: :overlay)
 
-            cnv.font(FONT_NAME, size: font_size)
-            cnv.text("Document ID: #{Digest::MD5.hexdigest(submitter.submission.slug).upcase}",
-                     at: [2, 4])
+            text =
+              if submitter.account.testing?
+                if with_signature_id
+                  "#{TESTING_FOOTER} | ID: #{document_id}"
+                else
+                  TESTING_FOOTER
+                end
+              else
+                "#{I18n.t('document_id', locale: submitter.account.locale)}: #{document_id}"
+              end
+
+            text = HexaPDF::Layout::TextFragment.create(
+              text, font:, font_size:, underlays: [
+                lambda do |canv, box|
+                  canv.fill_color('white').rectangle(-1, 0, box.width + 2, box.height).fill
+                end
+              ]
+            )
+
+            HexaPDF::Layout::TextLayouter.new(font:, font_size:)
+                                         .fit([text], page.box.width, page.box.height)
+                                         .draw(cnv, 1, font_size * 1.37)
           end
         end
       end
@@ -169,7 +198,7 @@ module Submissions
           canvas.font(FONT_NAME, size: font_size)
 
           case field['type']
-          when ->(type) { type == 'signature' && with_signature_id }
+          when ->(type) { type == 'signature' && (with_signature_id || field.dig('preferences', 'reason_field_uuid')) }
             attachment = submitter.attachments.find { |a| a.uuid == value }
 
             attachments_data_cache[attachment.uuid] ||= attachment.download
@@ -192,12 +221,15 @@ module Submissions
               break if id_string.length < 8
             end
 
+            reason_value = submitter.values[field.dig('preferences', 'reason_field_uuid')].presence
+
             reason_string =
-              "#{I18n.t('reason')}: #{I18n.t('digitally_signed_by')} " \
-              "#{submitter.name}#{submitter.email.present? ? " <#{submitter.email}>" : ''}\n" \
-              "#{I18n.l(attachment.created_at.in_time_zone(submitter.account.timezone),
-                        format: :long, locale: submitter.account.locale)} " \
-              "#{TimeUtils.timezone_abbr(submitter.account.timezone, attachment.created_at)}"
+              I18n.with_locale(submitter.account.locale) do
+                "#{I18n.t('reason')}: #{reason_value || I18n.t('digitally_signed_by')} " \
+                  "#{submitter.name}#{submitter.email.present? ? " <#{submitter.email}>" : ''}\n" \
+                  "#{I18n.l(attachment.created_at.in_time_zone(submitter.account.timezone), format: :long)} " \
+                  "#{TimeUtils.timezone_abbr(submitter.account.timezone, attachment.created_at)}"
+              end
 
             reason_text = HexaPDF::Layout::TextFragment.create(reason_string,
                                                                font:,
@@ -309,7 +341,8 @@ module Submissions
             if field['type'].in?(%w[multiple radio])
               option = field['options']&.find { |o| o['uuid'] == area['option_uuid'] }
 
-              option_name = option['value'].presence || "Option #{field['options'].index(option) + 1}"
+              option_name = option['value'].presence
+              option_name ||= "#{I18n.t('option', locale: account.locale)} #{field['options'].index(option) + 1}"
 
               value = Array.wrap(value).include?(option_name)
             end
@@ -327,7 +360,7 @@ module Submissions
               width: PdfIcons::WIDTH * scale,
               height: PdfIcons::HEIGHT * scale
             )
-          when ->(type) { type == 'cells' && area['cell_w'] }
+          when ->(type) { type == 'cells' && !area['cell_w'].to_f.zero? }
             cell_width = area['cell_w'] * width
 
             TextUtils.maybe_rtl_reverse(value).chars.each_with_index do |char, index|
@@ -423,8 +456,10 @@ module Submissions
       if sign_reason
         sign_params = {
           reason: sign_reason,
-          **build_signing_params(pkcs, tsa_url)
+          **build_signing_params(submitter, pkcs, tsa_url)
         }
+
+        pdf.pages.first[:Annots] = [] unless pdf.pages.first[:Annots].respond_to?(:<<)
 
         begin
           pdf.sign(io, write_options: { validate: false }, **sign_params)
@@ -460,7 +495,7 @@ module Submissions
       io
     end
 
-    def build_signing_params(pkcs, tsa_url)
+    def build_signing_params(_submitter, pkcs, tsa_url)
       params = {
         certificate: pkcs.certificate,
         key: pkcs.key,
@@ -501,6 +536,8 @@ module Submissions
           begin
             pdf.acro_form.create_appearances(force: true) if pdf.acro_form && pdf.acro_form[:NeedAppearances]
             pdf.acro_form&.flatten
+          rescue HexaPDF::MissingGlyphError
+            nil
           rescue StandardError => e
             Rollbar.error(e) if defined?(Rollbar)
           end
@@ -571,6 +608,14 @@ module Submissions
       )
 
       pdf
+    end
+
+    def normalize_image_pdf(pdf)
+      io = StringIO.new
+      pdf.write(io)
+      io.rewind
+
+      HexaPDF::Document.new(io:)
     end
 
     def sign_reason(name)

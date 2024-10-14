@@ -5,7 +5,7 @@ module Submitters
     SERIALIZE_PARAMS = {
       methods: %i[status application_key],
       only: %i[id submission_id email phone name ua ip sent_at opened_at
-               completed_at created_at updated_at external_id metadata]
+               completed_at declined_at created_at updated_at external_id metadata]
     }.freeze
 
     module_function
@@ -22,8 +22,12 @@ module Submitters
       submitter_name = (submitter.submission.template_submitters ||
                         submitter.submission.template.submitters).find { |e| e['uuid'] == submitter.uuid }['name']
 
+      decline_reason =
+        submitter.declined_at? ? submitter.submission_events.find_by(event_type: :decline_form).data['reason'] : nil
+
       submitter.as_json(SERIALIZE_PARAMS)
-               .merge('role' => submitter_name,
+               .merge('decline_reason' => decline_reason,
+                      'role' => submitter_name,
                       'preferences' => submitter.preferences.except('default_values'),
                       'values' => values,
                       'documents' => documents,
@@ -33,8 +37,8 @@ module Submitters
                       'template' => submitter.template.as_json(only: %i[id name external_id created_at updated_at],
                                                                methods: %i[folder_name]),
                       'submission' => {
-                        **submitter.submission.slice(:id, :audit_log_url, :created_at),
-                        status: submitter.submission.submitters.all?(&:completed_at?) ? 'completed' : 'pending',
+                        **submitter.submission.slice(:id, :audit_log_url, :combined_document_url, :created_at),
+                        status: build_submission_status(submitter.submission),
                         url: r.submissions_preview_url(submitter.submission.slug, **Docuseal.default_url_options)
                       })
     end
@@ -79,7 +83,19 @@ module Submitters
 
         value = fetch_field_value(field, submitter.values[field['uuid']], attachments_index)
 
-        { name: field_name, uuid: field['uuid'], value: }
+        { name: field_name, uuid: field['uuid'], value:, readonly: field['readonly'] == true }
+      end
+    end
+
+    def build_submission_status(submission)
+      submitters = submission.submitters
+
+      if submitters.all?(&:completed_at?)
+        'completed'
+      elsif submitters.any?(&:declined_at?)
+        'declined'
+      else
+        submission.expired? ? 'expired' : 'pending'
       end
     end
 

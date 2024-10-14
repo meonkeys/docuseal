@@ -9,6 +9,13 @@ class SubmissionsController < ApplicationController
   def show
     @submission = Submissions.preload_with_pages(@submission)
 
+    unless @submission.submitters.all?(&:completed_at?)
+      ActiveRecord::Associations::Preloader.new(
+        records: [@submission],
+        associations: [submitters: :start_form_submission_events]
+      ).call
+    end
+
     render :show, layout: 'plain'
   end
 
@@ -49,7 +56,7 @@ class SubmissionsController < ApplicationController
 
     Submissions.send_signature_requests(submissions)
 
-    redirect_to template_path(@template), notice: 'New recipients have been added'
+    redirect_to template_path(@template), notice: I18n.t('new_recipients_have_been_added')
   end
 
   def destroy
@@ -57,13 +64,13 @@ class SubmissionsController < ApplicationController
       if params[:permanently].present?
         @submission.destroy!
 
-        'Submission has been removed'
+        I18n.t('submission_has_been_removed')
       else
         @submission.update!(archived_at: Time.current)
 
         SendSubmissionArchivedWebhookRequestJob.perform_async('submission_id' => @submission.id)
 
-        'Submission has been archived'
+        I18n.t('submission_has_been_archived')
       end
 
     redirect_back(fallback_location: template_path(@submission.template), notice:)

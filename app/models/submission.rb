@@ -6,6 +6,7 @@
 #
 #  id                  :bigint           not null, primary key
 #  archived_at         :datetime
+#  expire_at           :datetime
 #  preferences         :text             not null
 #  slug                :string           not null
 #  source              :text             not null
@@ -21,7 +22,7 @@
 #
 # Indexes
 #
-#  index_submissions_on_account_id          (account_id)
+#  index_submissions_on_account_id_and_id   (account_id,id)
 #  index_submissions_on_created_by_user_id  (created_by_user_id)
 #  index_submissions_on_slug                (slug) UNIQUE
 #  index_submissions_on_template_id         (template_id)
@@ -75,10 +76,20 @@ class Submission < ApplicationRecord
     preserved: 'preserved'
   }, scope: false, prefix: true
 
+  def expired?
+    expire_at && expire_at <= Time.current
+  end
+
   def audit_trail_url
     return if audit_trail.blank?
 
     ActiveStorage::Blob.proxy_url(audit_trail.blob)
   end
   alias audit_log_url audit_trail_url
+
+  def combined_document_url
+    return if combined_document.blank?
+
+    ActiveStorage::Blob.proxy_url(combined_document.blob)
+  end
 end

@@ -6,7 +6,7 @@ module Docuseal
   NEWSLETTER_URL = "#{PRODUCT_URL}/newsletters".freeze
   ENQUIRIES_URL = "#{PRODUCT_URL}/enquiries".freeze
   PRODUCT_NAME = 'DocuSeal'
-  DEFAULT_APP_URL = 'http://localhost:3000'
+  DEFAULT_APP_URL = ENV.fetch('APP_URL', 'http://localhost:3000')
   GITHUB_URL = 'https://github.com/docusealco/docuseal'
   DISCORD_URL = 'https://discord.gg/qygYCDGck9'
   TWITTER_URL = 'https://twitter.com/docusealco'
@@ -14,6 +14,7 @@ module Docuseal
   CHATGPT_URL = 'https://chatgpt.com/g/g-9hg8AAw0r-docuseal'
   SUPPORT_EMAIL = 'support@docuseal.co'
   HOST = ENV.fetch('HOST', 'localhost')
+  AATL_CERT_NAME = 'docuseal_aatl'
   CONSOLE_URL = if Rails.env.development?
                   'http://console.localhost.io:3001'
                 elsif ENV['MULTITENANT'] == 'true'
@@ -76,7 +77,7 @@ module Docuseal
     return DEFAULT_URL_OPTIONS if multitenant?
 
     @default_url_options ||= begin
-      value = EncryptedConfig.find_by(key: EncryptedConfig::APP_URL_KEY)&.value
+      value = EncryptedConfig.find_by(key: EncryptedConfig::APP_URL_KEY)&.value if ENV['APP_URL'].blank?
       value ||= DEFAULT_APP_URL
       url = Addressable::URI.parse(value)
       { host: url.host, port: url.port, protocol: url.scheme }

@@ -4,12 +4,13 @@ module Submitters
   module NormalizeValues
     CHECKSUM_CACHE_STORE = ActiveSupport::Cache::MemoryStore.new
 
+    BASE64_PREFIX_REGEXP = %r{\Adata:image/\w+;base64,}
+
     BaseError = Class.new(StandardError)
 
     UnknownFieldName = Class.new(BaseError)
     InvalidDefaultValue = Class.new(BaseError)
     UnknownSubmitterName = Class.new(BaseError)
-    UnableToDownload = Class.new(BaseError)
 
     TRUE_VALUES = ['1', 'true', true, 'TRUE', 'True', 'yes', 'YES', 'Yes'].freeze
     FALSE_VALUES = ['0', 'false', false, 'FALSE', 'False', 'no', 'NO', 'No'].freeze
@@ -79,9 +80,7 @@ module Submitters
       else
         Date.parse(value).to_s
       end
-    rescue Date::Error => e
-      Rollbar.warning(e) if defined?(Rollbar)
-
+    rescue Date::Error
       value
     end
 
@@ -136,7 +135,8 @@ module Submitters
           find_or_create_blob_from_url(account, value)
         elsif type.in?(%w[signature initials]) && value.length < 60
           find_or_create_blob_from_text(account, value, type)
-        elsif (data = Base64.decode64(value)) && Marcel::MimeType.for(data).include?('image')
+        elsif (data = Base64.decode64(value.sub(BASE64_PREFIX_REGEXP, ''))) &&
+              Marcel::MimeType.for(data).exclude?('octet-stream')
           find_or_create_blob_from_base64(account, data, type)
         else
           raise InvalidDefaultValue, "Invalid value, url, base64 or text < 60 chars is expected: #{value.first(200)}..."
@@ -184,12 +184,7 @@ module Submitters
 
       return blob if blob
 
-      uri = Addressable::URI.parse(url)
-      resp = conn.get(uri.display_uri.to_s)
-
-      raise UnableToDownload, "Error loading: #{uri.display_uri}" if resp.status >= 400
-
-      data = resp.body
+      data = DownloadUtils.call(url).body
 
       checksum = Digest::MD5.base64digest(data)
 
@@ -213,12 +208,6 @@ module Submitters
       return blob if account.submitters.exists?(id: blob.attachments.where(record_type: 'Submitter').select(:record_id))
 
       nil
-    end
-
-    def conn
-      Faraday.new do |faraday|
-        faraday.response :follow_redirects
-      end
     end
   end
 end
