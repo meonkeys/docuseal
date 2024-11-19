@@ -10,7 +10,7 @@ module Submissions
                   'Helvetica'
                 end
 
-    SIGN_REASON = 'Signed by %<name>s with DocuSeal.co'
+    SIGN_REASON = 'Signed by %<name>s with DocuSeal.com'
 
     RTL_REGEXP = TextUtils::RTL_REGEXP
 
@@ -19,7 +19,6 @@ module Submissions
     MAX_PAGE_ROTATE = 20
 
     A4_SIZE = [595, 842].freeze
-    SUPPORTED_IMAGE_TYPES = ['image/png', 'image/jpeg'].freeze
 
     TESTING_FOOTER = 'Testing Document - NOT LEGALLY BINDING'
 
@@ -69,7 +68,7 @@ module Submissions
                                name: item['name'])
         end
 
-      return result_attachments.map { |e| e.tap(&:save!) } if image_pdfs.size < 2
+      return ApplicationRecord.no_touching { result_attachments.map { |e| e.tap(&:save!) } } if image_pdfs.size < 2
 
       images_pdf =
         image_pdfs.each_with_object(HexaPDF::Document.new) do |pdf, doc|
@@ -88,23 +87,19 @@ module Submissions
           name: template.name
         )
 
-      (result_attachments + [images_pdf_attachment]).map { |e| e.tap(&:save!) }
+      ApplicationRecord.no_touching do
+        (result_attachments + [images_pdf_attachment]).map { |e| e.tap(&:save!) }
+      end
     end
 
     def generate_pdfs(submitter)
-      cell_layouter = HexaPDF::Layout::TextLayouter.new(text_valign: :center, text_align: :center)
+      configs = submitter.account.account_configs.where(key: [AccountConfig::FLATTEN_RESULT_PDF_KEY,
+                                                              AccountConfig::WITH_SIGNATURE_ID])
 
-      with_signature_id = submitter.account.account_configs
-                                   .exists?(key: AccountConfig::WITH_SIGNATURE_ID, value: true)
+      with_signature_id = configs.find { |c| c.key == AccountConfig::WITH_SIGNATURE_ID }&.value == true
+      is_flatten = configs.find { |c| c.key == AccountConfig::FLATTEN_RESULT_PDF_KEY }&.value != false
 
-      is_flatten =
-        submitter.account.account_configs
-                 .find_or_initialize_by(key: AccountConfig::FLATTEN_RESULT_PDF_KEY).value != false
-
-      account = submitter.account
-      attachments_data_cache = {}
-
-      pdfs_index = build_pdfs_index(submitter, flatten: is_flatten)
+      pdfs_index = build_pdfs_index(submitter.submission, submitter:, flatten: is_flatten)
 
       if with_signature_id || submitter.account.testing?
         pdfs_index.each_value do |pdf|
@@ -145,6 +140,16 @@ module Submissions
         end
       end
 
+      fill_submitter_fields(submitter, submitter.account, pdfs_index, with_signature_id:, is_flatten:)
+    end
+
+    def fill_submitter_fields(submitter, account, pdfs_index, with_signature_id:, is_flatten:)
+      cell_layouter = HexaPDF::Layout::TextLayouter.new(text_valign: :center, text_align: :center)
+
+      attachments_data_cache = {}
+
+      return pdfs_index if submitter.submission.template_fields.blank?
+
       submitter.submission.template_fields.each do |field|
         next if field['submitter_uuid'] != submitter.uuid
 
@@ -173,6 +178,8 @@ module Submissions
 
           font_size   = preferences_font_size
           font_size ||= (([page.box.width, page.box.height].min / A4_SIZE[0].to_f) * FONT_SIZE).to_i
+
+          fill_color = field.dig('preferences', 'color').presence
 
           font = pdf.fonts.add(field.dig('preferences', 'font').presence || FONT_NAME)
 
@@ -269,7 +276,15 @@ module Submissions
 
             attachments_data_cache[attachment.uuid] ||= attachment.download
 
-            image = Vips::Image.new_from_buffer(attachments_data_cache[attachment.uuid], '').autorot
+            image =
+              begin
+                Vips::Image.new_from_buffer(attachments_data_cache[attachment.uuid], '').autorot
+              rescue Vips::Error
+                next unless attachment.content_type.starts_with?('image/')
+                next if attachment.byte_size.zero?
+
+                raise
+              end
 
             scale = [(area['w'] * width) / image.width,
                      (area['h'] * height) / image.height].min
@@ -367,6 +382,7 @@ module Submissions
               next if char.blank?
 
               text = HexaPDF::Layout::TextFragment.create(char, font:,
+                                                                fill_color:,
                                                                 font_size:)
 
               line_height = layouter.fit([text], cell_width, height).lines.first.height
@@ -374,6 +390,7 @@ module Submissions
               if preferences_font_size.blank? && line_height > (area['h'] * height)
                 text = HexaPDF::Layout::TextFragment.create(char,
                                                             font:,
+                                                            fill_color:,
                                                             font_size: (font_size / 1.4).to_i)
 
                 line_height = layouter.fit([text], cell_width, height).lines.first.height
@@ -382,6 +399,7 @@ module Submissions
               if preferences_font_size.blank? && line_height > (area['h'] * height)
                 text = HexaPDF::Layout::TextFragment.create(char,
                                                             font:,
+                                                            fill_color:,
                                                             font_size: (font_size / 1.9).to_i)
 
                 line_height = layouter.fit([text], cell_width, height).lines.first.height
@@ -401,6 +419,7 @@ module Submissions
             value = TextUtils.maybe_rtl_reverse(Array.wrap(value).join(', '))
 
             text = HexaPDF::Layout::TextFragment.create(value, font:,
+                                                               fill_color:,
                                                                font_size:)
 
             lines = layouter.fit([text], area['w'] * width, height).lines
@@ -409,6 +428,7 @@ module Submissions
             if preferences_font_size.blank? && box_height > (area['h'] * height) + 1
               text = HexaPDF::Layout::TextFragment.create(value,
                                                           font:,
+                                                          fill_color:,
                                                           font_size: (font_size / 1.4).to_i)
 
               lines = layouter.fit([text], field['type'].in?(%w[date number]) ? width : area['w'] * width, height).lines
@@ -419,6 +439,7 @@ module Submissions
             if preferences_font_size.blank? && box_height > (area['h'] * height) + 1
               text = HexaPDF::Layout::TextFragment.create(value,
                                                           font:,
+                                                          fill_color:,
                                                           font_size: (font_size / 1.9).to_i)
 
               lines = layouter.fit([text], field['type'].in?(%w[date number]) ? width : area['w'] * width, height).lines
@@ -514,13 +535,13 @@ module Submissions
       Digest::UUID.uuid_v5(Digest::UUID::OID_NAMESPACE, attachments.map(&:uuid).sort.join(':'))
     end
 
-    def build_pdfs_index(submitter, flatten: true)
-      latest_submitter = find_last_submitter(submitter)
+    def build_pdfs_index(submission, submitter: nil, flatten: true)
+      latest_submitter = find_last_submitter(submission, submitter:)
 
       Submissions::EnsureResultGenerated.call(latest_submitter) if latest_submitter
 
       documents   = latest_submitter&.documents&.preload(:blob).to_a.presence
-      documents ||= submitter.submission.template_schema_documents.preload(:blob)
+      documents ||= submission.template_schema_documents.preload(:blob)
 
       documents.to_h do |attachment|
         pdf =
@@ -582,11 +603,11 @@ module Submissions
       font_wrapper.custom_glyph(replace_with, character)
     end
 
-    def find_last_submitter(submitter)
-      submitter.submission.submitters
-               .select(&:completed_at?)
-               .select { |e| e.id != submitter.id && e.completed_at <= submitter.completed_at }
-               .max_by(&:completed_at)
+    def find_last_submitter(submission, submitter: nil)
+      submission.submitters
+                .select(&:completed_at?)
+                .select { |e| submitter.nil? ? true : e.id != submitter.id && e.completed_at <= submitter.completed_at }
+                .max_by(&:completed_at)
     end
 
     def build_pdf_from_image(attachment)

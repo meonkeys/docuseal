@@ -20,6 +20,7 @@ en: &en
   language_ko: 한국어
   hi_there: Hi there
   thanks: Thanks
+  unarchive: Unarchive
   first_party: 'First Party'
   docuseal_trusted_signature: DocuSeal Trusted Signature
   hello_name: Hello %{name}
@@ -119,7 +120,7 @@ en: &en
   profile_details: Profile Details
   sign_up_with_google: Sign up with Google
   sign_up_with_microsoft: Sign up with Microsoft
-  by_creating_an_account_you_agree_to_our_html: 'By creating an account, you agree to our <a target="_blank" href="https://www.docuseal.co/privacy">Privacy Policy</a> and <a target="_blank" href="https://www.docuseal.co/terms">Terms of Service</a>.'
+  by_creating_an_account_you_agree_to_our_html: 'By creating an account, you agree to our <a target="_blank" href="https://www.docuseal.com/privacy">Privacy Policy</a> and <a target="_blank" href="https://www.docuseal.com/terms">Terms of Service</a>.'
   enter_email_to_continue: Enter email to continue
   account: Account
   preferences: Preferences
@@ -134,6 +135,7 @@ en: &en
   require_signing_reason: Require signing reason
   allow_typed_text_signatures: Allow typed text signatures
   allow_to_resubmit_completed_forms: Allow to resubmit completed forms
+  allow_to_decline_documents: Allow to decline documents
   remember_and_pre_fill_signatures: Remember and pre-fill signatures
   require_authentication_for_file_download_links: Require authentication for file download links
   combine_completed_documents_and_audit_log: Combine completed documents and Audit Log
@@ -472,8 +474,8 @@ en: &en
   logo: Logo
   back: Back
   add_secret: Add Secret
+  edit_secret: Edit Secret
   submission_example_payload: Submission example payload
-  status_users: '%{status} Users'
   there_are_no_signatures: There are no signatures
   signed_with_trusted_certificate: Signed with trusted certificate
   signed_with_external_certificate: Signed with external certificate
@@ -498,6 +500,7 @@ en: &en
   document_template_has_been_moved: Document template has been moved.
   unable_to_move_template_into_folder: Unable to move template into folder.
   template_has_been_unarchived: Template has been unarchived.
+  submission_has_been_unarchived: Submission has been unarchived.
   unable_to_update_file: Unable to upload file.
   user_has_been_invited: User has been invited.
   unable_to_update_user: Unable to update user.
@@ -508,13 +511,17 @@ en: &en
   webhook_secret_has_been_saved: Webhook Secret has been saved.
   webhook_url_has_been_saved: Webhook URL has been saved.
   webhook_request_has_been_sent: Webhook request has been sent.
+  webhook_url_has_been_updated: Webhook URL has been updated.
+  webhook_url_has_been_deleted: Webhook URL has been deleted.
+  unable_to_resend_webhook_request: Unable to resend webhook request.
+  new_webhook: New Webhook
+  delete_webhook: Delete webhook
   count_submissions_have_been_created: '%{count} submissions have been created.'
   gmail_has_been_connected: Gmail has been connected
   microsoft_account_has_been_connected: Microsoft Account has been connected
   sms_length_cant_be_longer_than_120_bytes: SMS length can't be longer than 120 bytes
   connected_successfully: Connected successfully.
   user_nameid_not_found: 'User %{nameid} not found.'
-  webhook_request_has_been_sent: Webhook request has been sent.
   sso_settings_have_been_updated: SSO settings have been updated.
   sms_has_been_sent: SMS has been sent.
   account_has_been_created: Account has been created.
@@ -618,6 +625,12 @@ en: &en
   use_international_format_1xxx_: 'Use internatioanl format: +1xxx...'
   submitter_cannot_be_updated: Submitter cannot be updated.
   at_least_one_field_must_be_filled: At least one field must be filled.
+  archived_users: Archived Users
+  embedding_users: Embedding Users
+  view_embedding_users: View Embedding Users
+  key: Key
+  value: Value
+  webhook_secret: Webhook Secret
   submission_event_names:
     send_email_to_html: '<b>Email sent</b> to %{submitter_name}'
     send_reminder_email_to_html: '<b>Reminder email sent</b> to %{submitter_name}'
@@ -654,6 +667,7 @@ en: &en
       read: Read your data
 
 es: &es
+  unarchive: Desarchivar
   awaiting_completion_by_the_other_party: "Esperando la finalización por la otra parte"
   enforce_recipients_order: 'Hacer cumplir el orden de los destinatarios'
   first_party: 'Primera Parte'
@@ -755,7 +769,7 @@ es: &es
   profile_details: Detalles del perfil
   sign_up_with_google: Registrarse con Google
   sign_up_with_microsoft: Registrarse con Microsoft
-  by_creating_an_account_you_agree_to_our_html: 'Al crear una cuenta, aceptas nuestra <a target="_blank" href="https://www.docuseal.co/privacy">Política de Privacidad</a> y <a target="_blank" href="https://www.docuseal.co/terms">Términos de Servicio</a>.'
+  by_creating_an_account_you_agree_to_our_html: 'Al crear una cuenta, aceptas nuestra <a target="_blank" href="https://www.docuseal.com/privacy">Política de Privacidad</a> y <a target="_blank" href="https://www.docuseal.com/terms">Términos de Servicio</a>.'
   enter_email_to_continue: Ingresa tu correo electrónico para continuar
   account: Cuenta
   preferences: Preferencias
@@ -770,6 +784,7 @@ es: &es
   require_signing_reason: Requerir motivo de firma
   allow_typed_text_signatures: Permitir firmas de texto mecanografiadas
   allow_to_resubmit_completed_forms: Permitir reenviar formularios completados
+  allow_to_decline_documents: Permitir rechazar documentos
   remember_and_pre_fill_signatures: Recordar y prellenar firmas
   require_authentication_for_file_download_links: Requerir autenticación para enlaces de descarga de archivos
   combine_completed_documents_and_audit_log: Combinar documentos completados y Registro de Auditoría
@@ -1108,8 +1123,8 @@ es: &es
   logo: Logotipo
   back: Atrás
   add_secret: Agregar secreto
+  edit_secret: Editar secreto
   submission_example_payload: Ejemplo de payload de envío
-  status_users: '%{status} Usuarios'
   there_are_no_signatures: No hay firmas
   signed_with_trusted_certificate: Firmado con certificado de confianza
   signed_with_external_certificate: Firmado con certificado externo
@@ -1134,6 +1149,7 @@ es: &es
   document_template_has_been_moved: La plantilla de documento ha sido movida.
   unable_to_move_template_into_folder: No se pudo mover la plantilla a la carpeta.
   template_has_been_unarchived: La plantilla ha sido desarchivada.
+  submission_has_been_unarchived: La presentación ha sido desarchivada.
   unable_to_update_file: No se pudo subir el archivo.
   user_has_been_invited: El usuario ha sido invitado.
   unable_to_update_user: No se pudo actualizar el usuario.
@@ -1144,13 +1160,17 @@ es: &es
   webhook_secret_has_been_saved: El secreto del Webhook ha sido guardado.
   webhook_url_has_been_saved: La URL del Webhook ha sido guardada.
   webhook_request_has_been_sent: La solicitud del Webhook ha sido enviada.
+  webhook_url_has_been_updated: La URL del Webhook ha sido actualizada.
+  webhook_url_has_been_deleted: La URL del Webhook ha sido eliminada.
+  unable_to_resend_webhook_request: No se pudo reenviar la solicitud del webhook.
+  new_webhook: Nuevo Webhook
+  delete_webhook: Eliminar webhook
   count_submissions_have_been_created: '%{count} envíos han sido creados.'
   gmail_has_been_connected: Gmail ha sido conectado.
   microsoft_account_has_been_connected: La cuenta de Microsoft ha sido conectada.
   sms_length_cant_be_longer_than_120_bytes: La longitud del SMS no puede ser mayor a 120 bytes.
   connected_successfully: Conectado con éxito.
   user_nameid_not_found: 'Usuario %{nameid} no encontrado.'
-  webhook_request_has_been_sent: La solicitud del Webhook ha sido enviada.
   sso_settings_have_been_updated: La configuración de SSO ha sido actualizada.
   sms_has_been_sent: El SMS ha sido enviado.
   account_has_been_created: La cuenta ha sido creada.
@@ -1254,6 +1274,12 @@ es: &es
   use_international_format_1xxx_: 'Usa el formato internacional: +1xxx...'
   submitter_cannot_be_updated: El remitente no puede ser actualizado.
   at_least_one_field_must_be_filled: Al menos un campo debe estar completo.
+  archived_users: Usuarios Archivados
+  embedding_users: Usuarios Integrados
+  view_embedding_users: Ver Usuarios Integrado
+  key: Clave
+  value: Valor
+  webhook_secret: Secreto del Webhook
   submission_event_names:
     send_email_to_html: '<b>Correo electrónico enviado</b> a %{submitter_name}'
     send_reminder_email_to_html: '<b>Correo de recordatorio enviado</b> a %{submitter_name}'
@@ -1290,6 +1316,7 @@ es: &es
       read: Leer tus datos
 
 it: &it
+  unarchive: Ripristina
   awaiting_completion_by_the_other_party: "In attesa di completamento da parte dell'altra parte"
   enforce_recipients_order: Aplicar el orden de los destinatarios
   first_party: 'Prima parte'
@@ -1391,7 +1418,7 @@ it: &it
   profile_details: Dettagli del profilo
   sign_up_with_google: Registrati con Google
   sign_up_with_microsoft: Registrati con Microsoft
-  by_creating_an_account_you_agree_to_our_html: 'Creando un account, accetti la nostra <a target="_blank" href="https://www.docuseal.co/privacy">Privacy Policy</a> e i nostri <a target="_blank" href="https://www.docuseal.co/terms">Termini di servizio</a>.'
+  by_creating_an_account_you_agree_to_our_html: 'Creando un account, accetti la nostra <a target="_blank" href="https://www.docuseal.com/privacy">Privacy Policy</a> e i nostri <a target="_blank" href="https://www.docuseal.com/terms">Termini di servizio</a>.'
   enter_email_to_continue: "Inserisci l'email per continuare"
   account: Account
   preferences: Preferenze
@@ -1406,6 +1433,7 @@ it: &it
   require_signing_reason: Richiedere il motivo della firma
   allow_typed_text_signatures: Permettere firme con testo digitato
   allow_to_resubmit_completed_forms: Permettere di reinviare i moduli completati
+  allow_to_decline_documents: Permettere di rifiutare i documenti
   remember_and_pre_fill_signatures: Ricordare e precompilare le firme
   require_authentication_for_file_download_links: "Richiedere l'autenticazione per i link di download dei file"
   combine_completed_documents_and_audit_log: Combinare i documenti completati e il Registro di Audit
@@ -1744,8 +1772,8 @@ it: &it
   logo: Logo
   back: Indietro
   add_secret: Aggiungi segreto
+  edit_secret: Modifica segreto
   submission_example_payload: Esempio di payload di invio
-  status_users: '%{status} Utenti'
   there_are_no_signatures: Non ci sono firme
   signed_with_trusted_certificate: Firmato con certificato affidabile
   signed_with_external_certificate: Firmato con certificato esterno
@@ -1770,6 +1798,7 @@ it: &it
   document_template_has_been_moved: Il modello di documento è stato spostato.
   unable_to_move_template_into_folder: Impossibile spostare il modello nella cartella.
   template_has_been_unarchived: Il modello è stato disarchiviato.
+  submission_has_been_unarchived: La sottomissione è stata dearchiviata.
   unable_to_update_file: Impossibile caricare il file.
   user_has_been_invited: "L'utente è stato invitato."
   unable_to_update_user: Impossibile aggiornare l'utente.
@@ -1780,13 +1809,17 @@ it: &it
   webhook_secret_has_been_saved: Il segreto del Webhook è stato salvato.
   webhook_url_has_been_saved: "L'URL del Webhook è stato salvato."
   webhook_request_has_been_sent: La richiesta del Webhook è stata inviata.
+  webhook_url_has_been_updated: "L'URL del Webhook è stata aggiornata."
+  webhook_url_has_been_deleted: "L'URL del Webhook è stata eliminata."
+  unable_to_resend_webhook_request: Impossibile reinviare la richiesta del webhook.
+  new_webhook: Nuovo Webhook
+  delete_webhook: Elimina webhook
   count_submissions_have_been_created: '%{count} invii sono stati creati.'
   gmail_has_been_connected: Gmail è stato connesso.
   microsoft_account_has_been_connected: "L'account Microsoft è stato connesso."
   sms_length_cant_be_longer_than_120_bytes: "La lunghezza dell'SMS non può superare i 120 byte."
   connected_successfully: Collegamento avvenuto con successo.
   user_nameid_not_found: 'Utente %{nameid} non trovato.'
-  webhook_request_has_been_sent: La richiesta del Webhook è stata inviata.
   sso_settings_have_been_updated: Le impostazioni SSO sono state aggiornate.
   sms_has_been_sent: "L'SMS è stato inviato."
   account_has_been_created: "L'account è stato creato."
@@ -1890,6 +1923,12 @@ it: &it
   use_international_format_1xxx_: 'Utilizza il formato internazionale: +1xxx...'
   submitter_cannot_be_updated: Il mittente non può essere aggiornato.
   at_least_one_field_must_be_filled: Almeno un campo deve essere compilato.
+  archived_users: Utenti Archiviati
+  embedding_users: Utenti Incorporati
+  view_embedding_users: Visualizza Utenti Incorporati
+  key: Chiave
+  value: Valore
+  webhook_secret: Segreto del Webhook
   submission_event_names:
     send_email_to_html: '<b>E-mail inviato</b> a %{submitter_name}'
     send_reminder_email_to_html: '<b>E-mail di promemoria inviato</b> a %{submitter_name}'
@@ -1926,6 +1965,7 @@ it: &it
       read: Leggi i tuoi dati
 
 fr: &fr
+  unarchive: Désarchiver
   awaiting_completion_by_the_other_party: "En attente de la complétion par l'autre partie"
   enforce_recipients_order: "Respecter l'ordre des destinataires"
   first_party: 'Première partie'
@@ -2028,7 +2068,7 @@ fr: &fr
   sign_up_with_google: S'inscrire avec Google
   sign_up_with_microsoft: S'inscrire avec Microsoft
   by_creating_an_account_you_agree_to_our_html: |
-    En créant un compte, vous acceptez notre <a target="_blank" href="https://www.docuseal.co/privacy">Politique de Confidentialité</a> et nos <a target="_blank" href="https://www.docuseal.co/terms">Conditions d'Utilisation</a>.
+    En créant un compte, vous acceptez notre <a target="_blank" href="https://www.docuseal.com/privacy">Politique de Confidentialité</a> et nos <a target="_blank" href="https://www.docuseal.com/terms">Conditions d'Utilisation</a>.
   enter_email_to_continue: Entrez votre e-mail pour continuer
   account: Compte
   preferences: Préférences
@@ -2043,6 +2083,7 @@ fr: &fr
   require_signing_reason: Demander une raison pour la signature
   allow_typed_text_signatures: Autoriser les signatures en texte tapé
   allow_to_resubmit_completed_forms: Autoriser la resoumission des formulaires complétés
+  allow_to_decline_documents: Autoriser le refus des documents
   remember_and_pre_fill_signatures: Se souvenir et préremplir les signatures
   require_authentication_for_file_download_links: Exiger une authentification pour les liens de téléchargement des fichiers
   combine_completed_documents_and_audit_log: "Combiner les documents complétés et le journal d'audit"
@@ -2381,8 +2422,8 @@ fr: &fr
   logo: Logo
   back: Retour
   add_secret: Ajouter un secret
+  edit_secret: Modifier le Secret
   submission_example_payload: Exemple de payload de soumission
-  status_users: '%{status} Utilisateurs'
   there_are_no_signatures: "Il n'y a pas de signatures"
   signed_with_trusted_certificate: Signé avec un certificat de confiance
   signed_with_external_certificate: Signé avec un certificat externe
@@ -2407,6 +2448,7 @@ fr: &fr
   document_template_has_been_moved: Le modèle de document a été déplacé.
   unable_to_move_template_into_folder: Impossible de déplacer le modèle dans le dossier.
   template_has_been_unarchived: Le modèle a été désarchivé.
+  submission_has_been_unarchived: La soumission a été désarchivée.
   unable_to_update_file: Impossible de télécharger le fichier.
   user_has_been_updated: "L'utilisateur a été mis à jour."
   unable_to_remove_user: Impossible de supprimer l'utilisateur.
@@ -2417,13 +2459,17 @@ fr: &fr
   webhook_secret_has_been_saved: Le secret du Webhook a été enregistré.
   webhook_url_has_been_saved: "L'URL du Webhook a été enregistrée."
   webhook_request_has_been_sent: La demande du Webhook a été envoyée.
+  webhook_url_has_been_updated: "L'URL du Webhook a été mise à jour."
+  webhook_url_has_been_deleted: "L'URL du Webhook a été supprimée."
+  unable_to_resend_webhook_request: Impossible de renvoyer la requête du webhook.
+  new_webhook: Nouveau Webhook
+  delete_webhook: Supprimer le webhook
   count_submissions_have_been_created: '%{count} soumissions ont été créées.'
   gmail_has_been_connected: Gmail a été connecté.
   microsoft_account_has_been_connected: Le compte Microsoft a été connecté.
   sms_length_cant_be_longer_than_120_bytes: La longueur du SMS ne peut pas dépasser 120 octets.
   connected_successfully: Connecté avec succès.
   user_nameid_not_found: 'Utilisateur %{nameid} introuvable.'
-  webhook_request_has_been_sent: La demande du Webhook a été envoyée.
   sso_settings_have_been_updated: Les paramètres de SSO ont été mis à jour.
   sms_has_been_sent: Le SMS a été envoyé.
   account_has_been_created: Le compte a été créé.
@@ -2527,6 +2573,12 @@ fr: &fr
   use_international_format_1xxx_: 'Utilizza il formato internazionale: +1xxx...'
   submitter_cannot_be_updated: Il mittente non può essere aggiornato.
   at_least_one_field_must_be_filled: Almeno un campo deve essere compilato.
+  archived_users: Utilisateurs Archivés
+  embedding_users: Utilisateurs Intégrés
+  view_embedding_users: Voir les Utilisateurs Intégrés
+  key: Clé
+  value: Valeur
+  webhook_secret: Secret du Webhook
   submission_event_names:
     send_email_to_html: '<b>E-mail envoyé</b> à %{submitter_name}'
     send_reminder_email_to_html: '<b>E-mail de rappel envoyé</b> à %{submitter_name}'
@@ -2563,6 +2615,7 @@ fr: &fr
       read: Lire vos données
 
 pt: &pt
+  unarchive: Desarquivar
   awaiting_completion_by_the_other_party: "Aguardando a conclusão pela outra parte"
   enforce_recipients_order: 'Forçar a ordem dos recipientes'
   first_party: 'Primeira Parte'
@@ -2664,7 +2717,7 @@ pt: &pt
   profile_details: Detalhes do perfil
   sign_up_with_google: Inscrever-se com Google
   sign_up_with_microsoft: Inscrever-se com Microsoft
-  by_creating_an_account_you_agree_to_our_html: 'Ao criar uma conta, você concorda com nossa <a target="_blank" href="https://www.docuseal.co/privacy">Política de Privacidade</a> e <a target="_blank" href="https://www.docuseal.co/terms">Termos de Serviço</a>.'
+  by_creating_an_account_you_agree_to_our_html: 'Ao criar uma conta, você concorda com nossa <a target="_blank" href="https://www.docuseal.com/privacy">Política de Privacidade</a> e <a target="_blank" href="https://www.docuseal.com/terms">Termos de Serviço</a>.'
   enter_email_to_continue: Insira o e-mail para continuar
   account: Conta
   preferences: Preferências
@@ -2679,6 +2732,7 @@ pt: &pt
   require_signing_reason: Requerer motivo para assinatura
   allow_typed_text_signatures: Permitir assinaturas digitadas
   allow_to_resubmit_completed_forms: Permitir reenviar formulários concluídos
+  allow_to_decline_documents: Permitir recusar documentos
   remember_and_pre_fill_signatures: Lembrar e preencher assinaturas automaticamente
   require_authentication_for_file_download_links: Requerer autenticação para links de download de arquivos
   combine_completed_documents_and_audit_log: Combinar documentos concluídos e log de auditoria
@@ -3017,8 +3071,8 @@ pt: &pt
   logo: Logotipo
   back: Voltar
   add_secret: Adicionar segredo
+  edit_secret: Editar Segredo
   submission_example_payload: Exemplo de payload de submissão
-  status_users: '%{status} Usuários'
   there_are_no_signatures: Não há assinaturas
   signed_with_trusted_certificate: Assinado com certificado confiável
   signed_with_external_certificate: Assinado com certificado externo
@@ -3043,6 +3097,7 @@ pt: &pt
   document_template_has_been_moved: O modelo de documento foi movido.
   unable_to_move_template_into_folder: Não foi possível mover o modelo para a pasta.
   template_has_been_unarchived: O modelo foi desarquivado.
+  submission_has_been_unarchived: A submissao foi desarquivada.
   unable_to_update_file: Não foi possível atualizar o arquivo.
   user_has_been_updated: O usuário foi atualizado.
   unable_to_remove_user: Não foi possível remover o usuário.
@@ -3053,13 +3108,17 @@ pt: &pt
   webhook_secret_has_been_saved: O segredo do Webhook foi salvo.
   webhook_url_has_been_saved: A URL do Webhook foi salva.
   webhook_request_has_been_sent: A solicitação do Webhook foi enviada.
+  webhook_url_has_been_updated: URL do Webhook foi atualizada.
+  webhook_url_has_been_deleted: URL do Webhook foi excluída.
+  unable_to_resend_webhook_request: Não foi possível reenviar a solicitação do webhook.
+  new_webhook: Novo Webhook
+  delete_webhook: Excluir webhook
   count_submissions_have_been_created: '%{count} submissões foram criadas.'
   gmail_has_been_connected: O Gmail foi conectado
   microsoft_account_has_been_connected: A conta da Microsoft foi conectada
   sms_length_cant_be_longer_than_120_bytes: O comprimento do SMS não pode ultrapassar 120 bytes
   connected_successfully: Conectado com sucesso.
   user_nameid_not_found: 'Usuário %{nameid} não encontrado.'
-  webhook_request_has_been_sent: A solicitação do Webhook foi enviada.
   sso_settings_have_been_updated: As configurações de SSO foram atualizadas.
   sms_has_been_sent: O SMS foi enviado.
   account_has_been_created: A conta foi criada.
@@ -3163,6 +3222,12 @@ pt: &pt
   use_international_format_1xxx_: 'Use o formato internacional: +1xxx...'
   submitter_cannot_be_updated: O remetente não pode ser atualizado.
   at_least_one_field_must_be_filled: Pelo menos um campo deve ser preenchido.
+  archived_users: Usuários Arquivados
+  embedding_users: Usuários Incorporados
+  view_embedding_users: Ver Usuários Incorporados
+  key: Chave
+  value: Valor
+  webhook_secret: Segredo do Webhook
   submission_event_names:
     send_email_to_html: '<b>E-mail enviado</b> para %{submitter_name}'
     send_reminder_email_to_html: '<b>E-mail de lembrete enviado</b> para %{submitter_name}'
@@ -3199,6 +3264,7 @@ pt: &pt
       read: Ler seus dados
 
 de: &de
+  unarchive: Wiederherstellen
   awaiting_completion_by_the_other_party: "Warten auf die Fertigstellung durch die andere Partei"
   enforce_recipients_order: 'Empfängerreihenfolge durchsetzen'
   first_party: 'Erste Partei'
@@ -3300,7 +3366,7 @@ de: &de
   profile_details: Profildetails
   sign_up_with_google: Mit Google registrieren
   sign_up_with_microsoft: Mit Microsoft registrieren
-  by_creating_an_account_you_agree_to_our_html: 'Durch die Erstellung eines Kontos stimmst du unseren <a target="_blank" href="https://www.docuseal.co/privacy">Datenschutzrichtlinien</a> und <a target="_blank" href="https://www.docuseal.co/terms">Nutzungsbedingungen</a> zu.'
+  by_creating_an_account_you_agree_to_our_html: 'Durch die Erstellung eines Kontos stimmst du unseren <a target="_blank" href="https://www.docuseal.com/privacy">Datenschutzrichtlinien</a> und <a target="_blank" href="https://www.docuseal.com/terms">Nutzungsbedingungen</a> zu.'
   enter_email_to_continue: E-Mail eingeben, um fortzufahren
   account: Konto
   preferences: Einstellungen
@@ -3315,6 +3381,7 @@ de: &de
   require_signing_reason: Grund für die Signatur erforderlich
   allow_typed_text_signatures: Unterschriften mit getipptem Text zulassen
   allow_to_resubmit_completed_forms: Erneutes Einreichen abgeschlossener Formulare zulassen
+  allow_to_decline_documents: Erlauben, Dokumente abzulehnen
   remember_and_pre_fill_signatures: Signaturen merken und vorab ausfüllen
   require_authentication_for_file_download_links: Authentifizierung für Dateidownload-Links erforderlich
   combine_completed_documents_and_audit_log: Abgeschlossene Dokumente und Prüfprotokoll kombinieren
@@ -3652,9 +3719,9 @@ de: &de
   api_key: API-Schlüssel
   logo: Logo
   back: Zurück
-  add_secret: Geheimnis hinzufügen
+  add_secret: Geheimnis hinzuf
+  edit_secret: Geheimnis bearb
   submission_example_payload: Beispiel-Payload für Einreichung
-  status_users: '%{status} Benutzer'
   there_are_no_signatures: Es gibt keine Unterschriften
   signed_with_trusted_certificate: Signiert mit vertrauenswürdigem Zertifikat
   signed_with_external_certificate: Signiert mit externem Zertifikat
@@ -3679,6 +3746,7 @@ de: &de
   document_template_has_been_moved: Die Dokumentvorlage wurde verschoben.
   unable_to_move_template_into_folder: Vorlage konnte nicht in den Ordner verschoben werden.
   template_has_been_unarchived: Die Vorlage wurde entarchiviert.
+  submission_has_been_unarchived: Die Einreichung wurde wiederhergestellt.
   unable_to_update_file: Datei konnte nicht hochgeladen werden.
   user_has_been_updated: Der Benutzer wurde aktualisiert.
   unable_to_remove_user: Benutzer konnte nicht entfernt werden.
@@ -3689,13 +3757,17 @@ de: &de
   webhook_secret_has_been_saved: Das Webhook-Geheimnis wurde gespeichert.
   webhook_url_has_been_saved: Die Webhook-URL wurde gespeichert.
   webhook_request_has_been_sent: Die Webhook-Anfrage wurde gesendet.
+  webhook_url_has_been_updated: Webhook-URL wurde aktualisiert.
+  webhook_url_has_been_deleted: Webhook-URL wurde gelöscht.
+  unable_to_resend_webhook_request: Webhook-Anfrage konnte nicht erneut gesendet werden.
+  new_webhook: Neuer Webhook
+  delete_webhook: Webhook löschen
   count_submissions_have_been_created: '%{count} Einreichungen wurden erstellt.'
   gmail_has_been_connected: Gmail wurde verbunden.
   microsoft_account_has_been_connected: Microsoft-Konto wurde verbunden.
   sms_length_cant_be_longer_than_120_bytes: Die SMS-Länge darf 120 Bytes nicht überschreiten.
   connected_successfully: Erfolgreich verbunden.
   user_nameid_not_found: 'Benutzer %{nameid} nicht gefunden.'
-  webhook_request_has_been_sent: Die Webhook-Anfrage wurde gesendet.
   sso_settings_have_been_updated: Die SSO-Einstellungen wurden aktualisiert.
   sms_has_been_sent: Die SMS wurde gesendet.
   account_has_been_created: Das Konto wurde erstellt.
@@ -3799,6 +3871,12 @@ de: &de
   use_international_format_1xxx_: 'Verwenden Sie das internationale Format: +1xxx...'
   submitter_cannot_be_updated: Der Absender kann nicht aktualisiert werden.
   at_least_one_field_must_be_filled: Mindestens ein Feld muss ausgefüllt werden.
+  archived_users: Archivierte Benutzer
+  embedding_users: Einbettende Benutzer
+  view_embedding_users: Einbettende Benutzer anzeigen
+  key: Schlüssel
+  value: Wert
+  webhook_secret: Webhook-Geheimnis
   submission_event_names:
     send_email_to_html: '<b>E-Mail gesendet</b> an %{submitter_name}'
     send_reminder_email_to_html: '<b>Erinnerungs-E-Mail gesendet</b> an %{submitter_name}'
@@ -3885,7 +3963,7 @@ pl:
   profile_details: Szczegóły profilu
   sign_up_with_google: Zarejestruj się przez Google
   sign_up_with_microsoft: Zarejestruj się przez Microsoft
-  by_creating_an_account_you_agree_to_our_html: 'Tworząc konto, akceptujesz naszą <a target="_blank" href="https://www.docuseal.co/privacy">Politykę Prywatności</a> i <a target="_blank" href="https://www.docuseal.co/terms">Regulamin</a>.'
+  by_creating_an_account_you_agree_to_our_html: 'Tworząc konto, akceptujesz naszą <a target="_blank" href="https://www.docuseal.com/privacy">Politykę Prywatności</a> i <a target="_blank" href="https://www.docuseal.com/terms">Regulamin</a>.'
   enter_email_to_continue: Wprowadź e-mail, aby kontynuować
 
 uk:
@@ -3939,7 +4017,7 @@ uk:
   profile_details: Дані профілю
   sign_up_with_google: Зареєструватися через Google
   sign_up_with_microsoft: Зареєструватися через Microsoft
-  by_creating_an_account_you_agree_to_our_html: 'Створюючи акаунт, ви погоджуєтесь з нашою <a target="_blank" href="https://www.docuseal.co/privacy">Політикою конфіденційності</a> і <a target="_blank" href="https://www.docuseal.co/terms">Умовами надання послуг</a>.'
+  by_creating_an_account_you_agree_to_our_html: 'Створюючи акаунт, ви погоджуєтесь з нашою <a target="_blank" href="https://www.docuseal.com/privacy">Політикою конфіденційності</a> і <a target="_blank" href="https://www.docuseal.com/terms">Умовами надання послуг</a>.'
   enter_email_to_continue: Введіть електронну пошту, щоб продовжити
 
 cs:
@@ -3993,7 +4071,7 @@ cs:
   profile_details: Detaily profilu
   sign_up_with_google: Zaregistrovat se pomocí Googlu
   sign_up_with_microsoft: Zaregistrovat se pomocí Microsoftu
-  by_creating_an_account_you_agree_to_our_html: 'Vytvořením účtu souhlasíte s našimi <a target="_blank" href="https://www.docuseal.co/privacy">Zásadami ochrany osobních údajů</a> a <a target="_blank" href="https://www.docuseal.co/terms">Podmínkami služby</a>.'
+  by_creating_an_account_you_agree_to_our_html: 'Vytvořením účtu souhlasíte s našimi <a target="_blank" href="https://www.docuseal.com/privacy">Zásadami ochrany osobních údajů</a> a <a target="_blank" href="https://www.docuseal.com/terms">Podmínkami služby</a>.'
   enter_email_to_continue: Zadejte e-mail pro pokračování
 
 he:
@@ -4047,7 +4125,7 @@ he:
   profile_details: פרטי הפרופיל
   sign_up_with_google: הירשם עם גוגל
   sign_up_with_microsoft: הירשם עם מיקרוסופט
-  by_creating_an_account_you_agree_to_our_html: 'על ידי יצירת חשבון, אתה מסכים ל<a target="_blank" href="https://www.docuseal.co/privacy">מדיניות הפרטיות</a> ול<a target="_blank" href="https://www.docuseal.co/terms">תנאי השירות</a> שלנו.'
+  by_creating_an_account_you_agree_to_our_html: 'על ידי יצירת חשבון, אתה מסכים ל<a target="_blank" href="https://www.docuseal.com/privacy">מדיניות הפרטיות</a> ול<a target="_blank" href="https://www.docuseal.com/terms">תנאי השירות</a> שלנו.'
   enter_email_to_continue: הכנס דוא"ל כדי להמשיך
 
 nl:
@@ -4101,7 +4179,7 @@ nl:
   profile_details: Profielgegevens
   sign_up_with_google: Aanmelden met Google
   sign_up_with_microsoft: Aanmelden met Microsoft
-  by_creating_an_account_you_agree_to_our_html: 'Door een account aan te maken, ga je akkoord met ons <a target="_blank" href="https://www.docuseal.co/privacy">Privacybeleid</a> en onze <a target="_blank" href="https://www.docuseal.co/terms">Gebruiksvoorwaarden</a>.'
+  by_creating_an_account_you_agree_to_our_html: 'Door een account aan te maken, ga je akkoord met ons <a target="_blank" href="https://www.docuseal.com/privacy">Privacybeleid</a> en onze <a target="_blank" href="https://www.docuseal.com/terms">Gebruiksvoorwaarden</a>.'
   enter_email_to_continue: Voer e-mail in om door te gaan
 
 ar:
@@ -4155,7 +4233,7 @@ ar:
   profile_details: تفاصيل الملف الشخصي
   sign_up_with_google: الاشتراك باستخدام جوجل
   sign_up_with_microsoft: الاشتراك باستخدام مايكروسوفت
-  by_creating_an_account_you_agree_to_our_html: 'من خلال إنشاء حساب، فإنك توافق على <a target="_blank" href="https://www.docuseal.co/privacy">سياسة الخصوصية</a> و<a target="_blank" href="https://www.docuseal.co/terms">شروط الخدمة</a> الخاصة بنا.'
+  by_creating_an_account_you_agree_to_our_html: 'من خلال إنشاء حساب، فإنك توافق على <a target="_blank" href="https://www.docuseal.com/privacy">سياسة الخصوصية</a> و<a target="_blank" href="https://www.docuseal.com/terms">شروط الخدمة</a> الخاصة بنا.'
   enter_email_to_continue: أدخل البريد الإلكتروني للمتابعة
 
 ko:
@@ -4209,7 +4287,7 @@ ko:
   profile_details: 프로필 세부 정보
   sign_up_with_google: Google로 가입
   sign_up_with_microsoft: Microsoft로 가입
-  by_creating_an_account_you_agree_to_our_html: '계정을 생성함으로써, 귀하는 우리의 <a target="_blank" href="https://www.docuseal.co/privacy">개인정보 보호정책</a> 및 <a target="_blank" href="https://www.docuseal.co/terms">서비스 약관</a>에 동의하는 것입니다.'
+  by_creating_an_account_you_agree_to_our_html: '계정을 생성함으로써, 귀하는 우리의 <a target="_blank" href="https://www.docuseal.com/privacy">개인정보 보호정책</a> 및 <a target="_blank" href="https://www.docuseal.com/terms">서비스 약관</a>에 동의하는 것입니다.'
   enter_email_to_continue: 계속하려면 이메일을 입력하세요
 
 en-US:

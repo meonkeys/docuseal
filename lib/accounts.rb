@@ -11,7 +11,7 @@ module Accounts
     new_user.uuid = SecureRandom.uuid
     new_user.account = new_account
     new_user.encrypted_password = SecureRandom.hex
-    new_user.email = "#{SecureRandom.hex}@docuseal.co"
+    new_user.email = "#{SecureRandom.hex}@docuseal.com"
 
     account.templates.each do |template|
       new_template = template.dup
@@ -76,30 +76,6 @@ module Accounts
     Templates::CloneAttachments.call(template: new_template, original_template: template)
 
     new_template
-  end
-
-  def load_webhook_url(account)
-    load_webhook_config(account)&.value.presence
-  end
-
-  def load_webhook_config(account)
-    configs = account.encrypted_configs.find_by(key: EncryptedConfig::WEBHOOK_URL_KEY)
-
-    if !configs && !Docuseal.multitenant? && !account.testing?
-      configs = Account.order(:id).first.encrypted_configs.find_by(key: EncryptedConfig::WEBHOOK_URL_KEY)
-    end
-
-    configs
-  end
-
-  def load_webhook_preferences(account)
-    configs = account.account_configs.find_by(key: AccountConfig::WEBHOOK_PREFERENCES_KEY)
-
-    unless Docuseal.multitenant?
-      configs ||= Account.order(:id).first.account_configs.find_by(key: AccountConfig::WEBHOOK_PREFERENCES_KEY)
-    end
-
-    configs&.value.presence || {}
   end
 
   def load_signing_pkcs(account)

@@ -34,6 +34,7 @@ Rails.application.routes.draw do
     resources :submitter_form_views, only: %i[create]
     resources :submitters, only: %i[index show update]
     resources :submissions, only: %i[index show create destroy] do
+      resources :documents, only: %i[index], controller: 'submission_documents'
       collection do
         resources :init, only: %i[create], controller: 'submissions'
         resources :emails, only: %i[create], controller: 'submissions', as: :submissions_emails
@@ -68,7 +69,9 @@ Rails.application.routes.draw do
   resource :user_initials, only: %i[edit update destroy]
   resources :submissions_archived, only: %i[index], path: 'submissions/archived'
   resources :submissions, only: %i[index], controller: 'submissions_dashboard'
-  resources :submissions, only: %i[show destroy]
+  resources :submissions, only: %i[show destroy] do
+    resources :unarchive, only: %i[create], controller: 'submissions_unarchive'
+  end
   resources :submitters, only: %i[edit update]
   resources :console_redirect, only: %i[index]
   resources :upgrade, only: %i[index], controller: 'console_redirect'
@@ -77,8 +80,8 @@ Rails.application.routes.draw do
   resources :testing_api_settings, only: %i[index]
   resources :submitters_autocomplete, only: %i[index]
   resources :template_folders_autocomplete, only: %i[index]
-  resources :webhook_preferences, only: %i[create]
-  resources :webhook_secret, only: %i[index create]
+  resources :webhook_secret, only: %i[show update]
+  resources :webhook_preferences, only: %i[update]
   resource :templates_upload, only: %i[create]
   authenticated do
     resource :templates_upload, only: %i[show], path: 'new'
@@ -152,18 +155,22 @@ Rails.application.routes.draw do
   scope '/settings', as: :settings do
     unless Docuseal.multitenant?
       resources :storage, only: %i[index create], controller: 'storage_settings'
-      resources :email, only: %i[index create], controller: 'email_smtp_settings'
       resources :sms, only: %i[index], controller: 'sms_settings'
     end
+    resources :email, only: %i[index create], controller: 'email_smtp_settings'
     resources :sso, only: %i[index], controller: 'sso_settings'
     resources :notifications, only: %i[index create], controller: 'notifications_settings'
     resource :esign, only: %i[show create new update destroy], controller: 'esign_settings'
     resources :users, only: %i[index]
     resources :archived_users, only: %i[index], path: 'users/:status', controller: 'users',
                                defaults: { status: :archived }
+    resources :integration_users, only: %i[index], path: 'users/:status', controller: 'users',
+                                  defaults: { status: :integration }
     resource :personalization, only: %i[show create], controller: 'personalization_settings'
     resources :api, only: %i[index create], controller: 'api_settings'
-    resource :webhooks, only: %i[show create update], controller: 'webhook_settings'
+    resources :webhooks, only: %i[index show new create update destroy], controller: 'webhook_settings' do
+      post :resend
+    end
     resource :account, only: %i[show update destroy]
     resources :profile, only: %i[index] do
       collection do

@@ -39,7 +39,6 @@
       </template>
     </div>
     <div
-      v-if="isActive"
       ref="scrollToElem"
       class="absolute"
       :style="{ top: scrollPadding }"
@@ -405,7 +404,12 @@ export default {
       }
 
       if (this.field.preferences?.font_size) {
-        style.fontSize = this.field.preferences.font_size + 'pt'
+        style.fontSize = `clamp(4pt, 1.6vw, ${parseInt(this.field.preferences.font_size) * 1.23}pt)`
+        style.lineHeight = `clamp(6pt, 2.0vw, ${parseInt(this.field.preferences.font_size) * 1.23 + 3}pt)`
+      }
+
+      if (this.field.preferences?.color) {
+        style.color = this.field.preferences.color
       }
 
       return style

@@ -291,7 +291,16 @@ module Submissions
             ),
             if field['type'].in?(%w[image signature initials stamp])
               attachment = submitter.attachments.find { |a| a.uuid == value }
-              image = Vips::Image.new_from_buffer(attachment.download, '').autorot
+
+              image =
+                begin
+                  Vips::Image.new_from_buffer(attachment.download, '').autorot
+                rescue Vips::Error
+                  next unless attachment.content_type.starts_with?('image/')
+                  next if attachment.byte_size.zero?
+
+                  raise
+                end
 
               scale = [600.0 / image.width, 600.0 / image.height].min
 
@@ -393,7 +402,7 @@ module Submissions
     end
 
     def sign_reason
-      'Signed with DocuSeal.co'
+      'Signed with DocuSeal.com'
     end
 
     def maybe_add_background(_canvas, _submission, _page_size); end

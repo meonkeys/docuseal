@@ -6,6 +6,20 @@ module Templates
 
     FIELD_NAME_REGEXP = /\A(?=.*\p{L})[\p{L}\d\s-]+\z/
     SKIP_FIELD_DESCRIPTION = %w[undefined].freeze
+    SELECT_PLACEHOLDER_REGEXP = /\b(
+      Select      |
+      Choose      |
+      Wählen      |
+      Auswählen   |
+      Sélectionner|
+      Choisir     |
+      Seleccionar |
+      Elegir      |
+      Seleziona   |
+      Scegliere   |
+      Selecionar  |
+      Escolher
+    )\b/ix
 
     module_function
 
@@ -24,6 +38,8 @@ module Templates
 
           media_box_start = [media_box[0], media_box[1]]
           crop_shift = [crop_box[0] - media_box[0], crop_box[1] - media_box[1]]
+
+          next unless child_field[:Rect]
 
           x0, y0, x1, y1 = child_field[:Rect]
 
@@ -141,8 +157,8 @@ module Templates
         {
           **attrs,
           type: 'select',
-          options: build_options(field[:Opt]),
-          default_value: field.field_value
+          options: build_options(field[:Opt], 'select'),
+          default_value: field.field_value.to_s.match?(SELECT_PLACEHOLDER_REGEXP) ? nil : field.field_value
         }
       elsif field.field_type == :Ch && field.concrete_field_type == :multi_select && field[:Opt].present?
         {
@@ -176,10 +192,13 @@ module Templates
     def build_options(values, type = nil)
       is_skip_single_value = type.in?(%w[radio multiple]) && values.uniq.size == 1
 
-      values.map do |option|
+      values.filter_map do |option|
         is_option_number = option.is_a?(Symbol) && option.to_s.match?(/\A\d+\z/)
 
+        option = option[1] if option.is_a?(Array) && option.size == 2
         option = option.encode('utf-8', invalid: :replace, undef: :replace, replace: '') if option.is_a?(String)
+
+        next if type == 'select' && option.to_s.match?(SELECT_PLACEHOLDER_REGEXP)
 
         {
           uuid: SecureRandom.uuid,
@@ -202,6 +221,7 @@ module Templates
             field = annot[:Parent]
             field = field[:Parent] while field[:Parent]
 
+            annots_index[field.hash] ||= page
             fields_index[field.hash] ||= HexaPDF::Type::AcroForm::Field.wrap(pdf, field)
           end
         end

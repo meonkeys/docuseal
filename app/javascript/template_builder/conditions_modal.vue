@@ -23,7 +23,7 @@
           class="bg-base-300 rounded-xl py-2 px-3 text-center"
         >
           <a
-            href="https://www.docuseal.co/pricing"
+            href="https://www.docuseal.com/pricing"
             target="_blank"
             class="link"
           >{{ t('available_in_pro') }}</a>
@@ -90,7 +90,7 @@
                 </option>
               </select>
               <select
-                v-if="conditionField(condition)?.options?.length"
+                v-if="['radio', 'select', 'multiple'].includes(conditionField(condition)?.type) && conditionField(condition)?.options"
                 class="select select-bordered select-sm w-full bg-white h-11 pl-4 text-base font-normal"
                 :class="{ 'text-gray-300': !condition.value }"
                 required

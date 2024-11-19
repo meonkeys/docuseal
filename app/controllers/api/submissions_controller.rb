@@ -67,20 +67,24 @@ module Api
 
       submissions = create_submissions(@template, params)
 
-      submissions.each do |submission|
-        SendSubmissionCreatedWebhookRequestJob.perform_async({ 'submission_id' => submission.id })
+      WebhookUrls.for_account_id(@template.account_id, 'submission.created').each do |webhook_url|
+        submissions.each do |submission|
+          SendSubmissionCreatedWebhookRequestJob.perform_async('submission_id' => submission.id,
+                                                               'webhook_url_id' => webhook_url.id)
+        end
       end
 
       Submissions.send_signature_requests(submissions)
 
       submissions.each do |submission|
-        if submission.submitters.all?(&:completed_at?) && submission.submitters.last
-          ProcessSubmitterCompletionJob.perform_async({ 'submitter_id' => submission.submitters.last.id })
+        submission.submitters.each do |submitter|
+          ProcessSubmitterCompletionJob.perform_async('submitter_id' => submitter.id) if submitter.completed_at?
         end
       end
 
       render json: build_create_json(submissions)
-    rescue Submitters::NormalizeValues::BaseError, DownloadUtils::UnableToDownload => e
+    rescue Submitters::NormalizeValues::BaseError, Submissions::CreateFromSubmitters::BaseError,
+           DownloadUtils::UnableToDownload => e
       Rollbar.warning(e) if defined?(Rollbar)
 
       render json: { error: e.message }, status: :unprocessable_entity
@@ -92,7 +96,10 @@ module Api
       else
         @submission.update!(archived_at: Time.current)
 
-        SendSubmissionArchivedWebhookRequestJob.perform_async('submission_id' => @submission.id)
+        WebhookUrls.for_account_id(@submission.account_id, 'submission.archived').each do |webhook_url|
+          SendSubmissionArchivedWebhookRequestJob.perform_async('submission_id' => @submission.id,
+                                                                'webhook_url_id' => webhook_url.id)
+        end
       end
 
       render json: @submission.as_json(only: %i[id archived_at])
