@@ -9,7 +9,7 @@
     <div class="modal-box pt-4 pb-6 px-6 mt-20 max-h-none w-full max-w-xl">
       <div class="flex justify-between items-center border-b pb-2 mb-2 font-medium">
         <span>
-          {{ t('condition') }} - {{ field.name || buildDefaultName(field, template.fields) }}
+          {{ t('condition') }} - {{ item.name || buildDefaultName(item, template.fields) }}
         </span>
         <a
           href="#"
@@ -29,15 +29,26 @@
           >{{ t('available_in_pro') }}</a>
         </div>
         <form @submit.prevent="validateSaveAndClose">
-          <div class="my-4 space-y-5">
+          <div class="my-4">
             <div
               v-for="(condition, cindex) in conditions"
               :key="cindex"
               class="space-y-4 relative"
             >
               <div
+                v-if="cindex > 0"
+                class="divider -mb-2 mx-1"
+              >
+                <button
+                  class="btn btn-xs btn-primary w-24"
+                  @click.prevent="condition.operation === 'or' ? delete condition.operation : condition.operation = 'or'"
+                >
+                  {{ condition.operation === 'or' ? t('or') : t('and') }}
+                </button>
+              </div>
+              <div
                 v-if="conditions.length > 1"
-                class="flex justify-between border-b mx-1 -mb-1 pb-1"
+                class="flex justify-between mx-1"
               >
                 <span class="text-sm">
                   {{ t('condition') }} {{ cindex + 1 }}
@@ -127,12 +138,12 @@
           </button>
         </form>
         <div
-          v-if="field.conditions?.[0]?.field_uuid"
+          v-if="item.conditions?.[0]?.field_uuid"
           class="text-center w-full mt-4"
         >
           <button
             class="link"
-            @click="[conditions = [], delete field.conditions, validateSaveAndClose()]"
+            @click="[conditions = [], delete item.conditions, validateSaveAndClose()]"
           >
             {{ t('remove_condition') }}
           </button>
@@ -147,7 +158,7 @@ export default {
   name: 'ConditionModal',
   inject: ['t', 'save', 'template', 'withConditions'],
   props: {
-    field: {
+    item: {
       type: Object,
       required: true
     },
@@ -159,22 +170,26 @@ export default {
   emits: ['close'],
   data () {
     return {
-      conditions: this.field.conditions?.[0] ? JSON.parse(JSON.stringify(this.field.conditions)) : [{}]
+      conditions: this.item.conditions?.[0] ? JSON.parse(JSON.stringify(this.item.conditions)) : [{}]
     }
   },
   computed: {
     fields () {
-      return this.template.fields.reduce((acc, f) => {
-        if (f !== this.field && f.submitter_uuid === this.field.submitter_uuid) {
-          acc.push(f)
-        }
+      if (this.item.submitter_uuid) {
+        return this.template.fields.reduce((acc, f) => {
+          if (f !== this.item && f.submitter_uuid === this.item.submitter_uuid) {
+            acc.push(f)
+          }
 
-        return acc
-      }, [])
+          return acc
+        }, [])
+      } else {
+        return this.template.fields
+      }
     }
   },
   created () {
-    this.field.conditions ||= []
+    this.item.conditions ||= []
   },
   methods: {
     conditionField (condition) {
@@ -208,9 +223,9 @@ export default {
       }
 
       if (this.conditions.find((f) => f.field_uuid)) {
-        this.field.conditions = this.conditions
+        this.item.conditions = this.conditions
       } else {
-        delete this.field.conditions
+        delete this.item.conditions
       }
 
       this.save()

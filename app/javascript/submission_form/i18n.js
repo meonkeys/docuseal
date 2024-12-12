@@ -1,4 +1,7 @@
 const en = {
+  complete_all_required_fields_to_proceed_with_identity_verification: 'Complete all required fields to proceed with identity verification.',
+  verify_id: 'Verify ID',
+  identity_verification: 'Identity verification',
   complete: 'Complete',
   fill_all_required_fields_to_complete: 'Fill all required fields to complete',
   sign_and_complete: 'Sign and Complete',
@@ -67,7 +70,7 @@ const en = {
   documents_have_been_signed: 'Documents have been signed!',
   create_a_free_account: 'Create a Free Account',
   powered_by: 'Powered by',
-  please_check_the_box_to_continue: 'Please check the box to continue',
+  please_check_the_box_to_continue: 'Please check the box to continue.',
   open_source_documents_software: 'open source documents software',
   verified_phone_number: 'Verify Phone Number',
   use_international_format: 'Use international format: +1xxx',
@@ -89,10 +92,14 @@ const en = {
   pay_with_strip: 'Pay with Stripe',
   reupload: 'Reupload',
   upload: 'Upload',
-  files: 'Files'
+  files: 'Files',
+  signature_is_too_small_please_redraw: 'Signature is too small. Please redraw.'
 }
 
 const es = {
+  complete_all_required_fields_to_proceed_with_identity_verification: 'Complete todos los campos requeridos para continuar con la verificación de identidad.',
+  verify_id: 'Verificar ID',
+  identity_verification: 'Verificación de identidad',
   complete: 'Completar',
   fill_all_required_fields_to_complete: 'Complete todos los campos requeridos para finalizar',
   sign_and_complete: 'Firmar y Completar',
@@ -160,7 +167,7 @@ const es = {
   documents_have_been_signed: '¡Los documentos han sido firmados!',
   create_a_free_account: 'Crear una Cuenta Gratuita',
   powered_by: 'Desarrollado por',
-  please_check_the_box_to_continue: 'Por favor marque la casilla para continuar',
+  please_check_the_box_to_continue: 'Por favor marque la casilla para continuar.',
   open_source_documents_software: 'software de documentos de código abierto',
   verified_phone_number: 'Verificar número de teléfono',
   use_international_format: 'Usar formato internacional: +1xxx',
@@ -182,10 +189,14 @@ const es = {
   pay_with_strip: 'Pagar con Stripe',
   reupload: 'Volver a subir',
   upload: 'Subir',
-  files: 'Archivos'
+  files: 'Archivos',
+  signature_is_too_small_please_redraw: 'La firma es demasiado pequeña. Por favor, dibújala de nuevo.'
 }
 
 const it = {
+  complete_all_required_fields_to_proceed_with_identity_verification: "Compila tutti i campi obbligatori per procedere con la verifica dell'identità.",
+  verify_id: 'Verifica ID',
+  identity_verification: "Verifica dell'identità",
   complete: 'Completa',
   fill_all_required_fields_to_complete: 'Compila tutti i campi obbligatori per completare',
   sign_and_complete: 'Firma e Completa',
@@ -253,7 +264,7 @@ const it = {
   documents_have_been_signed: 'I documenti sono stati firmati!',
   create_a_free_account: 'Crea un Account Gratuito',
   powered_by: 'Desarrollado por',
-  please_check_the_box_to_continue: 'Si prega di spuntare la casella per continuare',
+  please_check_the_box_to_continue: 'Si prega di spuntare la casella per continuare.',
   open_source_documents_software: 'software di documenti open source',
   verified_phone_number: 'Verifica numero di telefono',
   use_international_format: 'Usa formato internazionale: +1xxx',
@@ -275,10 +286,14 @@ const it = {
   pay_with_strip: 'Paga con Stripe',
   reupload: 'Ricarica',
   upload: 'Carica',
-  files: 'File'
+  files: 'File',
+  signature_is_too_small_please_redraw: 'La firma è troppo piccola. Ridisegnala per favore.'
 }
 
 const de = {
+  complete_all_required_fields_to_proceed_with_identity_verification: 'Vervollständigen Sie alle erforderlichen Felder, um mit der Identitätsverifizierung fortzufahren.',
+  verify_id: 'ID überprüfen',
+  identity_verification: 'Identitätsüberprüfung',
   complete: 'Abschließen',
   fill_all_required_fields_to_complete: 'Alle erforderlichen Felder ausfüllen, um abzuschließen',
   sign_and_complete: 'Signieren und Abschließen',
@@ -346,7 +361,7 @@ const de = {
   documents_have_been_signed: 'Dokumente wurden unterschrieben!',
   create_a_free_account: 'Kostenloses Konto erstellen',
   powered_by: 'Bereitgestellt von',
-  please_check_the_box_to_continue: 'Bitte setzen Sie das Häkchen, um fortzufahren',
+  please_check_the_box_to_continue: 'Bitte setzen Sie das Häkchen, um fortzufahren.',
   open_source_documents_software: 'Open-Source-Dokumentensoftware',
   verified_phone_number: 'Telefonnummer überprüfen',
   use_international_format: 'Internationales Format verwenden: +1xxx',
@@ -368,10 +383,14 @@ const de = {
   pay_with_strip: 'Mit Stripe bezahlen',
   reupload: 'Erneut hochladen',
   upload: 'Hochladen',
-  files: 'Dateien'
+  files: 'Dateien',
+  signature_is_too_small_please_redraw: 'Die Unterschrift ist zu klein. Bitte erneut zeichnen.'
 }
 
 const fr = {
+  complete_all_required_fields_to_proceed_with_identity_verification: "Veuillez remplir tous les champs obligatoires pour continuer la vérification de l'identité.",
+  verif_id: "Vérification de l'ID",
+  verif_identite: "Vérification de l'identité",
   complete: 'Terminer',
   fill_all_required_fields_to_complete: 'Veuillez remplir tous les champs obligatoires pour compléter',
   sign_and_complete: 'Signer et Terminer',
@@ -439,7 +458,7 @@ const fr = {
   documents_have_been_signed: 'Les documents ont été signés!',
   create_a_free_account: 'Créer un Compte Gratuit',
   powered_by: 'Propulsé par',
-  please_check_the_box_to_continue: 'Veuillez cocher la case pour continuer',
+  please_check_the_box_to_continue: 'Veuillez cocher la case pour continuer.',
   open_source_documents_software: 'logiciel de documents open source',
   verified_phone_number: 'Vérifier le numéro de téléphone',
   use_international_format: 'Utiliser le format international : +1xxx',
@@ -461,10 +480,14 @@ const fr = {
   pay_with_strip: 'Paiement avec Stripe',
   reupload: 'Recharger',
   upload: 'Télécharger',
-  files: 'Fichiers'
+  files: 'Fichiers',
+  signature_is_too_small_please_redraw: 'La signature est trop petite. Veuillez la redessiner.'
 }
 
 const pl = {
+  complete_all_required_fields_to_proceed_with_identity_verification: 'Uzupełnij wszystkie wymagane pola, aby kontynuować weryfikację tożsamości.',
+  verify_id: 'Zweryfikuj ID',
+  identity_verification: 'Weryfikacja tożsamości',
   complete: 'Zakończ',
   fill_all_required_fields_to_complete: 'Uzupełnij wszystkie wymagane pola, aby zakończyć',
   sign_and_complete: 'Podpisz i zakończ',
@@ -532,7 +555,7 @@ const pl = {
   documents_have_been_signed: 'Dokumenty zostały podpisane!',
   create_a_free_account: 'Utwórz darmowe konto',
   powered_by: 'Napędzany przez',
-  please_check_the_box_to_continue: 'Proszę zaznaczyć pole, aby kontynuować',
+  please_check_the_box_to_continue: 'Proszę zaznaczyć pole, aby kontynuować.',
   open_source_documents_software: 'oprogramowanie do dokumentów open source',
   verified_phone_number: 'Zweryfikuj numer telefonu',
   use_international_format: 'Użyj międzynarodowego formatu: +1xxx',
@@ -554,10 +577,14 @@ const pl = {
   pay_with_strip: 'Płatność za pomocą Stripe',
   reupload: 'Ponowne przesłanie',
   upload: 'Przesyłanie',
-  files: 'Pliki'
+  files: 'Pliki',
+  signature_is_too_small_please_redraw: 'Podpis jest zbyt mały. Proszę narysować go ponownie.'
 }
 
 const uk = {
+  complete_all_required_fields_to_proceed_with_identity_verification: "Заповніть всі обов'язкові поля, щоб продовжити перевірку особи.",
+  verify_id: 'Підтвердження ідентичності',
+  identity_verification: 'Ідентифікація особи',
   complete: 'Завершити',
   fill_all_required_fields_to_complete: "Заповніть всі обов'язкові поля для завершення",
   sign_and_complete: 'Підписати і завершити',
@@ -625,7 +652,7 @@ const uk = {
   documents_have_been_signed: 'Документи були підписані!',
   create_a_free_account: 'Створити безкоштовний обліковий запис',
   powered_by: 'Працює на базі',
-  please_check_the_box_to_continue: 'Будь ласка, позначте прапорець, щоб продовжити',
+  please_check_the_box_to_continue: 'Будь ласка, позначте прапорець, щоб продовжити.',
   open_source_documents_software: 'відкритий програмний засіб для документів',
   verified_phone_number: 'Підтвердіть номер телефону',
   use_international_format: 'Використовуйте міжнародний формат: +1xxx',
@@ -647,10 +674,14 @@ const uk = {
   pay_with_strip: 'Сплатити за допомогою Stripe',
   reupload: 'Перезавантажити',
   upload: 'Завантажити',
-  files: 'Файли'
+  files: 'Файли',
+  signature_is_too_small_please_redraw: 'Підпис занадто малий. Будь ласка, перемалюйте його.'
 }
 
 const cs = {
+  complete_all_required_fields_to_proceed_with_identity_verification: 'Vyplňte všechna povinná pole, abyste mohli pokračovat v ověření identity.',
+  verify_id: 'Ověřit ID',
+  identity_verification: 'Ověření identity',
   complete: 'Dokončit',
   fill_all_required_fields_to_complete: 'Please complete all mandatory fields',
   sign_and_complete: 'Podepsat a dokončit',
@@ -718,7 +749,7 @@ const cs = {
   documents_have_been_signed: 'Dokumenty byly podepsány!',
   create_a_free_account: 'Vytvořit bezplatný účet',
   powered_by: 'Poháněno',
-  please_check_the_box_to_continue: 'Prosím, zaškrtněte políčko pro pokračování',
+  please_check_the_box_to_continue: 'Prosím, zaškrtněte políčko pro pokračování.',
   open_source_documents_software: 'open source software pro dokumenty',
   verified_phone_number: 'Ověřte telefonní číslo',
   use_international_format: 'Použijte mezinárodní formát: +1xxx',
@@ -740,12 +771,16 @@ const cs = {
   pay_with_strip: 'Zaplacení přes Stripe',
   reupload: 'Znovu nahrát',
   upload: 'Nahrát',
-  files: 'Soubory'
+  files: 'Soubory',
+  signature_is_too_small_please_redraw: 'Podpis je příliš malý. Prosím, překreslete ho.'
 }
 
 const pt = {
+  complete_all_required_fields_to_proceed_with_identity_verification: 'Preencha todos os campos obrigatórios para prosseguir com a verificação de identidade.',
+  verify_id: 'Verificar ID',
+  identity_verification: 'Verificação de identidade',
   complete: 'Completar',
-  preencher_todos_os_campos_obrigatórios_para_concluir: 'Preencher todos os campos obrigatórios para concluir',
+  fill_all_required_fields_to_complete: 'Preencher todos os campos obrigatórios para concluir',
   sign_and_complete: 'Assinar e Completar',
   invite: 'Convidar',
   email: 'E-mail',
@@ -811,7 +846,7 @@ const pt = {
   documents_have_been_signed: 'Os documentos foram assinados!',
   create_a_free_account: 'Criar uma Conta Gratuita',
   powered_by: 'Desenvolvido por',
-  please_check_the_box_to_continue: 'Por favor, marque a caixa para continuar',
+  please_check_the_box_to_continue: 'Por favor, marque a caixa para continuar.',
   open_source_documents_software: 'software de documentos de código aberto',
   verified_phone_number: 'Verificar Número de Telefone',
   use_international_format: 'Use formato internacional: +1xxx',
@@ -833,10 +868,14 @@ const pt = {
   pay_with_strip: 'Pagar com Stripe',
   reupload: 'Reenviar',
   upload: 'Carregar',
-  files: 'Arquivos'
+  files: 'Arquivos',
+  signature_is_too_small_please_redraw: 'A assinatura é muito pequena. Por favor, redesenhe-a.'
 }
 
 const he = {
+  complete_all_required_fields_to_proceed_with_identity_verification: 'מלא את כל השדות הנדרשים כדי להמשיך עם אימות זהות.',
+  verify_id: 'אמת מזהה',
+  identity_verification: 'אימות זהות',
   complete: 'השלם',
   fill_all_required_fields_to_complete: 'נא למלא את כל השדות הנדרשים להשלמה',
   sign_and_complete: 'חתום והשלם',
@@ -905,7 +944,7 @@ const he = {
   documents_have_been_signed: 'המסמכים נחתמו!',
   create_a_free_account: 'צור חשבון חינם',
   powered_by: 'מופעל על ידי',
-  please_check_the_box_to_continue: 'אנא סמן את התיבה כדי להמשיך',
+  please_check_the_box_to_continue: 'אנא סמן את התיבה כדי להמשיך.',
   open_source_documents_software: 'תוכנה פתוחה למסמכים',
   verified_phone_number: 'אימות מספר טלפון',
   use_international_format: 'השתמש בפורמט בינלאומי: +1xxx',
@@ -927,12 +966,16 @@ const he = {
   pay_with_strip: 'שלם עם סטרייפ',
   reupload: 'העלה שוב',
   upload: 'העלאה',
-  files: 'קבצים'
+  files: 'קבצים',
+  signature_is_too_small_please_redraw: 'החתימה קטנה מדי. אנא צייר מחדש.'
 }
 
 const nl = {
+  complete_all_required_fields_to_proceed_with_identity_verification: 'Vul alle verplichte velden in om door te gaan met de identiteitsverificatie.',
+  verify_id: 'Verifiëren ID',
+  identity_verification: 'Identiteitsverificatie',
   complete: 'Voltooien',
-  vul_alle_verplichte_velden_in_om_te_voltooien: 'Vul alle verplichte velden in om te voltooien',
+  fill_all_required_fields_to_complete: 'Vul alle verplichte velden in om te voltooien',
   sign_and_complete: 'Ondertekenen en voltooien',
   invite: 'Uitnodigen',
   email: 'E-mail',
@@ -999,7 +1042,7 @@ const nl = {
   documents_have_been_signed: 'De documenten zijn ondertekend!',
   create_a_free_account: 'Maak een gratis account aan',
   powered_by: 'Aangedreven door',
-  please_check_the_box_to_continue: 'Vink het vakje aan om door te gaan',
+  please_check_the_box_to_continue: 'Vink het vakje aan om door te gaan.',
   open_source_documents_software: 'Open source documenten software',
   verified_phone_number: 'Geverifieerd telefoonnummer',
   use_international_format: 'Gebruik internationaal formaat: +1xxx',
@@ -1021,10 +1064,14 @@ const nl = {
   pay_with_strip: 'Betalen met Stripe',
   reupload: 'Opnieuw uploaden',
   upload: 'Uploaden',
-  files: 'Bestanden'
+  files: 'Bestanden',
+  signature_is_too_small_please_redraw: 'De handtekening is te klein. Teken deze opnieuw, alstublieft.'
 }
 
 const ar = {
+  complete_all_required_fields_to_proceed_with_identity_verification: 'أكمل جميع الحقول المطلوبة للمتابعة في التحقق من الهوية.',
+  verify_id: 'تحقق من الهوية',
+  identity_verification: 'التحقق من الهوية',
   complete: 'اكتمال',
   fill_all_required_fields_to_complete: 'يرجى ملء جميع الحقول المطلوبة لإكمال',
   sign_and_complete: 'التوقيع والاكتمال',
@@ -1092,7 +1139,7 @@ const ar = {
   documents_have_been_signed: 'تم توقيع الوثائق!',
   create_a_free_account: 'إنشاء حساب مجاني',
   powered_by: 'مدعوم من',
-  please_check_the_box_to_continue: 'الرجاء التحقق من الخانة للمتابعة',
+  please_check_the_box_to_continue: 'الرجاء التحقق من الخانة للمتابعة.',
   open_source_documents_software: 'برنامج وثائق مفتوح المصدر',
   verified_phone_number: 'تحقق من رقم الهاتف',
   use_international_format: 'استخدم الشكل الدولي: +1xxx',
@@ -1114,10 +1161,14 @@ const ar = {
   pay_with_strip: 'الدفع بواسطة Stripe',
   reupload: 'إعادة التحميل',
   upload: 'تحميل',
-  files: 'الملفات'
+  files: 'الملفات',
+  signature_is_too_small_please_redraw: 'التوقيع صغير جدًا. يرجى إعادة الرسم.'
 }
 
 const ko = {
+  complete_all_required_fields_to_proceed_with_identity_verification: '신원 확인을 진행하려면 모든 필수 필드를 작성하십시오.',
+  verify_id: '아이디 확인',
+  identity_verification: '신원 확인',
   complete: '완료',
   fill_all_required_fields_to_complete: '모든 필수 필드를 작성하여 완료하세요',
   sign_and_complete: '서명하고 완료하기',
@@ -1184,7 +1235,7 @@ const ko = {
   documents_have_been_signed: '문서가 서명되었습니다!',
   create_a_free_account: '무료 계정 생성',
   powered_by: '구동',
-  please_check_the_box_to_continue: '계속하려면 확인란을 선택하십시오',
+  please_check_the_box_to_continue: '계속하려면 확인란을 선택하십시오.',
   open_source_documents_software: '오픈 소스 문서 소프트웨어',
   verified_phone_number: '전화번호 확인됨',
   use_international_format: '국제 포맷 사용: +1xxx',
@@ -1206,7 +1257,8 @@ const ko = {
   pay_with_strip: '스트라이프로 결제',
   reupload: '다시 업로드',
   upload: '업로드',
-  files: '파일'
+  files: '파일',
+  signature_is_too_small_please_redraw: '서명이 너무 작습니다. 다시 그려주세요.'
 }
 
 const i18n = { en, es, it, de, fr, pl, uk, cs, pt, he, nl, ar, ko }

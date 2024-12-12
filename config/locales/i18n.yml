@@ -22,6 +22,18 @@ en: &en
   thanks: Thanks
   unarchive: Unarchive
   first_party: 'First Party'
+  remove_filter: Remove filter
+  add: Add
+  adding: Adding
+  owner: Owner
+  select_user: Select user
+  team_member_permissions: Team member permissions
+  entire_team: Entire team
+  admin_only: Admin only
+  accessiable_by: Accessiable by
+  team_access: Team access
+  document_download_filename_format: Document download filename format
+  document_name: Document Name
   docuseal_trusted_signature: DocuSeal Trusted Signature
   hello_name: Hello %{name}
   you_are_invited_to_product_name: You are invited to %{product_name}
@@ -344,7 +356,7 @@ en: &en
   edit_message: Edit message
   smtp_not_configured: SMTP not Configured
   configure_smtp_settings_in_order_to_send_emails_: 'Configure SMTP settings in order to send emails:'
-  go_to_smtp_setting: Go to SMTP setting
+  go_to_smtp_settings: Go to SMTP settings
   save_as_default_template_message: Save as default template message
   re_send_sms: Re-send SMS
   send_sms: Send SMS
@@ -615,11 +627,13 @@ en: &en
   stamp_field: Stamp Field
   payment_field: Payment Field
   phone_field: Phone Field
+  verification_field: Identity Verification
+  identity_verification: Identity verification
   paid_price: 'Paid %{price}'
   verified: Verified
   unverified: Unverified
   document: Document
-  completed_at: Completed At
+  completed_at: Completed at
   edit_recipient: Edit Recipient
   update_recipient: Update Recipient
   use_international_format_1xxx_: 'Use internatioanl format: +1xxx...'
@@ -631,6 +645,21 @@ en: &en
   key: Key
   value: Value
   webhook_secret: Webhook Secret
+  author: Author
+  to: To
+  created_at: Created at
+  apply: Apply
+  applying: Applying
+  today: Today
+  yesterday: Yesterday
+  this_week: This week
+  last_week: Last week
+  this_month: This month
+  last_month: Last month
+  this_year: This year
+  policy_links: Policy Links
+  markdown_content_e_g: Markdown content, e.g.
+  privacy_policy: Privacy Policy
   submission_event_names:
     send_email_to_html: '<b>Email sent</b> to %{submitter_name}'
     send_reminder_email_to_html: '<b>Reminder email sent</b> to %{submitter_name}'
@@ -644,6 +673,8 @@ en: &en
     view_form_by_html: '<b>Form viewed</b> by %{submitter_name}'
     invite_party_by_html: '<b>Invited</b> %{invited_submitter_name} by %{submitter_name}'
     complete_form_by_html: '<b>Submission completed</b> by %{submitter_name}'
+    start_verification_by_html: '<b>Identity verification started</b> by %{submitter_name}'
+    complete_verification_by_html: '<b>Identity verification completed</b> by %{submitter_name} with %{provider}'
     api_complete_form_by_html: '<b>Submission completed via API</b> by %{submitter_name}'
   import_list:
     select_worksheet: Select Worksheet
@@ -667,6 +698,18 @@ en: &en
       read: Read your data
 
 es: &es
+  add: Agregar
+  adding: Agregando
+  owner: Propietario
+  select_user: Seleccionar usuario
+  team_member_permissions: Permisos de miembros del equipo
+  entire_team: Todo el equipo
+  admin_only: Solo administrador
+  accessiable_by: Accesible por
+  team_access: Acceso del equipo
+  remove_filter: Eliminar filtro
+  document_download_filename_format: Formato del nombre del archivo de descarga del documento
+  document_name: Nombre del documento
   unarchive: Desarchivar
   awaiting_completion_by_the_other_party: "Esperando la finalización por la otra parte"
   enforce_recipients_order: 'Hacer cumplir el orden de los destinatarios'
@@ -993,7 +1036,7 @@ es: &es
   edit_message: Editar mensaje
   smtp_not_configured: SMTP no configurado
   configure_smtp_settings_in_order_to_send_emails_: 'Configura los ajustes de SMTP para enviar correos electrónicos:'
-  go_to_smtp_setting: Ir a la configuración de SMTP
+  go_to_smtp_settings: Ir a la configuración de SMTP
   save_as_default_template_message: Guardar como mensaje de plantilla predeterminado
   re_send_sms: Reenviar SMS
   send_sms: Enviar SMS
@@ -1264,6 +1307,8 @@ es: &es
   stamp_field: Campo de Sello
   payment_field: Campo de Pago
   phone_field: Campo de Teléfono
+  verification_field: Verificación de Identidad
+  identity_verification: Verificación de Identidad
   paid_price: 'Pagado %{price}'
   verified: Verificado
   unverified: No verificado
@@ -1280,6 +1325,21 @@ es: &es
   key: Clave
   value: Valor
   webhook_secret: Secreto del Webhook
+  author: Autor
+  to: A
+  created_at: Creado el
+  apply: Aplicar
+  applying: Aplicando
+  today: Hoy
+  yesterday: Ayer
+  this_week: Esta Semana
+  last_week: La Semana Pasada
+  this_month: Este Mes
+  last_month: El Mes Pasado
+  this_year: Este Año
+  policy_links: Enlaces de Políticas
+  markdown_content_e_g: Contenido Markdown, por ej.
+  privacy_policy: Política de Privacidad
   submission_event_names:
     send_email_to_html: '<b>Correo electrónico enviado</b> a %{submitter_name}'
     send_reminder_email_to_html: '<b>Correo de recordatorio enviado</b> a %{submitter_name}'
@@ -1294,6 +1354,8 @@ es: &es
     invite_party_by_html: '<b>Invitado</b> %{invited_submitter_name} por %{submitter_name}'
     complete_form_by_html: '<b>Envío completado</b> por %{submitter_name}'
     api_complete_form_by_html: '<b>Envío completado vía API</b> por %{submitter_name}'
+    start_verification_by_html: '<b>Verificación de identidad iniciada</b> por %{submitter_name}'
+    complete_verification_by_html: '<b>Verificación de identidad completada</b> por %{submitter_name} con %{provider}'
   import_list:
     select_worksheet: Seleccionar hoja de cálculo
     open: Abrir
@@ -1316,6 +1378,18 @@ es: &es
       read: Leer tus datos
 
 it: &it
+  add: Aggiungi
+  adding: Aggiungendo
+  owner: Proprietario
+  select_user: Seleziona utente
+  team_member_permissions: Permessi membri del team
+  entire_team: Intero team
+  admin_only: Solo amministratore
+  accessiable_by: Accessibile da
+  team_access: Accesso al team
+  remove_filter: Rimuovi filtro
+  document_download_filename_format: Formato del nome file scaricato
+  document_name: Nome del Documento
   unarchive: Ripristina
   awaiting_completion_by_the_other_party: "In attesa di completamento da parte dell'altra parte"
   enforce_recipients_order: Aplicar el orden de los destinatarios
@@ -1642,7 +1716,7 @@ it: &it
   edit_message: Modifica messaggio
   smtp_not_configured: SMTP non configurato
   configure_smtp_settings_in_order_to_send_emails_: 'Configura le impostazioni SMTP per inviare email:'
-  go_to_smtp_setting: Vai alle impostazioni SMTP
+  go_to_smtp_settings: Vai alle impostazioni SMTP
   save_as_default_template_message: Salva come messaggio modello predefinito
   re_send_sms: Reinvio SMS
   send_sms: Invia SMS
@@ -1913,6 +1987,8 @@ it: &it
   stamp_field: Campo Timbro
   payment_field: Campo Pagamento
   phone_field: Campo Telefono
+  verification_field: "Verifica dell'identità"
+  identity_verification: "Verifica dell'identità"
   paid_price: 'Pagato %{price}'
   verified: Verificato
   unverified: Non verificato
@@ -1929,6 +2005,21 @@ it: &it
   key: Chiave
   value: Valore
   webhook_secret: Segreto del Webhook
+  author: Autore
+  to: A
+  created_at: Creato il
+  apply: Applica
+  applying: Applicazione
+  today: Oggi
+  yesterday: Ieri
+  this_week: Questa Settimana
+  last_week: Settimana Scorsa
+  this_month: Questo Mese
+  last_month: Mese Scorso
+  this_year: "Quest'Anno"
+  policy_links: Collegamenti alle Politiche
+  markdown_content_e_g: Contenuto Markdown, ad es.
+  privacy_policy: Politica sulla Privacy
   submission_event_names:
     send_email_to_html: '<b>E-mail inviato</b> a %{submitter_name}'
     send_reminder_email_to_html: '<b>E-mail di promemoria inviato</b> a %{submitter_name}'
@@ -1943,6 +2034,8 @@ it: &it
     invite_party_by_html: '<b>Invitato</b> %{invited_submitter_name} da %{submitter_name}'
     complete_form_by_html: '<b>Invio completato</b> da %{submitter_name}'
     api_complete_form_by_html: '<b>Invio completato tramite API</b> da %{submitter_name}'
+    start_verification_by_html: "<b>Verifica dell'identità iniziata</b> da %{submitter_name}"
+    complete_verification_by_html: "<b>Verifica dell'identità completata</b> da %{submitter_name} con %{provider}"
   import_list:
     select_worksheet: Seleziona il foglio di lavoro
     open: Apri
@@ -1965,6 +2058,18 @@ it: &it
       read: Leggi i tuoi dati
 
 fr: &fr
+  add: Ajouter
+  adding: Ajout
+  owner: Propriétaire
+  select_user: Sélectionner un utilisateur
+  team_member_permissions: Permissions des membres de l'équipe
+  entire_team: Équipe entière
+  admin_only: Administrateur uniquement
+  accessiable_by: Accessible par
+  team_access: Accès à l'équipe
+  remove_filter: Supprimer le filtre
+  document_download_filename_format: Format du nom de fichier du téléchargement de document
+  document_name: Nom du document
   unarchive: Désarchiver
   awaiting_completion_by_the_other_party: "En attente de la complétion par l'autre partie"
   enforce_recipients_order: "Respecter l'ordre des destinataires"
@@ -2292,7 +2397,7 @@ fr: &fr
   edit_message: Modifier le message
   smtp_not_configured: SMTP non configuré
   configure_smtp_settings_in_order_to_send_emails_: 'Configurez les paramètres SMTP pour envoyer des e-mails:'
-  go_to_smtp_setting: Aller aux paramètres SMTP
+  go_to_smtp_settings: Aller aux paramètres SMTP
   save_as_default_template_message: Enregistrer comme modèle de message par défaut
   re_send_sms: Renvoyer le SMS
   send_sms: Envoyer SMS
@@ -2563,6 +2668,8 @@ fr: &fr
   stamp_field: Champ de Tampon
   payment_field: Champ de Paiement
   phone_field: Champ de Téléphone
+  verification_field: "Vérification d'Identité"
+  identity_verification: "Vérification d'identité"
   paid_price: 'Payé %{price}'
   verified: Vérifié
   unverified: Non vérifié
@@ -2579,6 +2686,21 @@ fr: &fr
   key: Clé
   value: Valeur
   webhook_secret: Secret du Webhook
+  author: Auteur
+  to: À
+  created_at: Créé le
+  apply: Appliquer
+  applying: Application en cours
+  today: "Aujourd'hui"
+  yesterday: Hier
+  this_week: Cette Semaine
+  last_week: La Semaine Dernière
+  this_month: Ce Mois-ci
+  last_month: Le Mois Dernier
+  this_year: Cette Année
+  policy_links: Liens des Politiques
+  markdown_content_e_g: Contenu Markdown, par ex.
+  privacy_policy: Politique de Confidentialité
   submission_event_names:
     send_email_to_html: '<b>E-mail envoyé</b> à %{submitter_name}'
     send_reminder_email_to_html: '<b>E-mail de rappel envoyé</b> à %{submitter_name}'
@@ -2592,6 +2714,8 @@ fr: &fr
     view_form_by_html: '<b>Formulaire consulté</b> par %{submitter_name}'
     invite_party_by_html: '<b>Invité</b> %{invited_submitter_name} par %{submitter_name}'
     complete_form_by_html: '<b>Soumission terminée</b> par %{submitter_name}'
+    start_verification_by_html: "<b>Vérification d'identité commencée</b> par %{submitter_name}"
+    complete_verification_by_html: "<b>Vérification d'identité terminée</b> par %{submitter_name} avec %{provider}"
     api_complete_form_by_html: "<b>Soumission terminée via l'API</b> par %{submitter_name}"
   import_list:
     select_worksheet: Sélectionner la feuille de calcul
@@ -2615,6 +2739,18 @@ fr: &fr
       read: Lire vos données
 
 pt: &pt
+  add: Adicionar
+  adding: Adicionando
+  owner: Proprietário
+  select_user: Selecionar usuário
+  team_member_permissions: Permissões de membro da equipe
+  entire_team: Toda a equipe
+  admin_only: Somente administrador
+  accessiable_by: Acessível por
+  team_access: Acesso à equipe
+  remove_filter: Remover filtro
+  document_download_filename_format: Formato do nome do arquivo de download do documento
+  document_name: Nome do documento
   unarchive: Desarquivar
   awaiting_completion_by_the_other_party: "Aguardando a conclusão pela outra parte"
   enforce_recipients_order: 'Forçar a ordem dos recipientes'
@@ -2941,7 +3077,7 @@ pt: &pt
   edit_message: Editar mensagem
   smtp_not_configured: SMTP não configurado
   configure_smtp_settings_in_order_to_send_emails_: 'Configure as configurações de SMTP para enviar e-mails:'
-  go_to_smtp_setting: Ir para a configuração de SMTP
+  go_to_smtp_settings: Ir para a configuração de SMTP
   save_as_default_template_message: Salvar como mensagem de modelo padrão
   re_send_sms: Reenviar SMS
   send_sms: Enviar SMS
@@ -3212,6 +3348,8 @@ pt: &pt
   stamp_field: Campo de Carimbo
   payment_field: Campo de Pagamento
   phone_field: Campo de Telefone
+  verification_field: "Verificação de Identidade"
+  identity_verification: "Verificação de identidade"
   paid_price: 'Pago %{price}'
   verified: Verificado
   unverified: Não verificado
@@ -3228,6 +3366,21 @@ pt: &pt
   key: Chave
   value: Valor
   webhook_secret: Segredo do Webhook
+  author: Autor
+  to: Para
+  created_at: Criado em
+  apply: Aplicar
+  applying: Aplicando
+  today: Hoje
+  yesterday: Ontem
+  this_week: Esta Semana
+  last_week: Semana Passada
+  this_month: Este Mês
+  last_month: Mês Passado
+  this_year: Este Ano
+  policy_links: Links de Políticas
+  markdown_content_e_g: Conteúdo Markdown, ex.
+  privacy_policy: Política de Privacidade
   submission_event_names:
     send_email_to_html: '<b>E-mail enviado</b> para %{submitter_name}'
     send_reminder_email_to_html: '<b>E-mail de lembrete enviado</b> para %{submitter_name}'
@@ -3241,6 +3394,8 @@ pt: &pt
     view_form_by_html: '<b>Formulário visualizado</b> por %{submitter_name}'
     invite_party_by_html: '<b>Convidado</b> %{invited_submitter_name} por %{submitter_name}'
     complete_form_by_html: '<b>Submissão concluída</b> por %{submitter_name}'
+    start_verification_by_html: '<b>Verificação de identidade iniciada</b> por %{submitter_name}'
+    complete_verification_by_html: '<b>Verificação de identidade concluída</b> por %{submitter_name} com %{provider}'
     api_complete_form_by_html: '<b>Submissão concluída via API</b> por %{submitter_name}'
   import_list:
     select_worksheet: Selecionar planilha
@@ -3264,6 +3419,18 @@ pt: &pt
       read: Ler seus dados
 
 de: &de
+  add: Hinzufügen
+  adding: Hinzufügen
+  owner: Eigentümer
+  select_user: Benutzer auswählen
+  team_member_permissions: Berechtigungen für Teammitglieder
+  entire_team: Gesamtes Team
+  admin_only: Nur Administratoren
+  accessiable_by: Zugänglich für
+  team_access: Teamzugang
+  remove_filter: Filter entfernen
+  document_download_filename_format: Format des Dateinamens beim Herunterladen von Dokumenten
+  document_name: Dokumentname
   unarchive: Wiederherstellen
   awaiting_completion_by_the_other_party: "Warten auf die Fertigstellung durch die andere Partei"
   enforce_recipients_order: 'Empfängerreihenfolge durchsetzen'
@@ -3590,7 +3757,7 @@ de: &de
   edit_message: Nachricht bearbeiten
   smtp_not_configured: SMTP nicht konfiguriert
   configure_smtp_settings_in_order_to_send_emails_: 'Konfiguriere die SMTP-Einstellungen, um E-Mails zu senden:'
-  go_to_smtp_setting: Zu den SMTP-Einstellungen gehen
+  go_to_smtp_settings: Zu den SMTP-Einstellungen gehen
   save_as_default_template_message: Als Standardvorlage speichern
   re_send_sms: SMS erneut senden
   send_sms: SMS senden
@@ -3861,6 +4028,8 @@ de: &de
   stamp_field: Stempelfeld
   payment_field: Zahlungsfeld
   phone_field: Telefonfeld
+  verification_field: Identitätsüberprüfung
+  identity_verification: Identitätsüberprüfung
   paid_price: 'Bezahlt %{price}'
   verified: Verifiziert
   unverified: Nicht verifiziert
@@ -3877,6 +4046,21 @@ de: &de
   key: Schlüssel
   value: Wert
   webhook_secret: Webhook-Geheimnis
+  author: Autor
+  to: An
+  created_at: Erstellt am
+  apply: Anwenden
+  applying: Anwenden
+  today: Heute
+  yesterday: Gestern
+  this_week: Diese Woche
+  last_week: Letzte Woche
+  this_month: Dieser Monat
+  last_month: Letzter Monat
+  this_year: Dieses Jahr
+  policy_links: Richtlinien-Links
+  markdown_content_e_g: Markdown-Inhalt, z. B.
+  privacy_policy: Datenschutzrichtlinie
   submission_event_names:
     send_email_to_html: '<b>E-Mail gesendet</b> an %{submitter_name}'
     send_reminder_email_to_html: '<b>Erinnerungs-E-Mail gesendet</b> an %{submitter_name}'
@@ -3890,6 +4074,8 @@ de: &de
     view_form_by_html: '<b>Formular angesehen</b> von %{submitter_name}'
     invite_party_by_html: '<b>Eingeladen</b> %{invited_submitter_name} von %{submitter_name}'
     complete_form_by_html: '<b>Einreichung abgeschlossen</b> von %{submitter_name}'
+    start_verification_by_html: '<b>Identitätsüberprüfung gestartet</b> von %{submitter_name}'
+    complete_verification_by_html: '<b>Identitätsüberprüfung abgeschlossen</b> von %{submitter_name} mit %{provider}'
     api_complete_form_by_html: '<b>Einreichung über API abgeschlossen</b> von %{submitter_name}'
   import_list:
     select_worksheet: Arbeitsblatt auswählen

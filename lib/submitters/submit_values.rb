@@ -93,7 +93,11 @@ module Submitters
         if params[:cast_boolean] == 'true'
           v == 'true'
         elsif params[:cast_number] == 'true'
-          (v.to_f % 1).zero? ? v.to_i : v.to_f
+          if v == ''
+            nil
+          else
+            (v.to_f % 1).zero? ? v.to_i : v.to_f
+          end
         elsif params[:normalize_phone] == 'true'
           v.to_s.gsub(/[^0-9+]/, '')
         else
@@ -120,6 +124,17 @@ module Submitters
               submitter,
               with_logo: field.dig('preferences', 'with_logo') != false
             ).uuid
+
+          next
+        end
+
+        if field['type'] == 'verification'
+          acc[field['uuid']] =
+            if submitter.submission_events.exists?(event_type: :complete_verification)
+              I18n.t(:verified, locale: :en)
+            elsif field['required']
+              raise ValidationError, 'ID Not Verified'
+            end
 
           next
         end
@@ -168,46 +183,61 @@ module Submitters
     def maybe_remove_condition_values(submitter)
       fields_uuid_index = submitter.submission.template_fields.index_by { |e| e['uuid'] }
 
+      attachments_index =
+        Submissions.filtered_conditions_schema(submitter.submission).index_by { |i| i['attachment_uuid'] }
+
       submitter.submission.template_fields.each do |field|
         next if field['submitter_uuid'] != submitter.uuid
 
-        submitter.values.delete(field['uuid']) unless check_field_condition(submitter, field, fields_uuid_index)
+        submitter.values.delete(field['uuid']) unless check_field_conditions(submitter, field, fields_uuid_index)
+
+        if field['areas'].present? && field['areas'].none? { |area| attachments_index[area['attachment_uuid']] }
+          submitter.values.delete(field['uuid'])
+        end
       end
 
       submitter.values
     end
 
-    def check_field_condition(submitter, field, fields_uuid_index)
+    def check_field_conditions(submitter, field, fields_uuid_index)
       return true if field['conditions'].blank?
 
       submitter_values = submitter.values
 
-      field['conditions'].reduce(true) do |acc, c|
-        case c['action']
-        when 'empty', 'unchecked'
-          acc && submitter_values[c['field_uuid']].blank?
-        when 'not_empty', 'checked'
-          acc && submitter_values[c['field_uuid']].present?
-        when 'equal', 'contains'
-          field = fields_uuid_index[c['field_uuid']]
-          option = field['options'].find { |o| o['uuid'] == c['value'] }
-          values = Array.wrap(submitter_values[c['field_uuid']])
-
-          acc && values.include?(option['value'].presence || "Option #{field['options'].index(option)}")
-        when 'not_equal', 'does_not_contain'
-          field = fields_uuid_index[c['field_uuid']]
-          option = field['options'].find { |o| o['uuid'] == c['value'] }
-          values = Array.wrap(submitter_values[c['field_uuid']])
-
-          acc && values.exclude?(option['value'].presence || "Option #{field['options'].index(option)}")
+      field['conditions'].each_with_object([]) do |c, acc|
+        if c['operation'] == 'or'
+          acc.push(acc.pop || check_field_condition(c, submitter_values, fields_uuid_index))
         else
-          acc
+          acc.push(check_field_condition(c, submitter_values, fields_uuid_index))
         end
+      end.exclude?(false)
+    end
+
+    def check_field_condition(condition, submitter_values, fields_uuid_index)
+      case condition['action']
+      when 'empty', 'unchecked'
+        submitter_values[condition['field_uuid']].blank?
+      when 'not_empty', 'checked'
+        submitter_values[condition['field_uuid']].present?
+      when 'equal', 'contains'
+        field = fields_uuid_index[condition['field_uuid']]
+        option = field['options'].find { |o| o['uuid'] == condition['value'] }
+        values = Array.wrap(submitter_values[condition['field_uuid']])
+
+        values.include?(option['value'].presence || "#{I18n.t('option')} #{field['options'].index(option)}")
+      when 'not_equal', 'does_not_contain'
+        field = fields_uuid_index[condition['field_uuid']]
+        option = field['options'].find { |o| o['uuid'] == condition['value'] }
+        values = Array.wrap(submitter_values[condition['field_uuid']])
+
+        values.exclude?(option['value'].presence || "#{I18n.t('option')} #{field['options'].index(option)}")
+      else
+        true
       end
     end
 
     def replace_default_variables(value, attrs, submission, with_time: false)
-      return value if value.in?([true, false])
+      return value if value.in?([true, false]) || value.is_a?(Numeric)
       return if value.blank?
 
       value.to_s.gsub(VARIABLE_REGEXP) do |e|

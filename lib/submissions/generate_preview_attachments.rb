@@ -5,8 +5,12 @@ module Submissions
     module_function
 
     # rubocop:disable Metrics
-    def call(submission, values_hash: nil)
-      values_hash ||= build_values_hash(submission)
+    def call(submission, values_hash: nil, submitter: nil)
+      values_hash ||= if submitter
+                        build_submitter_values_hash(submitter)
+                      else
+                        build_values_hash(submission)
+                      end
 
       configs = submission.account.account_configs.where(key: [AccountConfig::FLATTEN_RESULT_PDF_KEY,
                                                                AccountConfig::WITH_SIGNATURE_ID])
@@ -16,8 +20,14 @@ module Submissions
 
       pdfs_index = GenerateResultAttachments.build_pdfs_index(submission, flatten: is_flatten)
 
-      submission.submitters.where(completed_at: nil).preload(attachments_attachments: :blob).each do |submitter|
-        GenerateResultAttachments.fill_submitter_fields(submitter, submission.account, pdfs_index,
+      submitters = if submitter
+                     submission.submitters.where(id: submitter.id)
+                   else
+                     submission.submitters.where(completed_at: nil)
+                   end
+
+      submitters.preload(attachments_attachments: :blob).each do |s|
+        GenerateResultAttachments.fill_submitter_fields(s, submission.account, pdfs_index,
                                                         with_signature_id:, is_flatten:)
       end
 
@@ -27,8 +37,10 @@ module Submissions
       original_documents = template.documents.preload(:blob)
 
       result_attachments =
-        (submission.template_schema || template.schema).map do |item|
+        (submission.template_schema || template.schema).filter_map do |item|
           pdf = pdfs_index[item['attachment_uuid']]
+
+          next if pdf.nil?
 
           if original_documents.find { |a| a.uuid == item['attachment_uuid'] }.image?
             pdf = GenerateResultAttachments.normalize_image_pdf(pdf)
@@ -36,7 +48,7 @@ module Submissions
             image_pdfs << pdf
           end
 
-          build_pdf_attachment(pdf:, submission:,
+          build_pdf_attachment(pdf:, submission:, submitter:,
                                uuid: item['attachment_uuid'],
                                values_hash:,
                                name: item['name'])
@@ -55,6 +67,7 @@ module Submissions
         build_pdf_attachment(
           pdf: images_pdf,
           submission:,
+          submitter:,
           uuid: GenerateResultAttachments.images_pdf_uuid(original_documents.select(&:image?)),
           values_hash:,
           name: template.name
@@ -66,10 +79,21 @@ module Submissions
     end
 
     def build_values_hash(submission)
-      submission.submitters.reduce({}) { |acc, s| acc.merge(s.values) }.hash
+      Digest::MD5.hexdigest(
+        submission.submitters.reduce({}) { |acc, s| acc.merge(s.values) }.to_json
+      )
     end
 
-    def build_pdf_attachment(pdf:, submission:, uuid:, name:, values_hash:)
+    def build_submitter_values_hash(submitter)
+      submission = submitter.submission
+
+      Digest::MD5.hexdigest(
+        submission.submitters.where.not(completed_at: nil).or(submission.submitters.where(id: submitter.id))
+                  .reduce({}) { |acc, s| acc.merge(s.values) }.to_json
+      )
+    end
+
+    def build_pdf_attachment(pdf:, submission:, submitter:, uuid:, name:, values_hash:)
       io = StringIO.new
 
       begin
@@ -82,12 +106,13 @@ module Submissions
 
       ActiveStorage::Attachment.new(
         blob: ActiveStorage::Blob.create_and_upload!(io: io.tap(&:rewind), filename: "#{name}.pdf"),
+        io_data: io.string,
         metadata: { original_uuid: uuid,
                     values_hash:,
                     analyzed: true,
                     sha256: Base64.urlsafe_encode64(Digest::SHA256.digest(io.string)) },
         name: 'preview_documents',
-        record: submission
+        record: submitter || submission
       )
     end
     # rubocop:enable Metrics

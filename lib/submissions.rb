@@ -26,7 +26,7 @@ module Submissions
       arel = arel.or(Template.arel_table[:name].lower.matches("%#{keyword.downcase}%"))
     end
 
-    submissions.joins(:submitters).where(arel).distinct
+    submissions.joins(:submitters).where(arel).group(:id)
   end
 
   def update_template_fields!(submission)
@@ -88,17 +88,19 @@ module Submissions
     )
   end
 
-  def send_signature_requests(submissions)
-    submissions.each do |submission|
+  def send_signature_requests(submissions, delay: nil)
+    submissions.each_with_index do |submission, index|
+      delay_seconds = (delay + index).seconds if delay
+
       submitters = submission.submitters.reject(&:completed_at?)
 
       if submission.submitters_order_preserved?
         first_submitter =
           submission.template_submitters.filter_map { |s| submitters.find { |e| e.uuid == s['uuid'] } }.first
 
-        Submitters.send_signature_requests([first_submitter]) if first_submitter
+        Submitters.send_signature_requests([first_submitter], delay_seconds:) if first_submitter
       else
-        Submitters.send_signature_requests(submitters)
+        Submitters.send_signature_requests(submitters, delay_seconds:)
       end
     end
   end
@@ -121,5 +123,43 @@ module Submissions
     Rails.logger.info("Fixed email #{email.split('@').last}") if fixed_email != email.downcase.delete_prefix('<').strip
 
     fixed_email
+  end
+
+  def filtered_conditions_schema(submission, values: nil, include_submitter_uuid: nil)
+    fields_uuid_index = nil
+
+    (submission.template_schema || submission.template.schema).filter_map do |item|
+      if item['conditions'].present?
+        fields_uuid_index ||=
+          (submission.template_fields || submission.template.fields).index_by { |f| f['uuid'] }
+
+        values ||= submission.submitters.reduce({}) { |acc, sub| acc.merge(sub.values) }
+
+        next unless check_document_conditions(item, values, fields_uuid_index, include_submitter_uuid:)
+      end
+
+      item
+    end
+  end
+
+  def check_document_conditions(item, values, fields_index, include_submitter_uuid: nil)
+    return true if item['conditions'].blank?
+
+    item['conditions'].all? do |condition|
+      result =
+        if fields_index[condition['field_uuid']]['submitter_uuid'] == include_submitter_uuid
+          true
+        else
+          Submitters::SubmitValues.check_field_condition(condition, values, fields_index)
+        end
+
+      item['conditions'].each_with_object([]) do |c, acc|
+        if c['operation'] == 'or'
+          acc.push(acc.pop || result)
+        else
+          acc.push(result)
+        end
+      end.exclude?(false)
+    end
   end
 end

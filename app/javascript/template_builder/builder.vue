@@ -1,10 +1,11 @@
 <template>
   <div
     style="max-width: 1600px"
-    class="mx-auto pl-3 md:pl-4 h-full"
+    class="mx-auto pl-3 h-full"
+    :class="isMobile ? 'pl-4' : 'md:pl-4'"
   >
     <div
-      v-if="pendingFieldAttachmentUuids.length"
+      v-if="pendingFieldAttachmentUuids.length && editable"
       class="top-1.5 sticky h-0 z-20 max-w-2xl mx-auto"
     >
       <div class="alert border-base-content/30 py-2 px-2.5">
@@ -163,7 +164,7 @@
     <div
       id="main_container"
       class="flex"
-      :class="$slots.buttons || withTitle ? 'md:max-h-[calc(100%_-_60px)]' : 'md:max-h-[100%]'"
+      :class="$slots.buttons || withTitle ? (isMobile ? 'max-h-[calc(100%_-_60px)]' : 'md:max-h-[calc(100%_-_60px)]') : (isMobile ? 'max-h-[100%]' : 'md:max-h-[100%]')"
     >
       <div
         v-if="withDocumentsList"
@@ -219,7 +220,8 @@
       </div>
       <div
         id="pages_container"
-        class="w-full overflow-y-hidden md:overflow-y-auto overflow-x-hidden mt-0.5 pt-0.5"
+        class="w-full overflow-y-hidden overflow-x-hidden mt-0.5 pt-0.5"
+        :class="isMobile ? 'overflow-y-auto' : 'md:overflow-y-auto'"
       >
         <div
           ref="documents"
@@ -320,7 +322,7 @@
         </div>
       </div>
       <div
-        v-if="withFieldsList"
+        v-if="withFieldsList && !isMobile"
         id="fields_list_container"
         class="relative w-80 flex-none mt-1 pr-4 pl-0.5 hidden md:block"
         :class="drawField ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'"
@@ -362,6 +364,7 @@
             :default-submitters="defaultSubmitters"
             :draw-field-type="drawFieldType"
             :default-fields="[...defaultRequiredFields, ...defaultFields]"
+            :template="template"
             :default-required-fields="defaultRequiredFields"
             :field-types="fieldTypes"
             :with-sticky-submitters="withStickySubmitters"
@@ -378,14 +381,14 @@
         </div>
       </div>
     </div>
-    <div class="sticky bottom-0">
+    <div class="sticky bottom-0 z-10">
       <MobileDrawField
-        v-if="drawField && isBreakpointLg"
+        v-if="drawField && (isBreakpointLg || isMobile)"
         :draw-field="drawField"
         :fields="template.fields"
         :submitters="template.submitters"
         :selected-submitter="selectedSubmitter"
-        class="md:hidden"
+        :class="{ 'md:hidden': !isMobile }"
         :editable="editable"
         @cancel="[drawField = null, drawOption = null]"
         @change-submitter="[selectedSubmitter = $event, drawField.submitter_uuid = $event.uuid]"
@@ -396,6 +399,7 @@
         :default-fields="[...defaultRequiredFields, ...defaultFields]"
         :default-required-fields="defaultRequiredFields"
         :field-types="fieldTypes"
+        :class="{ 'md:hidden': !isMobile }"
         :selected-submitter="selectedSubmitter"
         @select="startFieldDraw($event)"
       />
@@ -455,6 +459,7 @@ export default {
       fieldTypes: this.fieldTypes,
       backgroundColor: this.backgroundColor,
       withPhone: this.withPhone,
+      withVerification: this.withVerification,
       withPayment: this.withPayment,
       isPaymentConnected: this.isPaymentConnected,
       withFormula: this.withFormula,
@@ -635,6 +640,11 @@ export default {
       required: false,
       default: false
     },
+    withVerification: {
+      type: Boolean,
+      required: false,
+      default: null
+    },
     withPayment: {
       type: Boolean,
       required: false,
@@ -688,6 +698,9 @@ export default {
     fieldsDragFieldRef: () => ref(),
     language () {
       return this.locale.split('-')[0].toLowerCase()
+    },
+    isMobile () {
+      return /android|iphone|ipad/i.test(navigator.userAgent)
     },
     defaultDateFormat () {
       const isUsBrowser = Intl.DateTimeFormat().resolvedOptions().locale.endsWith('-US')
@@ -1017,6 +1030,22 @@ export default {
 
       if (!field.areas.length) {
         this.template.fields.splice(this.template.fields.indexOf(field), 1)
+
+        this.template.fields.forEach((f) => {
+          (f.conditions || []).forEach((c) => {
+            if (c.field_uuid === field.uuid) {
+              f.conditions.splice(f.conditions.indexOf(c), 1)
+            }
+          })
+        })
+
+        this.template.schema.forEach((item) => {
+          (item.conditions || []).forEach((c) => {
+            if (c.field_uuid === field.uuid) {
+              item.conditions.splice(item.conditions.indexOf(c), 1)
+            }
+          })
+        })
       }
 
       this.save()
@@ -1075,7 +1104,7 @@ export default {
       } else if (type === 'image') {
         area.w = pageMask.clientWidth / 5 / pageMask.clientWidth
         area.h = (pageMask.clientWidth / 5 / pageMask.clientWidth) * (pageMask.clientWidth / pageMask.clientHeight)
-      } else if (type === 'signature' || type === 'stamp') {
+      } else if (type === 'signature' || type === 'stamp' || type === 'verification') {
         area.w = pageMask.clientWidth / 5 / pageMask.clientWidth
         area.h = (pageMask.clientWidth / 5 / pageMask.clientWidth) * (pageMask.clientWidth / pageMask.clientHeight) / 2
       } else if (type === 'initials') {
@@ -1239,7 +1268,7 @@ export default {
             w: area.maskW / 5 / area.maskW,
             h: (area.maskW / 5 / area.maskW) * (area.maskW / area.maskH)
           }
-        } else if (field.type === 'signature' || field.type === 'stamp') {
+        } else if (field.type === 'signature' || field.type === 'stamp' || field.type === 'verification') {
           baseArea = {
             w: area.maskW / 5 / area.maskW,
             h: (area.maskW / 5 / area.maskW) * (area.maskW / area.maskH) / 2
@@ -1342,7 +1371,9 @@ export default {
       }
 
       this.$nextTick(() => {
-        this.$refs.previews.scrollTop = this.$refs.previews.scrollHeight
+        if (this.$refs.previews) {
+          this.$refs.previews.scrollTop = this.$refs.previews.scrollHeight
+        }
 
         this.scrollIntoDocument(data.schema[0])
       })

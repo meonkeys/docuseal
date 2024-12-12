@@ -57,13 +57,18 @@ class Submission < ApplicationRecord
 
   has_many_attached :preview_documents
 
+  has_many :template_accesses, primary_key: :template_id, foreign_key: :template_id, dependent: nil, inverse_of: false
+
   has_many :template_schema_documents,
            ->(e) { where(uuid: (e.template_schema.presence || e.template.schema).pluck('attachment_uuid')) },
            through: :template, source: :documents_attachments
 
   scope :active, -> { where(archived_at: nil) }
-  scope :pending, -> { joins(:submitters).where(submitters: { completed_at: nil }).distinct }
-  scope :completed, -> { where.not(id: pending.select(:submission_id)) }
+  scope :pending, -> { joins(:submitters).where(submitters: { completed_at: nil }).group(:id) }
+  scope :completed, lambda {
+    where.not(Submitter.where(Submitter.arel_table[:submission_id].eq(Submission.arel_table[:id])
+     .and(Submitter.arel_table[:completed_at].eq(nil))).select(1).arel.exists)
+  }
 
   enum :source, {
     invite: 'invite',

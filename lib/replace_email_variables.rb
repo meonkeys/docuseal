@@ -19,6 +19,8 @@ module ReplaceEmailVariables
   DOCUMENTS_LINKS = /\{+documents\.links\}+/i
   DOCUMENTS_LINK = /\{+documents\.link\}+/i
 
+  EMAIL_HOST = ENV.fetch('EMAIL_HOST', nil)
+
   module_function
 
   # rubocop:disable Metrics
@@ -64,10 +66,17 @@ module ReplaceEmailVariables
 
   def build_submitter_link(submitter, tracking_event_type)
     if tracking_event_type == 'click_email'
+      url_options =
+        if EMAIL_HOST.present?
+          { host: EMAIL_HOST, protocol: ENV['FORCE_SSL'].present? ? 'https' : 'http' }
+        else
+          Docuseal.default_url_options
+        end
+
       Rails.application.routes.url_helpers.submit_form_url(
         slug: submitter.slug,
         t: SubmissionEvents.build_tracking_param(submitter, 'click_email'),
-        **Docuseal.default_url_options
+        **url_options
       )
     else
       Rails.application.routes.url_helpers.submit_form_url(
@@ -83,6 +92,6 @@ module ReplaceEmailVariables
   end
 
   def build_submission_submitters(submission)
-    submission.submitters.order(:completed_at).map { |e| e.name || e.email || e.phone }.join(', ')
+    submission.submitters.order(:completed_at).map { |e| e.name || e.email || e.phone }.uniq.join(', ')
   end
 end

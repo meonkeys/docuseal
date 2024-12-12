@@ -1,4 +1,6 @@
 const en = {
+  verify_id: 'Verify ID',
+  obtain_qualified_electronic_signature_with_the_trusted_provider_click_to_learn_more: 'Obtain qualified electronic signature (QeS) with the trusted provider. Click to learn more.',
   editable: 'Editable',
   recurrent: 'Recurrent',
   one_off: 'One-off',
@@ -126,7 +128,6 @@ const en = {
   unlock_sms_verified_phone_number_field_with_paid_plan_use_text_field_for_phone_numbers_without_verification: 'Unlock SMS-verified phone number field with paid plan. Use text field for phone numbers without verification.',
   available_only_in_pro: 'Available only in Pro',
   failed_to_download_files: 'Failed to download files',
-  signature_is_too_small_please_redraw: 'Signature is too small - please redraw.',
   please_add_fields_for_the_submitter_name_or_remove_the_submitter_name_if_not_needed: 'Please add fields for the {submitter_name}. Or, remove the {submitter_name} if not needed.',
   draw_field: 'Draw {field} Field',
   replace: 'Replace',
@@ -149,10 +150,14 @@ const en = {
   preferences: 'Preferences',
   available_in_pro: 'Available in Pro',
   some_fields_are_missing_in_the_formula: 'Some fields are missing in the formula.',
-  learn_more: 'Learn more'
+  learn_more: 'Learn more',
+  and: 'and',
+  or: 'or'
 }
 
 const es = {
+  verify_id: 'Verificar ID',
+  obtain_qualified_electronic_signature_with_the_trusted_provider_click_to_learn_more: 'Obtenga una firma electrónica cualificada (QeS) con el proveedor de confianza. Haga clic para obtener más información.',
   recurrent: 'Recurrente',
   one_off: 'Único',
   editable: 'Editable',
@@ -277,7 +282,6 @@ const es = {
   unlock_sms_verified_phone_number_field_with_paid_plan_use_text_field_for_phone_numbers_without_verification: 'Desbloquea el campo de número de teléfono verificado por SMS con un plan pago. Usa el campo de texto para números de teléfono sin verificación.',
   available_only_in_pro: 'Disponible solo en Pro',
   failed_to_download_files: 'Error al descargar los archivos',
-  signature_is_too_small_please_redraw: 'La firma es demasiado pequeña. Por favor, dibújala de nuevo.',
   please_add_fields_for_the_submitter_name_or_remove_the_submitter_name_if_not_needed: 'Por favor, añade campos para {submitter_name} o elimina {submitter_name} si no es necesario.',
   draw_field: 'Dibujar campo {field}',
   replace: 'Reemplazar',
@@ -303,10 +307,14 @@ const es = {
   preferences: 'Preferencias',
   available_in_pro: 'Disponible en Pro',
   some_fields_are_missing_in_the_formula: 'Faltan algunos campos en la fórmula.',
-  learn_more: 'Aprende más'
+  learn_more: 'Aprende más',
+  and: 'y',
+  or: 'o'
 }
 
 const it = {
+  verify_id: 'Verifica ID',
+  obtain_qualified_electronic_signature_with_the_trusted_provider_click_to_learn_more: 'Ottieni una firma elettronica qualificata (QeS) con il fornitore di fiducia. Clicca per saperne di più.',
   ricorrente: 'Ricorrente',
   una_volta: 'Una volta',
   editable: 'Modificabile',
@@ -434,7 +442,6 @@ const it = {
   unlock_sms_verified_phone_number_field_with_paid_plan_use_text_field_for_phone_numbers_without_verification: 'Sblocca il campo numero di telefono verificato tramite SMS con un piano a pagamento. Usa il campo di testo per numeri di telefono senza verifica.',
   available_only_in_pro: 'Disponibile solo in Pro',
   failed_to_download_files: 'Impossibile scaricare i file',
-  signature_is_too_small_please_redraw: 'La firma è troppo piccola. Ridisegnala per favore.',
   please_add_fields_for_the_submitter_name_or_remove_the_submitter_name_if_not_needed: 'Aggiungi campi per {submitter_name} o rimuovi {submitter_name} se non necessario.',
   draw_field: 'Disegna il campo {field}',
   replace: 'Sostituisci',
@@ -457,10 +464,14 @@ const it = {
   preferences: 'Preferenze',
   available_in_pro: 'Disponibile in Pro',
   some_fields_are_missing_in_the_formula: 'Alcuni campi mancano nella formula.',
-  learn_more: 'Scopri di più'
+  learn_more: 'Scopri di più',
+  and: 'e',
+  or: 'o'
 }
 
 const pt = {
+  verify_id: 'Verificar ID',
+  obtain_qualified_electronic_signature_with_the_trusted_provider_click_to_learn_more: 'Obtenha a assinatura eletrônica qualificada (QeS) com o provedor confiável. Clique para saber mais.',
   recurrent: 'Recurrente',
   one_off: 'Único',
   editable: 'Editável',
@@ -585,7 +596,6 @@ const pt = {
   unlock_sms_verified_phone_number_field_with_paid_plan_use_text_field_for_phone_numbers_without_verification: 'Desbloqueie o campo de número de telefone verificado por SMS com um plano pago. Use o campo de texto para números de telefone sem verificação.',
   available_only_in_pro: 'Disponível apenas no Pro',
   failed_to_download_files: 'Falha ao baixar arquivos',
-  signature_is_too_small_please_redraw: 'A assinatura é muito pequena. Por favor, redesenhe.',
   please_add_fields_for_the_submitter_name_or_remove_the_submitter_name_if_not_needed: 'Adicione campos para {submitter_name} ou remova {submitter_name} se não for necessário.',
   draw_field: 'Desenhar campo {field}',
   replace: 'Substituir',
@@ -611,10 +621,14 @@ const pt = {
   preferences: 'Preferências',
   available_in_pro: 'Disponível no Pro',
   some_fields_are_missing_in_the_formula: 'Faltam alguns campos na fórmula.',
-  learn_more: 'Saiba mais'
+  learn_more: 'Saiba mais',
+  and: 'e',
+  or: 'ou'
 }
 
 const fr = {
+  verify_id: "Vérifier l'ID",
+  obtain_qualified_electronic_signature_with_the_trusted_provider_click_to_learn_more: 'Obtenez une signature électronique qualifiée (QeS) avec le fournisseur de confiance. Cliquez pour en savoir plus.',
   recurrent: 'Récurrent',
   one_off: 'Ponctuel',
   editable: 'Éditable',
@@ -739,7 +753,6 @@ const fr = {
   unlock_sms_verified_phone_number_field_with_paid_plan_use_text_field_for_phone_numbers_without_verification: 'Débloquez le champ de numéro de téléphone vérifié par SMS avec un plan payant. Utilisez un champ texte pour les numéros de téléphone sans vérification.',
   available_only_in_pro: 'Disponible uniquement en Pro',
   failed_to_download_files: 'Échec du téléchargement des fichiers',
-  signature_is_too_small_please_redraw: 'La signature est trop petite. Veuillez la redessiner.',
   please_add_fields_for_the_submitter_name_or_remove_the_submitter_name_if_not_needed: 'Veuillez ajouter des champs pour {submitter_name} ou retirer {submitter_name} si ce n\'est pas nécessaire.',
   draw_field: 'Dessiner le champ {field}',
   replace: 'Remplacer',
@@ -765,10 +778,14 @@ const fr = {
   preferences: 'Préférences',
   available_in_pro: 'Disponible en version Pro',
   some_fields_are_missing_in_the_formula: 'Certains champs manquent dans la formule.',
-  learn_more: 'En savoir plus'
+  learn_more: 'En savoir plus',
+  and: 'et',
+  or: 'ou'
 }
 
 const de = {
+  verify_id: 'ID überprüfen',
+  obtain_qualified_electronic_signature_with_the_trusted_provider_click_to_learn_more: 'Erhalten Sie eine qualifizierte elektronische Signatur (QeS) beim vertrauenswürdigen Anbieter. Klicken Sie hier, um mehr zu erfahren.',
   wiederkehrend: 'Wiederkehrend',
   einmalig: 'Einmalig',
   editable: 'Bearbeitbar',
@@ -893,7 +910,6 @@ const de = {
   unlock_sms_verified_phone_number_field_with_paid_plan_use_text_field_for_phone_numbers_without_verification: 'Schalte das SMS-verifizierte Telefonnummernfeld mit einem kostenpflichtigen Plan frei. Verwende das Textfeld für Telefonnummern ohne Verifizierung.',
   available_only_in_pro: 'Nur in Pro verfügbar',
   failed_to_download_files: 'Fehler beim Herunterladen der Dateien',
-  signature_is_too_small_please_redraw: 'Die Unterschrift ist zu klein. Bitte erneut zeichnen.',
   please_add_fields_for_the_submitter_name_or_remove_the_submitter_name_if_not_needed: 'Bitte füge Felder für {submitter_name} hinzu oder entferne {submitter_name}, falls nicht erforderlich.',
   draw_field: 'Feld {field} zeichnen',
   replace: 'Ersetzen',
@@ -919,7 +935,9 @@ const de = {
   preferences: 'Einstellungen',
   available_in_pro: 'In Pro verfügbar',
   some_fields_are_missing_in_the_formula: 'Einige Felder fehlen in der Formel.',
-  learn_more: 'Erfahren Sie mehr'
+  learn_more: 'Erfahren Sie mehr',
+  and: 'und',
+  or: 'oder'
 }
 
 export { en, es, it, pt, fr, de }

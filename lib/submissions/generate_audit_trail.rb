@@ -23,7 +23,7 @@ module Submissions
     RTL_REGEXP = TextUtils::RTL_REGEXP
     MAX_IMAGE_HEIGHT = 100
 
-    US_TIMEZONES = %w[EST CST MST PST HST AKDT].freeze
+    US_TIMEZONES = TimeUtils::US_TIMEZONES
 
     module_function
 
@@ -64,7 +64,10 @@ module Submissions
 
     def build_audit_trail(submission)
       account = submission.account
-      verify_url = Rails.application.routes.url_helpers.settings_esign_url(**Docuseal.default_url_options)
+      verify_url = Rails.application.routes.url_helpers.settings_esign_url(
+        **Docuseal.default_url_options, host: ENV.fetch('EMAIL_HOST', Docuseal.default_url_options[:host])
+      )
+
       page_size =
         if TimeUtils.timezone_abbr(account.timezone, Time.current.beginning_of_year).in?(US_TIMEZONES)
           :Letter
@@ -231,6 +234,11 @@ module Submissions
             e['type'] == 'phone' && e['submitter_uuid'] == submitter.uuid && submitter.values[e['uuid']].present?
           end
 
+        is_id_verified =
+          submission.template_fields.any? do |e|
+            e['type'] == 'verification' && e['submitter_uuid'] == submitter.uuid && submitter.values[e['uuid']].present?
+          end
+
         submitter_field_counters = Hash.new { 0 }
 
         info_rows = [
@@ -252,6 +260,9 @@ module Submissions
                 },
                 submitter.phone && is_phone_verified && {
                   text: "#{I18n.t('phone_verification')}: #{I18n.t('verified')}\n"
+                },
+                is_id_verified && {
+                  text: "#{I18n.t('identity_verification')}: #{I18n.t('verified')}\n"
                 },
                 completed_event.data['ip'] && { text: "IP: #{completed_event.data['ip']}\n" },
                 completed_event.data['sid'] && { text: "#{I18n.t('session_id')}: #{completed_event.data['sid']}\n" },
@@ -373,9 +384,12 @@ module Submissions
           end
 
         text =
-          if event.event_type == 'invite_party' &&
-             (invited_submitter = submission.submitters.find { |e| e.uuid == event.data['uuid'] }) &&
-             (name = submission.template_submitters.find { |e| e['uuid'] == event.data['uuid'] }&.dig('name'))
+          if event.event_type == 'complete_verification'
+            I18n.t('submission_event_names.complete_verification_by_html', provider: event.data['method'],
+                                                                           submitter_name:)
+          elsif event.event_type == 'invite_party' &&
+                (invited_submitter = submission.submitters.find { |e| e.uuid == event.data['uuid'] }) &&
+                (name = submission.template_submitters.find { |e| e['uuid'] == event.data['uuid'] }&.dig('name'))
             invited_submitter_name = [invited_submitter.name || invited_submitter.email || invited_submitter.phone,
                                       name].join(' ')
             I18n.t('submission_event_names.invite_party_by_html', invited_submitter_name:,
@@ -411,7 +425,7 @@ module Submissions
       column.image(PdfIcons.logo_io, width: 40, height: 40, position: :float)
 
       column.formatted_text([{ text: 'DocuSeal',
-                               link: Docuseal::PRODUCT_URL }],
+                               link: Docuseal::PRODUCT_EMAIL_URL }],
                             font_size: 20,
                             font: [FONT_NAME, { variant: :bold }],
                             width: 100,

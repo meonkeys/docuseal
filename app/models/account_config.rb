@@ -43,6 +43,8 @@ class AccountConfig < ApplicationRecord
   REQUIRE_SIGNING_REASON_KEY = 'require_signing_reason'
   REUSE_SIGNATURE_KEY = 'reuse_signature'
   COMBINE_PDF_RESULT_KEY = 'combine_pdf_result_key'
+  DOCUMENT_FILENAME_FORMAT_KEY = 'document_filename_format'
+  POLICY_LINKS_KEY = 'policy_links'
 
   DEFAULT_VALUES = {
     SUBMITTER_INVITATION_EMAIL_KEY => lambda {
