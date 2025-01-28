@@ -9,7 +9,7 @@
         <div class="flex items-center space-x-2">
           <span
             class="w-3 h-3 flex-shrink-0 rounded-full"
-            :class="colors[submitters.indexOf(selectedSubmitter)]"
+            :class="colors[submitters.indexOf(selectedSubmitter) % colors.length]"
           />
           <Contenteditable
             v-model="selectedSubmitter.name"
@@ -53,7 +53,7 @@
               <span class="py-1 flex items-center">
                 <span
                   class="rounded-full w-3 h-3 ml-1 mr-3"
-                  :class="colors[index]"
+                  :class="colors[index % colors.length]"
                 />
                 <span>
                   {{ submitter.name }}
@@ -101,7 +101,7 @@
     >
       <button
         class="mx-1 w-3 h-3 rounded-full"
-        :class="colors[submitters.indexOf(selectedSubmitter)]"
+        :class="colors[submitters.indexOf(selectedSubmitter) % colors.length]"
       />
     </label>
     <label
@@ -113,7 +113,7 @@
       <div class="flex items-center space-x-2">
         <span
           class="w-3 h-3 rounded-full"
-          :class="colors[submitters.indexOf(selectedSubmitter)]"
+          :class="colors[submitters.indexOf(selectedSubmitter) % colors.length]"
         />
         <Contenteditable
           v-model="selectedSubmitter.name"
@@ -143,6 +143,7 @@
       <li
         v-for="(submitter, index) in submitters"
         :key="submitter.uuid"
+        class="w-full"
       >
         <a
           href="#"
@@ -153,7 +154,7 @@
           <span class="py-1 flex items-center">
             <span
               class="rounded-full w-3 h-3 ml-1 mr-3"
-              :class="colors[index]"
+              :class="colors[index % colors.length]"
             />
             <span>
               {{ submitter.name }}
@@ -191,7 +192,10 @@
           </div>
         </a>
       </li>
-      <li v-if="submitters.length < names.length && editable && allowAddNew">
+      <li
+        v-if="submitters.length < names.length && editable && allowAddNew"
+        class="w-full"
+      >
         <a
           href="#"
           class="flex px-2"
@@ -214,6 +218,14 @@
 import { IconUserPlus, IconTrashX, IconPlus, IconChevronUp, IconChevronDown } from '@tabler/icons-vue'
 import Contenteditable from './contenteditable'
 import { v4 } from 'uuid'
+
+function getOrdinalSuffix (num) {
+  if (num % 10 === 1 && num % 100 !== 11) return 'st'
+  if (num % 10 === 2 && num % 100 !== 12) return 'nd'
+  if (num % 10 === 3 && num % 100 !== 13) return 'rd'
+
+  return 'th'
+}
 
 export default {
   name: 'FieldSubmitter',
@@ -284,20 +296,18 @@ export default {
         'bg-cyan-500',
         'bg-orange-500',
         'bg-lime-500',
-        'bg-indigo-500',
-        'bg-red-500',
-        'bg-sky-500',
-        'bg-emerald-500',
-        'bg-yellow-300',
-        'bg-purple-600',
-        'bg-pink-500',
-        'bg-cyan-500',
-        'bg-orange-500',
-        'bg-lime-500',
         'bg-indigo-500'
       ]
     },
     names () {
+      const generatedNames = []
+
+      for (let i = 21; i < 101; i++) {
+        const suffix = getOrdinalSuffix(i)
+
+        generatedNames.push(`${i}${suffix} ${this.t('party')}`)
+      }
+
       return [
         this.t('first_party'),
         this.t('second_party'),
@@ -318,7 +328,8 @@ export default {
         this.t('seventeenth_party'),
         this.t('eighteenth_party'),
         this.t('nineteenth_party'),
-        this.t('twentieth_party')
+        this.t('twentieth_party'),
+        ...generatedNames
       ]
     },
     lastPartyIndex () {
@@ -372,7 +383,7 @@ export default {
       this.$emit('new-submitter', newSubmitter)
     },
     closeDropdown () {
-      document.activeElement.blur()
+      this.$el.getRootNode().activeElement.blur()
     }
   }
 }

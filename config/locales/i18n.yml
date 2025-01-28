@@ -20,9 +20,11 @@ en: &en
   language_ko: 한국어
   hi_there: Hi there
   thanks: Thanks
+  reply_to: Reply to
   pending_by_me: Pending by me
   partially_completed: Partially completed
   unarchive: Unarchive
+  signed: Signed
   first_party: 'First Party'
   remove_filter: Remove filter
   add: Add
@@ -163,7 +165,7 @@ en: &en
   schedule_account_for_deletion_: Schedule account for deletion?
   account_information_has_been_updated: Account information has been updated.
   should_be_a_valid_url: should be a valid URL
-  your_account_removal_request_will_be_processed_within_2_weeks_please_contact_us_if_you_want_to_keep_your_account: Your account removal request will be processed within 2 weeks. Please contact us if you want to keep your account.
+  your_account_removal_request_will_be_processed_within_2_months_please_contact_us_if_you_want_to_keep_your_account: Your account removal request will be processed within 2 months. Please contact us if you want to keep your account.
   test_mode: Test mode
   copy: Copy
   copied: Copied
@@ -682,6 +684,12 @@ en: &en
   click_here_to_learn_more_about_user_roles_and_permissions_html: '<a href="https://www.docuseal.com/resources/manage-users-and-roles" class="link" rel="noopener noreferrer nofollow" target="_blank">Click here</a> to learn more about user roles and permissions.'
   count_10_signature_request_emails_sent_this_month_upgrade_to_pro_to_send_unlimited_signature_request_email: '%{count} / 10 signature request emails sent this month. Upgrade to Pro to send unlimited signature request email.'
   test_mode_emails_limit_will_be_reset_within_24_hours: Test mode emails limit will be reset within 24 hours.
+  on_a_scale_of_1_to_10_how_satisfied_are_you_with_the_docuseal_product_: On a scale of 1 to 10, how satisfied are you with the DocuSeal product?
+  tell_us_more_about_your_experience: Tell us more about your experience
+  extremely_dissatisfied: Extremely Dissatisfied
+  extremely_satisfied: Extremely Satisfied
+  your_pro_plan_payment_is_overdue: Your Pro plan payment is overdue.
+  click_here_to_update_your_payment_details_and_clear_the_invoice_to_ensure_uninterrupted_service_html: <a href="%{url}" class="link">Click here</a> to update your payment details and clear the invoice to ensure uninterrupted service.
   submission_event_names:
     send_email_to_html: '<b>Email sent</b> to %{submitter_name}'
     send_reminder_email_to_html: '<b>Reminder email sent</b> to %{submitter_name}'
@@ -720,6 +728,8 @@ en: &en
       read: Read your data
 
 es: &es
+  signed: Firmado
+  reply_to: Responder a
   partially_completed: Parcialmente completado
   pending_by_me: Pendiente por mi
   add: Agregar
@@ -865,7 +875,7 @@ es: &es
   schedule_account_for_deletion_: ¿Programar la eliminación de la cuenta?
   account_information_has_been_updated: La información de la cuenta ha sido actualizada.
   should_be_a_valid_url: debe ser una URL válida
-  your_account_removal_request_will_be_processed_within_2_weeks_please_contact_us_if_you_want_to_keep_your_account: Tu solicitud de eliminación de cuenta se procesará en un plazo de 2 semanas. Por favor contáctanos si deseas mantener tu cuenta.
+  your_account_removal_request_will_be_processed_within_2_months_please_contact_us_if_you_want_to_keep_your_account: Tu solicitud de eliminación de cuenta se procesará en un plazo de 2 meses. Por favor contáctanos si deseas mantener tu cuenta.
   test_mode: Modo de prueba
   copy: Copiar
   copied: Copiado
@@ -1384,6 +1394,12 @@ es: &es
   click_here_to_learn_more_about_user_roles_and_permissions_html: '<a href="https://www.docuseal.com/resources/manage-users-and-roles" class="link" rel="noopener noreferrer nofollow" target="_blank">Haz clic aquí</a> para obtener más información sobre los roles y permisos de usuario.'
   count_10_signature_request_emails_sent_this_month_upgrade_to_pro_to_send_unlimited_signature_request_email: '%{count} / 10 correos electrónicos de solicitud de firma enviados este mes. Mejora a Pro para enviar solicitudes de firma ilimitadas.'
   test_mode_emails_limit_will_be_reset_within_24_hours: El límite de correos electrónicos en modo de prueba se restablecerá en 24 horas.
+  on_a_scale_of_1_to_10_how_satisfied_are_you_with_the_docuseal_product_: 'En una escala del 1 al 10, ¿qué tan satisfecho estás con el producto DocuSeal?'
+  tell_us_more_about_your_experience: Cuéntanos más sobre tu experiencia
+  extremely_dissatisfied: Extremadamente insatisfecho
+  extremely_satisfied: Extremadamente satisfecho
+  your_pro_plan_payment_is_overdue: El pago de tu plan Pro está atrasado.
+  click_here_to_update_your_payment_details_and_clear_the_invoice_to_ensure_uninterrupted_service_html: '<a href="%{url}" class="link">Haz clic aquí</a> para actualizar tus datos de pago y liquidar la factura para garantizar un servicio ininterrumpido.'
   submission_event_names:
     send_email_to_html: '<b>Correo electrónico enviado</b> a %{submitter_name}'
     send_reminder_email_to_html: '<b>Correo de recordatorio enviado</b> a %{submitter_name}'
@@ -1422,6 +1438,8 @@ es: &es
       read: Leer tus datos
 
 it: &it
+  signed: Firmato
+  reply_to: Rispondi a
   pending_by_me: In sospeso da me
   add: Aggiungi
   adding: Aggiungendo
@@ -1437,7 +1455,7 @@ it: &it
   document_name: Nome del Documento
   unarchive: Ripristina
   awaiting_completion_by_the_other_party: "In attesa di completamento da parte dell'altra parte"
-  enforce_recipients_order: Aplicar el orden de los destinatarios
+  enforce_recipients_order: "Applicare l'ordine dei destinatari"
   first_party: 'Prima parte'
   docuseal_trusted_signature: "Firma Fiduciaria DocuSeal"
   hello_name: Ciao %{name}
@@ -1566,7 +1584,7 @@ it: &it
   schedule_account_for_deletion_: "Programmare l'eliminazione dell'account?"
   account_information_has_been_updated: "Le informazioni dell'account sono state aggiornate."
   should_be_a_valid_url: deve essere un URL valido
-  your_account_removal_request_will_be_processed_within_2_weeks_please_contact_us_if_you_want_to_keep_your_account: "La tua richiesta di rimozione dell'account sarà elaborata entro 2 settimane. Contattaci se desideri mantenere il tuo account."
+  your_account_removal_request_will_be_processed_within_2_months_please_contact_us_if_you_want_to_keep_your_account: "La tua richiesta di rimozione dell'account sarà elaborata entro 2 mesi. Contattaci se desideri mantenere il tuo account."
   test_mode: Modalità di test
   copy: Copia
   copied: Copiato
@@ -2085,6 +2103,12 @@ it: &it
   click_here_to_learn_more_about_user_roles_and_permissions_html: '<a href="https://www.docuseal.com/resources/manage-users-and-roles" class="link" rel="noopener noreferrer nofollow" target="_blank">Fai clic qui</a> per saperne di più sui ruoli e le autorizzazioni degli utenti.'
   count_10_signature_request_emails_sent_this_month_upgrade_to_pro_to_send_unlimited_signature_request_email: '%{count} / 10 e-mail di richiesta di firma inviati questo mese. Passa a Pro per inviare richieste di firma illimitate.'
   test_mode_emails_limit_will_be_reset_within_24_hours: Il limite di e-mail in modalità di test verrà ripristinato entro 24 ore.
+  on_a_scale_of_1_to_10_how_satisfied_are_you_with_the_docuseal_product_: 'Su una scala da 1 a 10, quanto sei soddisfatto del prodotto DocuSeal?'
+  tell_us_more_about_your_experience: Raccontaci di più sulla tua esperienza
+  extremely_dissatisfied: Estremamente insoddisfatto
+  extremely_satisfied: Estremamente soddisfatto
+  your_pro_plan_payment_is_overdue: Il pagamento del tuo piano Pro è in ritardo.
+  click_here_to_update_your_payment_details_and_clear_the_invoice_to_ensure_uninterrupted_service_html: '<a href="%{url}" class="link">Fai clic qui</a> per aggiornare i tuoi dati di pagamento e saldare la fattura per garantire un servizio ininterrotto.'
   submission_event_names:
     send_email_to_html: '<b>E-mail inviato</b> a %{submitter_name}'
     send_reminder_email_to_html: '<b>E-mail di promemoria inviato</b> a %{submitter_name}'
@@ -2123,6 +2147,8 @@ it: &it
       read: Leggi i tuoi dati
 
 fr: &fr
+  signed: Signé
+  reply_to: Répondre à
   partially_completed: Partiellement complété
   pending_by_me: En attente par moi
   add: Ajouter
@@ -2269,7 +2295,7 @@ fr: &fr
   schedule_account_for_deletion_: Programmer la suppression du compte?
   account_information_has_been_updated: Les informations du compte ont été mises à jour.
   should_be_a_valid_url: doit être une URL valide
-  your_account_removal_request_will_be_processed_within_2_weeks_please_contact_us_if_you_want_to_keep_your_account: Votre demande de suppression du compte sera traitée dans un délai de 2 semaines. Veuillez nous contacter si vous souhaitez conserver votre compte.
+  your_account_removal_request_will_be_processed_within_2_months_please_contact_us_if_you_want_to_keep_your_account: Votre demande de suppression du compte sera traitée dans un délai de 2 mois. Veuillez nous contacter si vous souhaitez conserver votre compte.
   test_mode: Mode test
   copy: Copier
   copied: Copié
@@ -2741,11 +2767,11 @@ fr: &fr
   unverified: Non vérifié
   document: Document
   completed_at: Terminé le
-  edit_recipient: Modifica Destinatario
-  update_recipient: Aggiorna Destinatario
-  use_international_format_1xxx_: 'Utilizza il formato internazionale: +1xxx...'
-  submitter_cannot_be_updated: Il mittente non può essere aggiornato.
-  at_least_one_field_must_be_filled: Almeno un campo deve essere compilato.
+  edit_recipient: Modifier le destinataire
+  update_recipient: Mettre à jour le destinataire
+  use_international_format_1xxx_: 'Utilisez un format international : +1xxx...'
+  submitter_cannot_be_updated: Le soumissionnaire ne peut pas être mis à jour.
+  at_least_one_field_must_be_filled: Au moins un champ doit être rempli.
   archived_users: Utilisateurs Archivés
   embedding_users: Utilisateurs Intégrés
   view_embedding_users: Voir les Utilisateurs Intégrés
@@ -2788,6 +2814,12 @@ fr: &fr
   click_here_to_learn_more_about_user_roles_and_permissions_html: '<a href="https://www.docuseal.com/resources/manage-users-and-roles" class="link" rel="noopener noreferrer nofollow" target="_blank">Cliquez ici</a> pour en savoir plus sur les rôles et les autorisations des utilisateurs.'
   count_10_signature_request_emails_sent_this_month_upgrade_to_pro_to_send_unlimited_signature_request_email: '%{count} / 10 e-mails de demande de signature envoyés ce mois-ci. Passez à Pro pour envoyer des demandes de signature illimitées.'
   test_mode_emails_limit_will_be_reset_within_24_hours: La limite d'e-mails en mode test sera réinitialisée dans les 24 heures.
+  on_a_scale_of_1_to_10_how_satisfied_are_you_with_the_docuseal_product_: 'Sur une échelle de 1 à 10, à quel point êtes-vous satisfait du produit DocuSeal?'
+  tell_us_more_about_your_experience: Parlez-nous davantage de votre expérience
+  extremely_dissatisfied: Extrêmement insatisfait
+  extremely_satisfied: Extrêmement satisfait
+  your_pro_plan_payment_is_overdue: Le paiement de votre plan Pro est en retard.
+  click_here_to_update_your_payment_details_and_clear_the_invoice_to_ensure_uninterrupted_service_html: '<a href="%{url}" class="link">Cliquez ici</a> pour mettre à jour vos informations de paiement et régler la facture afin de garantir un service ininterrompu.'
   submission_event_names:
     send_email_to_html: '<b>E-mail envoyé</b> à %{submitter_name}'
     send_reminder_email_to_html: '<b>E-mail de rappel envoyé</b> à %{submitter_name}'
@@ -2826,6 +2858,8 @@ fr: &fr
       read: Lire vos données
 
 pt: &pt
+  signed: Assinado
+  reply_to: Responder a
   partially_completed: Parcialmente concluído
   pending_by_me: Pendente por mim
   add: Adicionar
@@ -2971,7 +3005,7 @@ pt: &pt
   schedule_account_for_deletion_: Agendar exclusão da conta?
   account_information_has_been_updated: As informações da conta foram atualizadas.
   should_be_a_valid_url: deve ser um URL válido
-  your_account_removal_request_will_be_processed_within_2_weeks_please_contact_us_if_you_want_to_keep_your_account: Seu pedido de remoção da conta será processado em até 2 semanas. Entre em contato conosco se você quiser manter sua conta.
+  your_account_removal_request_will_be_processed_within_2_months_please_contact_us_if_you_want_to_keep_your_account: Seu pedido de remoção da conta será processado em até 2 meses. Entre em contato conosco se você quiser manter sua conta.
   test_mode: Modo de teste
   copy: Copiar
   copied: Copiado
@@ -3490,6 +3524,12 @@ pt: &pt
   click_here_to_learn_more_about_user_roles_and_permissions_html: '<a href="https://www.docuseal.com/resources/manage-users-and-roles" class="link" rel="noopener noreferrer nofollow" target="_blank">Clique aqui</a> para saber mais sobre os papéis e permissões dos usuários.'
   count_10_signature_request_emails_sent_this_month_upgrade_to_pro_to_send_unlimited_signature_request_email: '%{count} / 10 e-mails de solicitação de assinatura enviados este mês. Faça upgrade para Pro para enviar solicitações de assinatura ilimitadas.'
   test_mode_emails_limit_will_be_reset_within_24_hours: O limite de e-mails no modo de teste será redefinido em 24 horas.
+  on_a_scale_of_1_to_10_how_satisfied_are_you_with_the_docuseal_product_: 'Em uma escala de 1 a 10, quão satisfeito você está com o produto DocuSeal?'
+  tell_us_more_about_your_experience: Conte-nos mais sobre sua experiência
+  extremely_dissatisfied: Extremamente insatisfeito
+  extremely_satisfied: Extremamente satisfeito
+  your_pro_plan_payment_is_overdue: O pagamento do seu plano Pro está atrasado.
+  click_here_to_update_your_payment_details_and_clear_the_invoice_to_ensure_uninterrupted_service_html: '<a href="%{url}" class="link">Clique aqui</a> para atualizar seus dados de pagamento e quitar a fatura para garantir um serviço ininterrupto.'
   submission_event_names:
     send_email_to_html: '<b>E-mail enviado</b> para %{submitter_name}'
     send_reminder_email_to_html: '<b>E-mail de lembrete enviado</b> para %{submitter_name}'
@@ -3528,6 +3568,8 @@ pt: &pt
       read: Ler seus dados
 
 de: &de
+  signed: Unterschrieben
+  reply_to: Antworten auf
   partially_completed: Teilweise abgeschlossen
   pending_by_me: Ausstehend von mir
   add: Hinzufügen
@@ -3673,7 +3715,7 @@ de: &de
   schedule_account_for_deletion_: Konto zur Löschung einplanen?
   account_information_has_been_updated: Die Kontoinformationen wurden aktualisiert.
   should_be_a_valid_url: sollte eine gültige URL sein
-  your_account_removal_request_will_be_processed_within_2_weeks_please_contact_us_if_you_want_to_keep_your_account: Deine Anfrage zur Kontolöschung wird innerhalb von 2 Wochen bearbeitet. Bitte kontaktiere uns, wenn du dein Konto behalten möchtest.
+  your_account_removal_request_will_be_processed_within_2_months_please_contact_us_if_you_want_to_keep_your_account: Deine Anfrage zur Kontolöschung wird innerhalb von 2 Monaten bearbeitet. Bitte kontaktiere uns, wenn du dein Konto behalten möchtest.
   test_mode: Testmodus
   copy: Kopieren
   copied: Kopiert
@@ -4192,6 +4234,12 @@ de: &de
   click_here_to_learn_more_about_user_roles_and_permissions_html: '<a href="https://www.docuseal.com/resources/manage-users-and-roles" class="link" rel="noopener noreferrer nofollow" target="_blank">Klicken Sie hier</a>, um mehr über Benutzerrollen und -berechtigungen zu erfahren.'
   count_10_signature_request_emails_sent_this_month_upgrade_to_pro_to_send_unlimited_signature_request_email: '%{count} / 10 Signaturanfrage-E-Mails wurden diesen Monat gesendet. Upgraden Sie zu Pro, um unbegrenzte Signaturanfragen zu senden.'
   test_mode_emails_limit_will_be_reset_within_24_hours: Das Limit für E-Mails im Testmodus wird innerhalb von 24 Stunden zurückgesetzt.
+  on_a_scale_of_1_to_10_how_satisfied_are_you_with_the_docuseal_product_: 'Auf einer Skala von 1 bis 10, wie zufrieden sind Sie mit dem DocuSeal-Produkt?'
+  tell_us_more_about_your_experience: Erzählen Sie uns mehr über Ihre Erfahrung
+  extremely_dissatisfied: Extrem unzufrieden
+  extremely_satisfied: Extrem zufrieden
+  your_pro_plan_payment_is_overdue: Ihre Zahlung für den Pro-Plan ist überfällig.
+  click_here_to_update_your_payment_details_and_clear_the_invoice_to_ensure_uninterrupted_service_html: '<a href="%{url}" class="link">Klicken Sie hier</a>, um Ihre Zahlungsdaten zu aktualisieren und die Rechnung zu begleichen, um einen unterbrechungsfreien Service sicherzustellen.'
   submission_event_names:
     send_email_to_html: '<b>E-Mail gesendet</b> an %{submitter_name}'
     send_reminder_email_to_html: '<b>Erinnerungs-E-Mail gesendet</b> an %{submitter_name}'

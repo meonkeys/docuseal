@@ -197,7 +197,10 @@
       <span v-else-if="field.type === 'date'">
         {{ formattedDate }}
       </span>
-      <span v-else-if="field.type === 'number'">
+      <span
+        v-else-if="field.type === 'number'"
+        class="w-full"
+      >
         {{ formatNumber(modelValue, field.preferences?.format) }}
       </span>
       <span
@@ -447,8 +450,18 @@ export default {
       }
     },
     formatNumber (number, format) {
+      if (!number && number !== 0) {
+        return ''
+      }
+
       if (format === 'comma') {
         return new Intl.NumberFormat('en-US').format(number)
+      } else if (format === 'usd') {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(number)
+      } else if (format === 'gbp') {
+        return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(number)
+      } else if (format === 'eur') {
+        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(number)
       } else if (format === 'dot') {
         return new Intl.NumberFormat('de-DE').format(number)
       } else if (format === 'space') {

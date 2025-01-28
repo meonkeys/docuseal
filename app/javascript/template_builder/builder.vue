@@ -179,6 +179,7 @@
           :with-arrows="template.schema.length > 1"
           :item="item"
           :document="sortedDocuments[index]"
+          :data-document-uuid="item.attachment_uuid"
           :accept-file-types="acceptFileTypes"
           :with-replace-button="withUploadButton"
           :editable="editable"
@@ -221,8 +222,8 @@
       </div>
       <div
         id="pages_container"
-        class="w-full overflow-y-hidden overflow-x-hidden mt-0.5 pt-0.5"
-        :class="isMobile ? 'overflow-y-auto' : 'md:overflow-y-auto'"
+        class="w-full overflow-x-hidden mt-0.5 pt-0.5"
+        :class="isMobile ? 'overflow-y-auto' : 'overflow-y-hidden md:overflow-y-auto'"
       >
         <div
           ref="documents"
@@ -266,6 +267,7 @@
                 :input-mode="inputMode"
                 :default-fields="[...defaultRequiredFields, ...defaultFields]"
                 :allow-draw="!onlyDefinedFields"
+                :data-document-uuid="document.uuid"
                 :default-submitters="defaultSubmitters"
                 :with-field-placeholder="withFieldPlaceholder"
                 :draw-field="drawField"
@@ -701,7 +703,9 @@ export default {
       return this.locale.split('-')[0].toLowerCase()
     },
     isMobile () {
-      return /android|iphone|ipad/i.test(navigator.userAgent)
+      const isMobileSafariIos = 'ontouchstart' in window && navigator.maxTouchPoints > 0 && /AppleWebKit/i.test(navigator.userAgent)
+
+      return isMobileSafariIos || /android|iphone|ipad/i.test(navigator.userAgent)
     },
     defaultDateFormat () {
       const isUsBrowser = Intl.DateTimeFormat().resolvedOptions().locale.endsWith('-US')
@@ -770,13 +774,17 @@ export default {
       }
     })
 
+    const defineSubmittersUuids = this.defineSubmitters.map((name) => {
+      return this.template.submitters.find(e => e.name === name)?.uuid
+    })
+
     this.defineSubmitters.forEach((name, index) => {
       const submitter = (this.template.submitters[index] ||= {})
 
       submitter.name = name || this.submitterDefaultNames[index]
 
-      if (existingSubmittersUuids.filter(Boolean).length) {
-        submitter.uuid = existingSubmittersUuids[index] || submitter.uuid || v4()
+      if (defineSubmittersUuids.filter(Boolean).length || existingSubmittersUuids.filter(Boolean).length) {
+        submitter.uuid = defineSubmittersUuids[index] || existingSubmittersUuids[index] || submitter.uuid || v4()
       } else {
         submitter.uuid ||= v4()
       }
@@ -1312,7 +1320,11 @@ export default {
 
       if (!this.fieldsDragFieldRef.value) {
         if (['select', 'multiple', 'radio'].includes(field.type)) {
-          field.options = [{ value: '', uuid: v4() }]
+          if (this.dragField?.options?.length) {
+            field.options = this.dragField.options.map(option => ({ value: option, uuid: v4() }))
+          } else {
+            field.options = [{ value: '', uuid: v4() }]
+          }
         }
 
         if (['stamp', 'heading'].includes(field.type)) {
@@ -1415,6 +1427,8 @@ export default {
           const documentRef = this.documentRefs.find((e) => e.document.uuid === area.attachment_uuid)
           const areaRef = documentRef.pageRefs[area.page].areaRefs.find((ref) => ref.area === this.selectedAreaRef.value)
 
+          areaRef.isHeadingSelected = true
+
           areaRef.focusValueInput()
         })
       }
@@ -1502,29 +1516,29 @@ export default {
     onDocumentRemove (item) {
       if (window.confirm(this.t('are_you_sure_'))) {
         this.template.schema.splice(this.template.schema.indexOf(item), 1)
-      }
 
-      const removedFieldUuids = []
+        const removedFieldUuids = []
 
-      this.template.fields.forEach((field) => {
-        [...(field.areas || [])].forEach((area) => {
-          if (area.attachment_uuid === item.attachment_uuid) {
-            field.areas.splice(field.areas.indexOf(area), 1)
+        this.template.fields.forEach((field) => {
+          [...(field.areas || [])].forEach((area) => {
+            if (area.attachment_uuid === item.attachment_uuid) {
+              field.areas.splice(field.areas.indexOf(area), 1)
 
-            removedFieldUuids.push(field.uuid)
-          }
+              removedFieldUuids.push(field.uuid)
+            }
+          })
         })
-      })
 
-      this.template.fields =
-        this.template.fields.filter((f) => !removedFieldUuids.includes(f.uuid) || f.areas?.length)
+        this.template.fields =
+          this.template.fields.filter((f) => !removedFieldUuids.includes(f.uuid) || f.areas?.length)
 
-      this.save()
+        this.save()
+      }
     },
     onDocumentReplace (data) {
       const { replaceSchemaItem, schema, documents } = data
 
-      this.template.schema.splice(this.template.schema.indexOf(replaceSchemaItem), 1, schema[0])
+      this.template.schema.splice(this.template.schema.indexOf(replaceSchemaItem), 1, { ...replaceSchemaItem, ...schema[0] })
       this.template.documents.push(...documents)
 
       if (data.fields) {

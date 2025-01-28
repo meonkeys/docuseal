@@ -5,7 +5,7 @@
       class="roles-dropdown w-full rounded-lg"
       :style="withStickySubmitters ? { backgroundColor } : {}"
       :submitters="submitters"
-      :menu-style="{ backgroundColor: ['', null, 'transparent'].includes(backgroundColor) ? 'white' : backgroundColor }"
+      :menu-style="{ overflow: 'auto', display: 'flex', flexDirection: 'row', maxHeight: 'calc(100vh - 120px)', backgroundColor: ['', null, 'transparent'].includes(backgroundColor) ? 'white' : backgroundColor }"
       :editable="editable && !defaultSubmitters.length"
       @new-submitter="save"
       @remove="removeSubmitter"
@@ -26,7 +26,7 @@
       :field="field"
       :type-index="fields.filter((f) => f.type === field.type).indexOf(field)"
       :editable="editable && (!fieldsDragFieldRef.value || fieldsDragFieldRef.value !== field)"
-      :default-field="defaultFields.find((f) => f.name === field.name)"
+      :default-field="defaultFieldsIndex[field.name]"
       :draggable="editable"
       @dragstart="fieldsDragFieldRef.value = field"
       @dragend="fieldsDragFieldRef.value = null"
@@ -299,6 +299,13 @@ export default {
     isShowFieldSearch () {
       return this.submitterDefaultFields.length > 15
     },
+    defaultFieldsIndex () {
+      return this.defaultFields.reduce((acc, field) => {
+        acc[field.name] = field
+
+        return acc
+      }, {})
+    },
     fieldIconsSorted () {
       if (this.fieldTypes.length) {
         return this.fieldTypes.reduce((acc, type) => {
@@ -320,7 +327,7 @@ export default {
     },
     filteredSubmitterDefaultFields () {
       if (this.defaultFieldsSearch) {
-        return this.submitterDefaultFields.filter((f) => f.name.toLowerCase().includes(this.defaultFieldsSearch.toLowerCase()))
+        return this.submitterDefaultFields.filter((f) => (f.title || f.name).toLowerCase().includes(this.defaultFieldsSearch.toLowerCase()))
       } else {
         return this.submitterDefaultFields
       }

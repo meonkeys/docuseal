@@ -10,7 +10,7 @@
     <div
       v-if="isSelected || isDraw"
       class="top-0 bottom-0 right-0 left-0 absolute border border-1.5 pointer-events-none"
-      :class="field.type === 'heading' ? '' : borderColors[submitterIndex]"
+      :class="field.type === 'heading' ? '' : borderColors[submitterIndex % borderColors.length]"
     />
     <div
       v-if="field.type === 'cells' && (isSelected || isDraw)"
@@ -20,7 +20,7 @@
         v-for="(cellW, index) in cells"
         :key="index"
         class="absolute top-0 bottom-0 border-r"
-        :class="field.type === 'heading' ? '' : borderColors[submitterIndex]"
+        :class="field.type === 'heading' ? '' : borderColors[submitterIndex % borderColors.length]"
         :style="{ left: (cellW / area.w * 100) + '%' }"
       >
         <span
@@ -70,7 +70,7 @@
         @keydown.enter.prevent="onNameEnter"
         @focus="onNameFocus"
         @blur="onNameBlur"
-      >{{ optionIndexText }} {{ (defaultField ? (field.title || field.name) : field.name) || defaultName }}</span>
+      >{{ optionIndexText }} {{ (defaultField ? (defaultField.title || field.title || field.name) : field.name) || defaultName }}</span>
       <div
         v-if="isSettingsFocus || (isValueInput && field.type !== 'heading') || (isNameFocus && !['checkbox', 'phone'].includes(field.type))"
         class="flex items-center ml-1.5"
@@ -161,7 +161,7 @@
       ref="touchValueTarget"
       class="flex items-center h-full w-full"
       dir="auto"
-      :class="[isValueInput ? 'bg-opacity-50' : 'bg-opacity-80', field.type === 'heading' ? 'bg-gray-50' : bgColors[submitterIndex], isDefaultValuePresent || isValueInput || (withFieldPlaceholder && field.areas) ? (alignClasses[field.preferences?.align] || '') : 'justify-center']"
+      :class="[isValueInput ? 'bg-opacity-50' : 'bg-opacity-80', field.type === 'heading' ? 'bg-gray-50' : bgColors[submitterIndex % bgColors.length], isDefaultValuePresent || isValueInput || (withFieldPlaceholder && field.areas) ? (alignClasses[field.preferences?.align] || '') : 'justify-center']"
       @click="focusValueInput"
     >
       <span
@@ -212,7 +212,7 @@
               :contenteditable="isValueInput"
               class="whitespace-pre-wrap outline-none empty:before:content-[attr(placeholder)] before:text-gray-400"
               :class="{ 'cursor-text': isValueInput }"
-              :placeholder="withFieldPlaceholder && !isValueInput ? field.name || defaultName : t('type_value')"
+              :placeholder="withFieldPlaceholder && !isValueInput ? defaultField?.title || field.title || field.name || defaultName : t('type_value')"
               @blur="onDefaultValueBlur"
               @paste.prevent="onPaste"
               @keydown.enter="onDefaultValueEnter"
@@ -361,6 +361,7 @@ export default {
       isMoved: false,
       renderDropdown: false,
       isNameFocus: false,
+      isHeadingSelected: false,
       textOverflowChars: 0,
       dragFrom: { x: 0, y: 0 }
     }
@@ -377,7 +378,7 @@ export default {
       }
     },
     isValueInput () {
-      return (this.field.type === 'heading' && this.isSelected) || this.isContenteditable || (this.inputMode && ['text', 'number', 'date'].includes(this.field.type))
+      return (this.field.type === 'heading' && this.isHeadingSelected) || this.isContenteditable || (this.inputMode && ['text', 'number', 'date'].includes(this.field.type))
     },
     modalContainerEl () {
       return this.$el.getRootNode().querySelector('#docuseal_modal_container')
@@ -429,31 +430,11 @@ export default {
         'border-cyan-500/80',
         'border-orange-500/80',
         'border-lime-500/80',
-        'border-indigo-500/80',
-        'border-red-500/80',
-        'border-sky-500/80',
-        'border-emerald-500/80',
-        'border-yellow-300/80',
-        'border-purple-600/80',
-        'border-pink-500/80',
-        'border-cyan-500/80',
-        'border-orange-500/80',
-        'border-lime-500/80',
         'border-indigo-500/80'
       ]
     },
     bgColors () {
       return [
-        'bg-red-100',
-        'bg-sky-100',
-        'bg-emerald-100',
-        'bg-yellow-100',
-        'bg-purple-100',
-        'bg-pink-100',
-        'bg-cyan-100',
-        'bg-orange-100',
-        'bg-lime-100',
-        'bg-indigo-100',
         'bg-red-100',
         'bg-sky-100',
         'bg-emerald-100',
@@ -499,13 +480,13 @@ export default {
   methods: {
     buildDefaultName: Field.methods.buildDefaultName,
     closeDropdown () {
-      document.activeElement.blur()
+      this.$el.getRootNode().activeElement.blur()
     },
     maybeToggleDefaultValue () {
       if (['text', 'number'].includes(this.field.type)) {
         this.isContenteditable = true
 
-        this.$nextTick(() => this.focusValueInput())
+        this.focusValueInput()
       } else if (this.field.type === 'checkbox') {
         this.field.readonly = !this.field.readonly
         this.field.default_value === true ? delete this.field.default_value : this.field.default_value = true
@@ -527,20 +508,28 @@ export default {
       }
     },
     focusValueInput (e) {
-      if (this.$refs.defaultValue !== document.activeElement) {
-        this.$refs.defaultValue.focus()
+      this.$nextTick(() => {
+        if (this.$refs.defaultValue && this.$refs.defaultValue !== document.activeElement) {
+          this.$refs.defaultValue.focus()
 
-        if (this.$refs.defaultValue.innerText.length && this.$refs.defaultValue !== e?.target) {
-          window.getSelection().collapse(
-            this.$refs.defaultValue.firstChild,
-            this.$refs.defaultValue.innerText.length
-          )
+          if (this.$refs.defaultValue.innerText.length && this.$refs.defaultValue !== e?.target) {
+            window.getSelection().collapse(
+              this.$refs.defaultValue.firstChild,
+              this.$refs.defaultValue.innerText.length
+            )
+          }
         }
-      }
+      })
     },
     formatNumber (number, format) {
       if (format === 'comma') {
         return new Intl.NumberFormat('en-US').format(number)
+      } else if (format === 'usd') {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(number)
+      } else if (format === 'gbp') {
+        return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(number)
+      } else if (format === 'eur') {
+        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(number)
       } else if (format === 'dot') {
         return new Intl.NumberFormat('de-DE').format(number)
       } else if (format === 'space') {
@@ -646,6 +635,7 @@ export default {
       const text = this.$refs.defaultValue.innerText.trim()
 
       this.isContenteditable = false
+      this.isHeadingSelected = false
 
       if (text) {
         if (this.field.type === 'number') {
@@ -763,10 +753,6 @@ export default {
 
       this.selectedAreaRef.value = this.area
 
-      if (this.field.type === 'heading') {
-        this.$nextTick(() => this.focusValueInput())
-      }
-
       this.dragFrom = { x: rect.left - e.clientX, y: rect.top - e.clientY }
 
       this.$el.getRootNode().addEventListener('mousemove', this.mouseMove)
@@ -799,6 +785,12 @@ export default {
 
       if (this.isMoved) {
         this.save()
+      }
+
+      if (this.field.type === 'heading') {
+        this.isHeadingSelected = !this.isMoved
+
+        this.focusValueInput()
       }
 
       this.isDragged = false
