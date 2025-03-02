@@ -53,9 +53,17 @@ module Submitters
       submitter.completed_at = Time.current
       submitter.ip = request.remote_ip
       submitter.ua = request.user_agent
+
       submitter.values = merge_default_values(submitter)
       submitter.values = maybe_remove_condition_values(submitter)
-      submitter.values = merge_formula_values(submitter)
+
+      formula_values = build_formula_values(submitter)
+
+      if formula_values.present?
+        submitter.values = submitter.values.merge(formula_values)
+        submitter.values = maybe_remove_condition_values(submitter)
+      end
+
       submitter.values = submitter.values.transform_values do |v|
         v == '{{date}}' ? Time.current.in_time_zone(submitter.account.timezone).to_date.to_s : v
       end
@@ -149,7 +157,7 @@ module Submitters
       default_values.compact_blank.merge(submitter.values)
     end
 
-    def merge_formula_values(submitter)
+    def build_formula_values(submitter)
       computed_values = submitter.submission.template_fields.each_with_object({}) do |field, acc|
         next if field['submitter_uuid'] != submitter.uuid
         next if field['type'] == 'payment'
@@ -161,7 +169,7 @@ module Submitters
         acc[field['uuid']] = calculate_formula_value(formula, submitter.values.merge(acc.compact_blank))
       end
 
-      submitter.values.merge(computed_values.compact_blank)
+      computed_values.compact_blank
     end
 
     def calculate_formula_value(_formula, _values)
@@ -186,10 +194,21 @@ module Submitters
       attachments_index =
         Submissions.filtered_conditions_schema(submitter.submission).index_by { |i| i['attachment_uuid'] }
 
+      submitter_values = nil
+      is_other_submitter_conditions = submitter.submission.template_submitters.size > 1
+
       submitter.submission.template_fields.each do |field|
         next if field['submitter_uuid'] != submitter.uuid
 
-        submitter.values.delete(field['uuid']) unless check_field_conditions(submitter, field, fields_uuid_index)
+        submitter_values ||= submitter.values
+
+        is_other_submitter_conditions &&= field_conditions_other_submitter?(submitter, field, fields_uuid_index)
+
+        if is_other_submitter_conditions
+          submitter_values = submitter.submission.submitters.reduce({}) { |acc, sub| acc.merge(sub.values) }
+        end
+
+        submitter.values.delete(field['uuid']) unless check_field_conditions(submitter_values, field, fields_uuid_index)
 
         if field['areas'].present? && field['areas'].none? { |area| attachments_index[area['attachment_uuid']] }
           submitter.values.delete(field['uuid'])
@@ -199,10 +218,14 @@ module Submitters
       submitter.values
     end
 
-    def check_field_conditions(submitter, field, fields_uuid_index)
-      return true if field['conditions'].blank?
+    def field_conditions_other_submitter?(submitter, field, fields_uuid_index)
+      field['conditions'].to_a.any? do |c|
+        fields_uuid_index.dig(c['field_uuid'], 'submitter_uuid') != submitter.uuid
+      end
+    end
 
-      submitter_values = submitter.values
+    def check_field_conditions(submitter_values, field, fields_uuid_index)
+      return true if field['conditions'].blank?
 
       field['conditions'].each_with_object([]) do |c, acc|
         if c['operation'] == 'or'

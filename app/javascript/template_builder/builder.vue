@@ -366,6 +366,7 @@
             :with-help="withHelp"
             :default-submitters="defaultSubmitters"
             :draw-field-type="drawFieldType"
+            :with-fields-search="withFieldsSearch"
             :default-fields="[...defaultRequiredFields, ...defaultFields]"
             :template="template"
             :default-required-fields="defaultRequiredFields"
@@ -622,6 +623,11 @@ export default {
       type: Boolean,
       required: false,
       default: true
+    },
+    withFieldsSearch: {
+      type: Boolean,
+      required: false,
+      default: null
     },
     withFieldsList: {
       type: Boolean,
@@ -1395,7 +1401,6 @@ export default {
       const lastArea = field.areas[field.areas.length - 1]
 
       if (lastArea) {
-        fieldArea.x -= lastArea.w / 2
         fieldArea.w = lastArea.w
         fieldArea.h = lastArea.h
       }
