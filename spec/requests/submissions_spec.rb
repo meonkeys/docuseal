@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-require 'rails_helper'
-
-describe 'Submission API', type: :request do
+describe 'Submission API' do
   let(:account) { create(:account, :with_testing_account) }
   let(:testing_account) { account.testing_accounts.first }
   let(:author) { create(:user, account:) }
@@ -102,6 +100,21 @@ describe 'Submission API', type: :request do
       submission = Submission.last
 
       expect(response.parsed_body).to eq(JSON.parse(create_submission_body(submission).to_json))
+    end
+
+    it 'creates a submission when the submitter is marked as completed' do
+      post '/api/submissions', headers: { 'x-auth-token': author.access_token.token }, params: {
+        template_id: templates[0].id,
+        submitters: [{ role: 'First Party', email: 'john.doe@example.com', completed: true }]
+      }.to_json
+
+      expect(response).to have_http_status(:ok)
+
+      submission = Submission.last
+      submitter = submission.submitters.first
+
+      expect(submitter.status).to eq('completed')
+      expect(submitter.completed_at).not_to be_nil
     end
 
     it 'creates a submission when some submitter roles are not provided' do
@@ -395,7 +408,7 @@ describe 'Submission API', type: :request do
         preferences: { send_email: true, send_sms: false },
         role: submitter.template.submitters.find { |s| s['uuid'] == submitter.uuid }['name'],
         embed_src: "#{Docuseal::DEFAULT_APP_URL}/s/#{submitter.slug}",
-        values: []
+        values: Submitters::SerializeForWebhook.build_values_array(submitter)
       }
     end
   end

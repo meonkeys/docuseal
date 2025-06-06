@@ -64,13 +64,20 @@ class Submission < ApplicationRecord
            through: :template, source: :documents_attachments
 
   scope :active, -> { where(archived_at: nil) }
-  scope :pending, -> { joins(:submitters).where(submitters: { completed_at: nil }).group(:id) }
+  scope :archived, -> { where.not(archived_at: nil) }
+  scope :pending, lambda {
+    where(Submitter.where(Submitter.arel_table[:submission_id].eq(Submission.arel_table[:id])
+     .and(Submitter.arel_table[:completed_at].eq(nil))).select(1).arel.exists)
+  }
   scope :completed, lambda {
     where.not(Submitter.where(Submitter.arel_table[:submission_id].eq(Submission.arel_table[:id])
      .and(Submitter.arel_table[:completed_at].eq(nil))).select(1).arel.exists)
   }
-  scope :declined, -> { joins(:submitters).where.not(submitters: { declined_at: nil }).group(:id) }
-  scope :expired, -> { where(expire_at: ..Time.current) }
+  scope :declined, lambda {
+    where(Submitter.where(Submitter.arel_table[:submission_id].eq(Submission.arel_table[:id])
+     .and(Submitter.arel_table[:declined_at].not_eq(nil))).select(1).arel.exists)
+  }
+  scope :expired, -> { pending.where(expire_at: ..Time.current) }
 
   enum :source, {
     invite: 'invite',
@@ -87,6 +94,10 @@ class Submission < ApplicationRecord
 
   def expired?
     expire_at && expire_at <= Time.current
+  end
+
+  def fields_uuid_index
+    @fields_uuid_index ||= (template_fields || template.fields).index_by { |f| f['uuid'] }
   end
 
   def audit_trail_url

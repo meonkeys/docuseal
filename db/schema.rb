@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_02_25_111255) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_30_080846) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -22,6 +22,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_25_111255) do
     t.datetime "updated_at", null: false
     t.index ["sha256"], name: "index_access_tokens_on_sha256", unique: true
     t.index ["user_id"], name: "index_access_tokens_on_user_id"
+  end
+
+  create_table "account_accesses", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "user_id"], name: "index_account_accesses_on_account_id_and_user_id", unique: true
   end
 
   create_table "account_configs", force: :cascade do |t|
@@ -166,7 +174,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_25_111255) do
     t.text "data", null: false
     t.datetime "event_datetime", null: false
     t.datetime "created_at", null: false
-    t.index ["account_id"], name: "index_email_events_on_account_id"
+    t.index ["account_id", "event_datetime"], name: "index_email_events_on_account_id_and_event_datetime"
     t.index ["email"], name: "index_email_events_on_email"
     t.index ["emailable_type", "emailable_id"], name: "index_email_events_on_emailable"
     t.index ["message_id"], name: "index_email_events_on_message_id"
@@ -353,6 +361,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_25_111255) do
     t.bigint "folder_id", null: false
     t.string "external_id"
     t.text "preferences", null: false
+    t.boolean "shared_link", default: false, null: false
     t.index ["account_id"], name: "index_templates_on_account_id"
     t.index ["author_id"], name: "index_templates_on_author_id"
     t.index ["external_id"], name: "index_templates_on_external_id"
@@ -415,6 +424,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_25_111255) do
   end
 
   add_foreign_key "access_tokens", "users"
+  add_foreign_key "account_accesses", "accounts"
   add_foreign_key "account_configs", "accounts"
   add_foreign_key "account_linked_accounts", "accounts"
   add_foreign_key "account_linked_accounts", "accounts", column: "linked_account_id"

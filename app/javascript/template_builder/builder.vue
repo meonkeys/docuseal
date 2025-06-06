@@ -1,9 +1,30 @@
 <template>
   <div
+    ref="dragContainer"
     style="max-width: 1600px"
     class="mx-auto pl-3 h-full"
     :class="isMobile ? 'pl-4' : 'md:pl-4'"
+    @dragover="onDragover"
+    @drop="isDragFile = false"
   >
+    <HoverDropzone
+      v-if="sortedDocuments.length && withUploadButton && editable"
+      :is-dragging="isDragFile"
+      :template-id="template.id"
+      :accept-file-types="acceptFileTypes"
+      :with-replace-and-clone="withReplaceAndCloneUpload"
+      @add="[updateFromUpload($event), isDragFile = false]"
+      @replace="[onDocumentsReplace($event), isDragFile = false]"
+      @replace-and-clone="onDocumentsReplaceAndTemplateClone($event)"
+      @error="[onUploadFailed($event), isDragFile = false]"
+    />
+    <DragPlaceholder
+      ref="dragPlaceholder"
+      :field="fieldsDragFieldRef.value || toRaw(dragField)"
+      :is-field="template.fields.includes(fieldsDragFieldRef.value)"
+      :is-default="defaultFields.includes(toRaw(dragField))"
+      :is-required="defaultRequiredFields.includes(toRaw(dragField))"
+    />
     <div
       v-if="pendingFieldAttachmentUuids.length && editable"
       class="top-1.5 sticky h-0 z-20 max-w-2xl mx-auto"
@@ -32,7 +53,7 @@
     <div
       v-if="$slots.buttons || withTitle"
       id="title_container"
-      class="flex justify-between py-1.5 items-center pr-4 top-0 z-10"
+      class="flex justify-between py-1.5 items-center pr-4 top-0 z-10 title-container"
       :class="{ sticky: withStickySubmitters || isBreakpointLg }"
       :style="{ backgroundColor }"
     >
@@ -47,7 +68,7 @@
           v-if="withTitle"
           :model-value="template.name"
           :editable="editable"
-          class="text-xl md:text-3xl font-semibold focus:text-clip"
+          class="text-xl md:text-3xl font-semibold focus:text-clip template-name"
           :icon-stroke-width="2.3"
           @update:model-value="updateName"
         />
@@ -58,12 +79,52 @@
           name="buttons"
         />
         <template v-else>
+          <form
+            v-if="withSignYourselfButton && template.submitters.length < 2"
+            target="_blank"
+            data-turbo="false"
+            class="inline"
+            method="post"
+            :action="`/d/${template.slug}`"
+            @submit="maybeShowErrorTemplateAlert"
+          >
+            <input
+              type="hidden"
+              name="_method"
+              value="put"
+              autocomplete="off"
+            >
+            <input
+              type="hidden"
+              name="authenticity_token"
+              :value="authenticityToken"
+              autocomplete="off"
+            >
+            <input
+              type="hidden"
+              name="selfsign"
+              value="true"
+              autocomplete="off"
+            >
+            <button
+              class="btn btn-primary btn-ghost text-base hidden md:flex"
+              type="submit"
+            >
+              <IconWritingSign
+                width="22"
+                class="inline"
+              />
+              <span class="hidden md:inline">
+                {{ t('sign_yourself') }}
+              </span>
+            </button>
+          </form>
           <a
-            v-if="withSignYourselfButton"
-            :href="template.submitters.length > 1 ? `/templates/${template.id}/submissions/new?selfsign=true` : `/d/${template.slug}`"
+            v-else-if="withSignYourselfButton"
+            id="sign_yourself_button"
+            :href="`/templates/${template.id}/submissions/new?selfsign=true`"
             class="btn btn-primary btn-ghost text-base hidden md:flex"
-            :target="template.submitters.length > 1 ? '' : '_blank'"
-            :data-turbo-frame="template.submitters.length > 1 ? 'modal' : ''"
+            data-turbo-frame="modal"
             @click="maybeShowErrorTemplateAlert"
           >
             <IconWritingSign
@@ -76,6 +137,7 @@
           </a>
           <a
             v-if="withSendButton"
+            id="send_button"
             :href="`/templates/${template.id}/submissions/new?with_link=true`"
             data-turbo-frame="modal"
             class="white-button md:!px-6"
@@ -91,6 +153,7 @@
           </a>
           <span
             v-if="editable"
+            id="save_button_container"
             class="flex"
           >
             <button
@@ -163,7 +226,7 @@
     </div>
     <div
       id="main_container"
-      class="flex"
+      class="flex main-container"
       :class="$slots.buttons || withTitle ? (isMobile ? 'max-h-[calc(100%_-_60px)]' : 'md:max-h-[calc(100%_-_60px)]') : (isMobile ? 'max-h-[100%]' : 'md:max-h-[100%]')"
     >
       <div
@@ -205,7 +268,7 @@
           <button
             v-if="sortedDocuments.length && editable && withAddPageButton"
             id="add_blank_page_button"
-            class="btn btn-outline w-full"
+            class="btn btn-outline w-full add-blank-page-button"
             @click.prevent="addBlankPage"
           >
             <IconInnerShadowTop
@@ -239,7 +302,7 @@
             <button
               v-if="withAddPageButton"
               id="add_blank_page_button"
-              class="btn btn-outline w-full mt-4"
+              class="btn btn-outline w-full mt-4 add-blank-page-button"
               @click.prevent="addBlankPage"
             >
               <IconInnerShadowTop
@@ -266,9 +329,10 @@
                 :is-drag="!!dragField"
                 :input-mode="inputMode"
                 :default-fields="[...defaultRequiredFields, ...defaultFields]"
-                :allow-draw="!onlyDefinedFields"
+                :allow-draw="!onlyDefinedFields || drawField"
                 :data-document-uuid="document.uuid"
                 :default-submitters="defaultSubmitters"
+                :drag-field-placeholder="fieldsDragFieldRef.value || dragField"
                 :with-field-placeholder="withFieldPlaceholder"
                 :draw-field="drawField"
                 :draw-field-type="drawFieldType"
@@ -307,7 +371,7 @@
               <button
                 v-if="withAddPageButton"
                 id="add_blank_page_button"
-                class="btn btn-outline w-full mt-4"
+                class="btn btn-outline w-full mt-4 add-blank-page-button"
                 @click.prevent="addBlankPage"
               >
                 <IconInnerShadowTop
@@ -327,7 +391,7 @@
       <div
         v-if="withFieldsList && !isMobile"
         id="fields_list_container"
-        class="relative w-80 flex-none mt-1 pr-4 pl-0.5 hidden md:block"
+        class="relative w-80 flex-none mt-1 pr-4 pl-0.5 hidden md:block fields-list-container"
         :class="drawField ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'"
       >
         <div
@@ -335,13 +399,13 @@
           class="sticky inset-0 h-full z-20"
           :style="{ backgroundColor }"
         >
-          <div class="bg-base-200 rounded-lg p-5 text-center space-y-4">
+          <div class="bg-base-200 rounded-lg p-5 text-center space-y-4 draw-field-container">
             <p>
               {{ t('draw_field_on_the_document') }}
             </p>
             <div>
               <button
-                class="base-button"
+                class="base-button cancel-draw-button"
                 @click="clearDrawField"
               >
                 {{ t('cancel') }}
@@ -374,12 +438,14 @@
             :with-sticky-submitters="withStickySubmitters"
             :only-defined-fields="onlyDefinedFields"
             :editable="editable"
+            :show-tour-start-form="showTourStartForm"
             @add-field="addField"
             @set-draw="[drawField = $event.field, drawOption = $event.option]"
             @set-draw-type="[drawFieldType = $event, showDrawField = true]"
             @set-drag="dragField = $event"
+            @set-drag-placeholder="$refs.dragPlaceholder.dragPlaceholder = $event"
             @change-submitter="selectedSubmitter = $event"
-            @drag-end="dragField = null"
+            @drag-end="[dragField = null, $refs.dragPlaceholder.dragPlaceholder = null]"
             @scroll-to-area="scrollToArea"
           />
         </div>
@@ -408,13 +474,18 @@
         @select="startFieldDraw($event)"
       />
     </div>
-    <div id="docuseal_modal_container" />
+    <div
+      id="docuseal_modal_container"
+      class="modal-container"
+    />
   </div>
 </template>
 
 <script>
 import Upload from './upload'
 import Dropzone from './dropzone'
+import HoverDropzone from './hover_dropzone'
+import DragPlaceholder from './drag_placeholder'
 import Fields from './fields'
 import MobileDrawField from './mobile_draw_field'
 import Document from './document'
@@ -426,13 +497,14 @@ import MobileFields from './mobile_fields'
 import FieldSubmitter from './field_submitter'
 import { IconPlus, IconUsersPlus, IconDeviceFloppy, IconChevronDown, IconEye, IconWritingSign, IconInnerShadowTop, IconInfoCircle, IconAdjustments } from '@tabler/icons-vue'
 import { v4 } from 'uuid'
-import { ref, computed } from 'vue'
+import { ref, computed, toRaw } from 'vue'
 import * as i18n from './i18n'
 
 export default {
   name: 'TemplateBuilder',
   components: {
     Upload,
+    DragPlaceholder,
     Document,
     Fields,
     IconInfoCircle,
@@ -442,6 +514,7 @@ export default {
     MobileFields,
     Logo,
     Dropzone,
+    HoverDropzone,
     DocumentPreview,
     DocumentControls,
     IconInnerShadowTop,
@@ -457,6 +530,7 @@ export default {
       template: this.template,
       save: this.save,
       t: this.t,
+      assignDropAreaSize: this.assignDropAreaSize,
       currencies: this.currencies,
       locale: this.locale,
       baseFetch: this.baseFetch,
@@ -644,6 +718,11 @@ export default {
       required: false,
       default: true
     },
+    withReplaceAndCloneUpload: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
     withPhone: {
       type: Boolean,
       required: false,
@@ -683,6 +762,11 @@ export default {
       type: Object,
       required: false,
       default: () => ({ headers: {} })
+    },
+    showTourStartForm: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   },
   data () {
@@ -698,7 +782,8 @@ export default {
       copiedArea: null,
       drawFieldType: null,
       drawOption: null,
-      dragField: null
+      dragField: null,
+      isDragFile: false
     }
   },
   computed: {
@@ -810,6 +895,7 @@ export default {
     window.addEventListener('keydown', this.onKeyDown)
 
     window.addEventListener('resize', this.onWindowResize)
+    window.addEventListener('dragleave', this.onWindowDragLeave)
 
     this.$nextTick(() => {
       if (document.location.search?.includes('stripe_connect_success')) {
@@ -828,11 +914,30 @@ export default {
     window.removeEventListener('keydown', this.onKeyDown)
 
     window.removeEventListener('resize', this.onWindowResize)
+    window.removeEventListener('dragleave', this.onWindowDragLeave)
   },
   beforeUpdate () {
     this.documentRefs = []
   },
   methods: {
+    toRaw,
+    onDragover (e) {
+      if (this.$refs.dragPlaceholder?.dragPlaceholder) {
+        this.$refs.dragPlaceholder.isMask = e.target.id === 'mask'
+
+        const ref = this.$refs.dragPlaceholder.dragPlaceholder
+
+        ref.x = e.clientX - ref.offsetX
+        ref.y = e.clientY - ref.offsetY
+      } else if (e.dataTransfer?.types?.includes('Files')) {
+        this.isDragFile = true
+      }
+    },
+    onWindowDragLeave (event) {
+      if (event.clientX <= 0 || event.clientY <= 0 || event.clientX >= window.innerWidth || event.clientY >= window.innerHeight) {
+        this.isDragFile = false
+      }
+    },
     reorderFields (item) {
       const itemFields = []
       const fields = []
@@ -1213,7 +1318,7 @@ export default {
         area.h = (pageMask.clientWidth / 35 / pageMask.clientWidth)
       }
     },
-    onDraw (area) {
+    onDraw ({ area, isTooSmall }) {
       if (this.drawField) {
         if (this.drawOption) {
           const areaWithoutOption = this.drawField.areas?.find((a) => !a.option_uuid)
@@ -1308,7 +1413,7 @@ export default {
           area.y -= area.h / 2
         }
 
-        if (area.w) {
+        if (area.w && (type !== 'checkbox' || this.drawFieldType || !isTooSmall)) {
           this.addField(type, area)
 
           this.selectedAreaRef.value = area
@@ -1316,6 +1421,10 @@ export default {
       }
     },
     onDropfield (area) {
+      if (this.$refs.dragPlaceholder) {
+        this.$refs.dragPlaceholder.dragPlaceholder = null
+      }
+
       if (!this.editable) {
         return
       }
@@ -1326,6 +1435,10 @@ export default {
         submitter_uuid: this.selectedSubmitter.uuid,
         required: this.dragField.type !== 'checkbox',
         ...this.dragField
+      }
+
+      if (!field.type) {
+        field.type = 'text'
       }
 
       if (!this.fieldsDragFieldRef.value) {
@@ -1354,69 +1467,17 @@ export default {
         attachment_uuid: area.attachment_uuid
       }
 
-      const previousField = [...this.template.fields].reverse().find((f) => f.type === field.type)
-
-      let baseArea
-
-      if (this.selectedField?.type === field.type) {
-        baseArea = this.selectedAreaRef.value
-      } else if (previousField?.areas?.length) {
-        baseArea = previousField.areas[previousField.areas.length - 1]
-      } else {
-        if (['checkbox'].includes(field.type)) {
-          baseArea = {
-            w: area.maskW / 30 / area.maskW,
-            h: area.maskW / 30 / area.maskW * (area.maskW / area.maskH)
-          }
-        } else if (field.type === 'image') {
-          baseArea = {
-            w: area.maskW / 5 / area.maskW,
-            h: (area.maskW / 5 / area.maskW) * (area.maskW / area.maskH)
-          }
-        } else if (field.type === 'signature' || field.type === 'stamp' || field.type === 'verification') {
-          baseArea = {
-            w: area.maskW / 5 / area.maskW,
-            h: (area.maskW / 5 / area.maskW) * (area.maskW / area.maskH) / 2
-          }
-        } else if (field.type === 'initials') {
-          baseArea = {
-            w: area.maskW / 10 / area.maskW,
-            h: area.maskW / 35 / area.maskW
-          }
-        } else {
-          baseArea = {
-            w: area.maskW / 5 / area.maskW,
-            h: area.maskW / 35 / area.maskW
-          }
-        }
-      }
-
-      fieldArea.w = baseArea.w
-      fieldArea.h = baseArea.h
-      fieldArea.y = fieldArea.y - baseArea.h / 2
-
-      if (field.type === 'cells') {
-        fieldArea.cell_w = baseArea.cell_w || (baseArea.w / 5)
-      }
-
-      field.areas ||= []
-
-      const lastArea = field.areas[field.areas.length - 1]
-
-      if (lastArea) {
-        fieldArea.w = lastArea.w
-        fieldArea.h = lastArea.h
-      }
+      this.assignDropAreaSize(fieldArea, field, area)
 
       if (field.width) {
-        fieldArea.w = field.width / area.maskW
         delete field.width
       }
 
       if (field.height) {
-        fieldArea.h = field.height / area.maskH
         delete field.height
       }
+
+      field.areas ||= []
 
       field.areas.push(fieldArea)
 
@@ -1440,6 +1501,72 @@ export default {
           areaRef.focusValueInput()
         })
       }
+    },
+    assignDropAreaSize (fieldArea, field, area) {
+      const fieldType = field.type || 'text'
+
+      const previousField = [...this.template.fields].reverse().find((f) => f.type === fieldType)
+
+      let baseArea
+
+      if (this.selectedField?.type === fieldType) {
+        baseArea = this.selectedAreaRef.value
+      } else if (previousField?.areas?.length) {
+        baseArea = previousField.areas[previousField.areas.length - 1]
+      } else {
+        if (['checkbox'].includes(fieldType)) {
+          baseArea = {
+            w: area.maskW / 30 / area.maskW,
+            h: area.maskW / 30 / area.maskW * (area.maskW / area.maskH)
+          }
+        } else if (fieldType === 'image') {
+          baseArea = {
+            w: area.maskW / 5 / area.maskW,
+            h: (area.maskW / 5 / area.maskW) * (area.maskW / area.maskH)
+          }
+        } else if (fieldType === 'signature' || fieldType === 'stamp' || fieldType === 'verification') {
+          baseArea = {
+            w: area.maskW / 5 / area.maskW,
+            h: (area.maskW / 5 / area.maskW) * (area.maskW / area.maskH) / 2
+          }
+        } else if (fieldType === 'initials') {
+          baseArea = {
+            w: area.maskW / 10 / area.maskW,
+            h: area.maskW / 35 / area.maskW
+          }
+        } else {
+          baseArea = {
+            w: area.maskW / 5 / area.maskW,
+            h: area.maskW / 35 / area.maskW
+          }
+        }
+      }
+
+      fieldArea.w = baseArea.w
+      fieldArea.h = baseArea.h
+
+      if (fieldType === 'cells') {
+        fieldArea.cell_w = baseArea.cell_w || (baseArea.w / 5)
+      }
+
+      if (field.areas?.length) {
+        const lastArea = field.areas[field.areas.length - 1]
+
+        if (lastArea) {
+          fieldArea.w = lastArea.w
+          fieldArea.h = lastArea.h
+        }
+      }
+
+      if (field.width) {
+        fieldArea.w = field.width / area.maskW
+      }
+
+      if (field.height) {
+        fieldArea.h = field.height / area.maskH
+      }
+
+      fieldArea.y = fieldArea.y - fieldArea.h / 2
     },
     addBlankPage () {
       this.isLoadingBlankPage = true
@@ -1469,6 +1596,9 @@ export default {
           this.isLoadingBlankPage = false
         })
       }, 'image/png')
+    },
+    onUploadFailed (error) {
+      if (error) alert(error)
     },
     updateFromUpload (data) {
       this.template.schema.push(...data.schema)
@@ -1589,6 +1719,29 @@ export default {
       }
 
       this.save()
+    },
+    onDocumentsReplace (data) {
+      data.schema.forEach((schemaItem, index) => {
+        const existingSchemaItem = this.template.schema[index]
+
+        if (this.template.schema[index]) {
+          this.onDocumentReplace({
+            replaceSchemaItem: existingSchemaItem,
+            schema: [schemaItem],
+            documents: [data.documents.find((doc) => doc.uuid === schemaItem.attachment_uuid)]
+          })
+        } else {
+          this.updateFromUpload({
+            schema: [schemaItem],
+            documents: [data.documents.find((doc) => doc.uuid === schemaItem.attachment_uuid)],
+            fields: data.fields,
+            submitters: data.submitters
+          })
+        }
+      })
+    },
+    onDocumentsReplaceAndTemplateClone (template) {
+      window.Turbo.visit(`/templates/${template.id}/edit`)
     },
     moveDocument (item, direction) {
       const currentIndex = this.template.schema.indexOf(item)

@@ -7,11 +7,11 @@ class SubmitFormController < ApplicationController
   skip_before_action :authenticate_user!
   skip_authorization_check
 
+  before_action :load_submitter, only: %i[show update completed]
+
   CONFIG_KEYS = [].freeze
 
   def show
-    @submitter = Submitter.find_by!(slug: params[:slug])
-
     submission = @submitter.submission
 
     return redirect_to submit_form_completed_path(@submitter.slug) if @submitter.completed_at?
@@ -20,7 +20,11 @@ class SubmitFormController < ApplicationController
                                @submitter.account.archived_at?
     return render :expired if submission.expired?
     return render :declined if @submitter.declined_at?
-    return render :awaiting if submission.template.preferences['submitters_order'] == 'preserved' &&
+
+    @form_configs = Submitters::FormConfigs.call(@submitter, CONFIG_KEYS)
+
+    return render :awaiting if (@form_configs[:enforce_signing_order] ||
+                                submission.template.preferences['submitters_order'] == 'preserved') &&
                                !Submitters.current_submitter_order?(@submitter)
 
     Submitters.preload_with_pages(@submitter)
@@ -28,8 +32,6 @@ class SubmitFormController < ApplicationController
     Submitters::MaybeUpdateDefaultValues.call(@submitter, current_user)
 
     @attachments_index = build_attachments_index(submission)
-
-    @form_configs = Submitters::FormConfigs.call(@submitter, CONFIG_KEYS)
 
     return unless @form_configs[:prefill_signature]
 
@@ -48,39 +50,43 @@ class SubmitFormController < ApplicationController
   end
 
   def update
-    submitter = Submitter.find_by!(slug: params[:slug])
-
-    if submitter.completed_at?
+    if @submitter.completed_at?
       return render json: { error: I18n.t('form_has_been_completed_already') }, status: :unprocessable_entity
     end
 
-    if submitter.template.archived_at? || submitter.submission.archived_at?
+    if @submitter.template.archived_at? || @submitter.submission.archived_at?
       return render json: { error: I18n.t('form_has_been_archived') }, status: :unprocessable_entity
     end
 
-    if submitter.submission.expired?
+    if @submitter.submission.expired?
       return render json: { error: I18n.t('form_has_been_expired') }, status: :unprocessable_entity
     end
 
-    if submitter.declined_at?
+    if @submitter.declined_at?
       return render json: { error: I18n.t('form_has_been_declined') },
                     status: :unprocessable_entity
     end
 
-    Submitters::SubmitValues.call(submitter, params, request)
+    Submitters::SubmitValues.call(@submitter, params, request)
 
     head :ok
+  rescue Submitters::SubmitValues::RequiredFieldError => e
+    Rollbar.warning("Required field #{@submitter.id}: #{e.message}") if defined?(Rollbar)
+
+    render json: { field_uuid: e.message }, status: :unprocessable_entity
   rescue Submitters::SubmitValues::ValidationError => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
 
-  def completed
-    @submitter = Submitter.completed.find_by!(slug: params[:submit_form_slug])
-  end
+  def completed; end
 
   def success; end
 
   private
+
+  def load_submitter
+    @submitter = Submitter.find_by!(slug: params[:slug] || params[:submit_form_slug])
+  end
 
   def build_attachments_index(submission)
     ActiveStorage::Attachment.where(record: submission.submitters, name: :attachments)

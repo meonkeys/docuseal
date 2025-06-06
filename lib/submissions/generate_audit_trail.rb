@@ -31,7 +31,9 @@ module Submissions
     def call(submission)
       account = submission.account
 
-      I18n.with_locale(account.locale) do
+      last_submitter = submission.submitters.select(&:completed_at).max_by(&:completed_at)
+
+      I18n.with_locale(last_submitter.metadata.fetch('lang', account.locale)) do
         document = build_audit_trail(submission)
 
         pkcs = Accounts.load_signing_pkcs(account)
@@ -41,8 +43,6 @@ module Submissions
 
         document.trailer.info[:Creator] = "#{Docuseal.product_name} (#{Docuseal::PRODUCT_URL})"
 
-        last_submitter = submission.submitters.select(&:completed_at).max_by(&:completed_at)
-
         if pkcs
           sign_params = {
             reason: sign_reason,
@@ -50,11 +50,11 @@ module Submissions
           }
 
           document.sign(io, **sign_params)
+
+          Submissions::GenerateResultAttachments.maybe_enable_ltv(io, sign_params)
         else
           document.write(io)
         end
-
-        Submissions::GenerateResultAttachments.maybe_enable_ltv(io, sign_params)
 
         ActiveStorage::Attachment.create!(
           blob: ActiveStorage::Blob.create_and_upload!(
@@ -309,7 +309,7 @@ module Submissions
 
               image =
                 begin
-                  Vips::Image.new_from_buffer(attachment.download, '').autorot
+                  Submissions::GenerateResultAttachments.load_vips_image(attachment).autorot
                 rescue Vips::Error
                   next unless attachment.content_type.starts_with?('image/')
                   next if attachment.byte_size.zero?
@@ -322,7 +322,7 @@ module Submissions
               resized_image = image.resize([scale, 1].min)
               io = StringIO.new(resized_image.write_to_buffer('.png'))
 
-              width = field['type'] == 'initials' ? 100 : 200
+              width = field['type'] == 'initials' ? 50 : 200
               height = resized_image.height * (width.to_f / resized_image.width)
 
               if height > MAX_IMAGE_HEIGHT
@@ -379,7 +379,9 @@ module Submissions
 
       composer.text(I18n.t('event_log'), font_size: 12, padding: [10, 0, 20, 0])
 
-      events_data = submission.submission_events.sort_by(&:event_timestamp).map do |event|
+      events_data = submission.submission_events.sort_by(&:event_timestamp).filter_map do |event|
+        next if event.event_type.in?(%w[bounce_email complaint_email])
+
         submitter = submission.submitters.find { |e| e.id == event.submitter_id }
         submitter_name =
           if event.event_type.include?('sms') || event.event_type.include?('phone')

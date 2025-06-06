@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'rails_helper'
-
 RSpec.describe 'Template' do
   let!(:account) { create(:account) }
   let!(:user) { create(:user, account:) }
@@ -18,7 +16,7 @@ RSpec.describe 'Template' do
       expect(page).to have_content(template.name)
       expect(page).to have_content('There are no Submissions')
       expect(page).to have_content('Send an invitation to fill and complete the form')
-      expect(page).to have_link('Sign it Yourself')
+      expect(page).to have_button('Sign it Yourself')
     end
   end
 

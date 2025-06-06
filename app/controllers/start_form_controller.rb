@@ -8,24 +8,35 @@ class StartFormController < ApplicationController
 
   around_action :with_browser_locale, only: %i[show completed]
   before_action :maybe_redirect_com, only: %i[show completed]
+  before_action :load_resubmit_submitter, only: :update
   before_action :load_template
+  before_action :authorize_start!, only: :update
 
   def show
-    @submitter = @template.submissions.new(account_id: @template.account_id)
-                          .submitters.new(uuid: (filter_undefined_submitters(@template).first ||
-                                                 @template.submitters.first)['uuid'])
+    raise ActionController::RoutingError, I18n.t('not_found') if @template.preferences['require_phone_2fa']
+
+    if @template.shared_link?
+      @submitter = @template.submissions.new(account_id: @template.account_id)
+                            .submitters.new(account_id: @template.account_id,
+                                            uuid: (filter_undefined_submitters(@template).first ||
+                                                  @template.submitters.first)['uuid'])
+    else
+      Rollbar.warning("Not shared template: #{@template.id}") if defined?(Rollbar)
+
+      return render :private if current_user && current_ability.can?(:read, @template)
+
+      raise ActionController::RoutingError, I18n.t('not_found')
+    end
   end
 
   def update
-    return redirect_to start_form_path(@template.slug) if @template.archived_at?
-
     @submitter = find_or_initialize_submitter(@template, submitter_params)
 
     if @submitter.completed_at?
       redirect_to start_form_completed_path(@template.slug, email: submitter_params[:email])
     else
       if filter_undefined_submitters(@template).size > 1 && @submitter.new_record?
-        @error_message = I18n.t('not_found')
+        @error_message = multiple_submitters_error_message
 
         return render :show
       end
@@ -40,9 +51,11 @@ class StartFormController < ApplicationController
 
       if @submitter.save
         if is_new_record
-          WebhookUrls.for_account_id(@submitter.account_id, 'submission.created').each do |webhook_url|
-            SendSubmissionCreatedWebhookRequestJob.perform_async('submission_id' => @submitter.submission_id,
-                                                                 'webhook_url_id' => webhook_url.id)
+          enqueue_submission_create_webhooks(@submitter)
+
+          if @submitter.submission.expire_at?
+            ProcessSubmissionExpiredJob.perform_at(@submitter.submission.expire_at,
+                                                   'submission_id' => @submitter.submission_id)
           end
         end
 
@@ -54,6 +67,8 @@ class StartFormController < ApplicationController
   end
 
   def completed
+    return redirect_to start_form_path(@template.slug) if !@template.shared_link? || @template.archived_at?
+
     @submitter = Submitter.where(submission: @template.submissions)
                           .where.not(completed_at: nil)
                           .find_by!(email: params[:email])
@@ -61,32 +76,55 @@ class StartFormController < ApplicationController
 
   private
 
+  def load_resubmit_submitter
+    @resubmit_submitter =
+      if params[:resubmit].present? && !params[:resubmit].in?([true, 'true'])
+        Submitter.find_by(slug: params[:resubmit])
+      end
+  end
+
+  def authorize_start!
+    return redirect_to start_form_path(@template.slug) if @template.archived_at?
+
+    return if @resubmit_submitter
+    return if @template.shared_link? || (current_user && current_ability.can?(:read, @template))
+
+    Rollbar.warning("Not shared template: #{@template.id}") if defined?(Rollbar)
+
+    redirect_to start_form_path(@template.slug)
+  end
+
+  def enqueue_submission_create_webhooks(submitter)
+    WebhookUrls.for_account_id(submitter.account_id, 'submission.created').each do |webhook_url|
+      SendSubmissionCreatedWebhookRequestJob.perform_async('submission_id' => submitter.submission_id,
+                                                           'webhook_url_id' => webhook_url.id)
+    end
+  end
+
   def find_or_initialize_submitter(template, submitter_params)
-    Submitter.where(submission: template.submissions.where(expire_at: Time.current..)
-                                        .or(template.submissions.where(expire_at: nil)).where(archived_at: nil))
-             .order(id: :desc)
-             .where(declined_at: nil)
-             .where(external_id: nil)
-             .where(ip: [nil, request.remote_ip])
-             .then { |rel| params[:resubmit].present? ? rel.where(completed_at: nil) : rel }
-             .find_or_initialize_by(email: submitter_params[:email], **submitter_params.compact_blank)
+    Submitter
+      .where(submission: template.submissions.where(expire_at: Time.current..)
+                                 .or(template.submissions.where(expire_at: nil)).where(archived_at: nil))
+      .order(id: :desc)
+      .where(declined_at: nil)
+      .where(external_id: nil)
+      .where(ip: [nil, request.remote_ip])
+      .then { |rel| params[:resubmit].present? || params[:selfsign].present? ? rel.where(completed_at: nil) : rel }
+      .find_or_initialize_by(email: submitter_params[:email], **submitter_params.compact_blank)
   end
 
   def assign_submission_attributes(submitter, template)
-    resubmit_submitter =
-      (Submitter.where(submission: template.submissions).find_by(slug: params[:resubmit]) if params[:resubmit].present?)
-
     submitter.assign_attributes(
       uuid: (filter_undefined_submitters(template).first || @template.submitters.first)['uuid'],
       ip: request.remote_ip,
       ua: request.user_agent,
-      values: resubmit_submitter&.preferences&.fetch('default_values', nil) || {},
-      preferences: resubmit_submitter&.preferences.presence || { 'send_email' => true },
-      metadata: resubmit_submitter&.metadata.presence || {}
+      values: @resubmit_submitter&.preferences&.fetch('default_values', nil) || {},
+      preferences: @resubmit_submitter&.preferences.presence || { 'send_email' => true },
+      metadata: @resubmit_submitter&.metadata.presence || {}
     )
 
     if submitter.values.present?
-      resubmit_submitter.attachments.each do |attachment|
+      @resubmit_submitter.attachments.each do |attachment|
         submitter.attachments << attachment.dup if submitter.values.value?(attachment.uuid)
       end
     end
@@ -94,6 +132,7 @@ class StartFormController < ApplicationController
     submitter.submission ||= Submission.new(template:,
                                             account_id: template.account_id,
                                             template_submitters: template.submitters,
+                                            expire_at: Templates.build_default_expire_at(template),
                                             submitters: [submitter],
                                             source: :link)
 
@@ -107,14 +146,28 @@ class StartFormController < ApplicationController
   end
 
   def submitter_params
+    return current_user.slice(:email) if params[:selfsign]
+    return @resubmit_submitter.slice(:name, :phone, :email) if @resubmit_submitter.present?
+
     params.require(:submitter).permit(:email, :phone, :name).tap do |attrs|
       attrs[:email] = Submissions.normalize_email(attrs[:email])
     end
   end
 
   def load_template
-    slug = params[:slug] || params[:start_form_slug]
+    @template =
+      if @resubmit_submitter
+        @resubmit_submitter.template
+      else
+        Template.find_by!(slug: params[:slug] || params[:start_form_slug])
+      end
+  end
 
-    @template = Template.find_by!(slug:)
+  def multiple_submitters_error_message
+    if current_user&.account_id == @template.account_id
+      helpers.t('this_submission_has_multiple_signers_which_prevents_the_use_of_a_sharing_link_html')
+    else
+      I18n.t('not_found')
+    end
   end
 end

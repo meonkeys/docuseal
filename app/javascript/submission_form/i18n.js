@@ -93,7 +93,7 @@ const en = {
   reupload: 'Reupload',
   upload: 'Upload',
   files: 'Files',
-  signature_is_too_small_please_redraw: 'Signature is too small. Please redraw.',
+  signature_is_too_small_or_simple_please_redraw: 'Signature is too small or simple. Please redraw.',
   wait_countdown_seconds: 'Wait {countdown} seconds'
 }
 
@@ -148,6 +148,7 @@ const es = {
   sign_now: 'Firmar ahora',
   type_here_: 'Escribe aquí...',
   optional: 'opcional',
+  option: 'Opción',
   appears_on: 'Aparece en',
   page: 'Página',
   select_your_option: 'Selecciona tu opción',
@@ -191,7 +192,7 @@ const es = {
   reupload: 'Volver a subir',
   upload: 'Subir',
   files: 'Archivos',
-  signature_is_too_small_please_redraw: 'La firma es demasiado pequeña. Por favor, dibújala de nuevo.',
+  signature_is_too_small_or_simple_please_redraw: 'La firma es demasiado pequeña o simple. Por favor, vuelve a dibujarla.',
   wait_countdown_seconds: 'Espera {countdown} segundos'
 }
 
@@ -245,6 +246,7 @@ const it = {
   sign_now: 'Firma ora',
   type_here_: 'Digita qui...',
   optional: 'opzionale',
+  option: 'Opzione',
   appears_on: 'Compare su',
   page: 'Pagina',
   take_photo: 'Scattare una foto',
@@ -265,7 +267,7 @@ const it = {
   document_has_been_signed: 'Il documento è stato firmato!',
   documents_have_been_signed: 'I documenti sono stati firmati!',
   create_a_free_account: 'Crea un Account Gratuito',
-  powered_by: 'Desarrollado por',
+  powered_by: 'Fornito da',
   please_check_the_box_to_continue: 'Si prega di spuntare la casella per continuare.',
   open_source_documents_software: 'software di documenti open source',
   verified_phone_number: 'Verifica numero di telefono',
@@ -289,7 +291,7 @@ const it = {
   reupload: 'Ricarica',
   upload: 'Carica',
   files: 'File',
-  signature_is_too_small_please_redraw: 'La firma è troppo piccola. Ridisegnala per favore.',
+  signature_is_too_small_or_simple_please_redraw: 'La firma è troppo piccola o semplice. Ridisegnala, per favore.',
   wait_countdown_seconds: 'Attendi {countdown} secondi'
 }
 
@@ -343,6 +345,7 @@ const de = {
   sign_now: 'Jetzt unterschreiben',
   type_here_: 'Hier eingeben...',
   optional: 'optional',
+  option: 'Option',
   appears_on: 'Erscheint auf',
   page: 'Seite',
   take_photo: 'Foto aufnehmen',
@@ -387,14 +390,14 @@ const de = {
   reupload: 'Erneut hochladen',
   upload: 'Hochladen',
   files: 'Dateien',
-  signature_is_too_small_please_redraw: 'Die Unterschrift ist zu klein. Bitte erneut zeichnen.',
+  signature_is_too_small_or_simple_please_redraw: 'Die Unterschrift ist zu klein oder zu einfach. Bitte erneut zeichnen.',
   wait_countdown_seconds: 'Warte {countdown} Sekunden'
 }
 
 const fr = {
   complete_all_required_fields_to_proceed_with_identity_verification: "Veuillez remplir tous les champs obligatoires pour continuer la vérification de l'identité.",
-  verif_id: "Vérification de l'ID",
-  verif_identite: "Vérification de l'identité",
+  verify_id: "Vérification de l'ID",
+  identity_verification: "Vérification de l'identité",
   complete: 'Terminer',
   fill_all_required_fields_to_complete: 'Veuillez remplir tous les champs obligatoires pour compléter',
   sign_and_complete: 'Signer et Terminer',
@@ -441,6 +444,7 @@ const fr = {
   sign_now: 'Signer maintenant',
   type_here_: 'Tapez ici...',
   optional: 'facultatif',
+  option: 'Option',
   appears_on: 'Apparaît sur',
   page: 'Page',
   take_photo: 'Prendre une photo',
@@ -485,7 +489,7 @@ const fr = {
   reupload: 'Recharger',
   upload: 'Télécharger',
   files: 'Fichiers',
-  signature_is_too_small_please_redraw: 'La signature est trop petite. Veuillez la redessiner.',
+  signature_is_too_small_or_simple_please_redraw: 'La signature est trop petite ou trop simple. Veuillez la redessiner.',
   wait_countdown_seconds: 'Attendez {countdown} secondes'
 }
 
@@ -539,6 +543,7 @@ const pl = {
   sign_now: 'Podpisz teraz',
   type_here_: 'Wpisz tutaj...',
   optional: 'opcjonalny',
+  option: 'Opcja',
   appears_on: 'Pojawia się na',
   page: 'Strona',
   select_your_option: 'Wybierz swoją opcję',
@@ -583,7 +588,8 @@ const pl = {
   reupload: 'Ponowne przesłanie',
   upload: 'Przesyłanie',
   files: 'Pliki',
-  signature_is_too_small_please_redraw: 'Podpis jest zbyt mały. Proszę narysować go ponownie.'
+  signature_is_too_small_or_simple_please_redraw: 'Podpis jest zbyt mały lub zbyt prosty. Proszę narysować go ponownie.',
+  wait_countdown_seconds: 'Poczekaj {countdown} sekund'
 }
 
 const uk = {
@@ -636,6 +642,7 @@ const uk = {
   sign_now: 'Підписати зараз',
   type_here_: 'Введіть тут',
   optional: 'необов’язково',
+  option: 'Опція',
   appears_on: "З'являється на",
   page: 'Сторінка',
   take_photo: 'Зробити фото',
@@ -658,7 +665,7 @@ const uk = {
   create_a_free_account: 'Створити безкоштовний обліковий запис',
   powered_by: 'Працює на базі',
   please_check_the_box_to_continue: 'Будь ласка, позначте прапорець, щоб продовжити.',
-  open_source_documents_software: 'відкритий програмний засіб для документів',
+  open_source_documents_software: 'відкрите програмне забезпечення для документів',
   verified_phone_number: 'Підтвердіть номер телефону',
   use_international_format: 'Використовуйте міжнародний формат: +1xxx',
   six_digits_code: '6-значний код',
@@ -680,7 +687,7 @@ const uk = {
   reupload: 'Перезавантажити',
   upload: 'Завантажити',
   files: 'Файли',
-  signature_is_too_small_please_redraw: 'Підпис занадто малий. Будь ласка, перемалюйте його.',
+  signature_is_too_small_or_simple_please_redraw: 'Підпис занадто маленький або надто простий. Будь ласка, перемалюйте.',
   wait_countdown_seconds: 'Зачекайте {countdown} секунд'
 }
 
@@ -734,6 +741,7 @@ const cs = {
   sign_now: 'Podepsat nyní',
   type_here_: 'Zadejte zde',
   optional: 'volitelné',
+  option: 'Možnost',
   appears_on: 'Zobrazuje se na',
   page: 'Stránka',
   select_your_option: 'Vyberte svou volbu',
@@ -778,7 +786,7 @@ const cs = {
   reupload: 'Znovu nahrát',
   upload: 'Nahrát',
   files: 'Soubory',
-  signature_is_too_small_please_redraw: 'Podpis je příliš malý. Prosím, překreslete ho.',
+  signature_is_too_small_or_simple_please_redraw: 'Podpis je příliš malý nebo jednoduchý. Nakreslete jej prosím znovu.',
   wait_countdown_seconds: 'Počkejte {countdown} sekund'
 }
 
@@ -832,6 +840,7 @@ const pt = {
   sign_now: 'Assinar agora',
   type_here_: 'Digite aqui',
   optional: 'opcional',
+  option: 'Opção',
   appears_on: 'Aparece em',
   page: 'Página',
   take_photo: 'Tirar foto',
@@ -876,7 +885,7 @@ const pt = {
   reupload: 'Reenviar',
   upload: 'Carregar',
   files: 'Arquivos',
-  signature_is_too_small_please_redraw: 'A assinatura é muito pequena. Por favor, redesenhe-a.',
+  signature_is_too_small_or_simple_please_redraw: 'A assinatura é muito pequena ou simples. Por favor, redesenhe.',
   wait_countdown_seconds: 'Aguarde {countdown} segundos'
 }
 
@@ -975,7 +984,7 @@ const he = {
   reupload: 'העלה שוב',
   upload: 'העלאה',
   files: 'קבצים',
-  signature_is_too_small_please_redraw: 'החתימה קטנה מדי. אנא צייר מחדש.',
+  signature_is_too_small_or_simple_please_redraw: 'החתימה קטנה או פשוטה מדי. אנא חתום מחדש.',
   wait_countdown_seconds: 'המתן {countdown} שניות'
 }
 
@@ -1074,7 +1083,7 @@ const nl = {
   reupload: 'Opnieuw uploaden',
   upload: 'Uploaden',
   files: 'Bestanden',
-  signature_is_too_small_please_redraw: 'De handtekening is te klein. Teken deze opnieuw, alstublieft.',
+  signature_is_too_small_or_simple_please_redraw: 'De handtekening is te klein of te eenvoudig. Teken opnieuw.',
   wait_countdown_seconds: 'Wacht {countdown} seconden'
 }
 
@@ -1097,6 +1106,7 @@ const ar = {
   select_a_reason: 'اختر سببًا',
   value_is_invalid: 'القيمة غير صالحة',
   verification_code_is_invalid: 'رمز التحقق غير صالح',
+  already_paid: 'تم الدفع بالفعل',
   drawn_signature_on_a_touchscreen_device: 'توقيع مرسوم على جهاز بشاشة تعمل باللمس',
   scan_the_qr_code_with_the_camera_app_to_open_the_form_on_mobile_and_draw_your_signature: 'امسح رمز الاستجابة السريعة باستخدام تطبيق الكاميرا لفتح النموذج على الهاتف المحمول ورسم توقيعك',
   by_clicking_you_agree_to_the: 'بالنقر فوق "{button}"، أنت توافق على',
@@ -1172,7 +1182,7 @@ const ar = {
   reupload: 'إعادة التحميل',
   upload: 'تحميل',
   files: 'الملفات',
-  signature_is_too_small_please_redraw: 'التوقيع صغير جدًا. يرجى إعادة الرسم.',
+  signature_is_too_small_or_simple_please_redraw: 'التوقيع صغير جدًا أو بسيط جدًا. يرجى إعادة رسمه.',
   wait_countdown_seconds: 'انتظر {countdown} ثانية'
 }
 
@@ -1198,6 +1208,8 @@ const ko = {
   by_clicking_you_agree_to_the: '"{button}"를 클릭함으로써, 다음에 동의하게 됩니다',
   electronic_signature_disclosure: '전자 서명 공개',
   esignature_disclosure: '전자 서명 공개',
+  value_is_invalid: '값이 올바르지 않습니다',
+  verification_code_is_invalid: '인증 코드가 올바르지 않습니다',
   already_paid: '이미 지불됨',
   text: '텍스트',
   signature: '서명',
@@ -1269,10 +1281,109 @@ const ko = {
   reupload: '다시 업로드',
   upload: '업로드',
   files: '파일',
-  signature_is_too_small_please_redraw: '서명이 너무 작습니다. 다시 그려주세요.',
+  signature_is_too_small_or_simple_please_redraw: '서명이 너무 작거나 단순합니다. 다시 그려주세요.',
   wait_countdown_seconds: '{countdown}초 기다리세요'
 }
 
-const i18n = { en, es, it, de, fr, pl, uk, cs, pt, he, nl, ar, ko }
+const ja = {
+  complete_all_required_fields_to_proceed_with_identity_verification: '本人確認を進めるには、すべての必須項目を入力してください。',
+  verify_id: '本人確認',
+  identity_verification: '本人確認',
+  complete: '完了',
+  fill_all_required_fields_to_complete: '完了するにはすべての必須項目を入力してください',
+  sign_and_complete: '署名して完了',
+  text: 'テキスト',
+  by_clicking_you_agree_to_the: '"{button}" をクリックすることで、次に同意したことになります：',
+  electronic_signature_disclosure: '電子署名に関する開示',
+  esignature_disclosure: '電子署名開示',
+  signature: '署名',
+  initials: 'イニシャル',
+  drawn_signature_on_a_touchscreen_device: 'タッチスクリーンデバイスで描かれた署名',
+  approved: '承認済み',
+  reviewed: '確認済み',
+  other: 'その他',
+  authored_by_me: '自分が作成',
+  invite: '招待',
+  email: 'メール',
+  approved_by: '承認者',
+  reviewed_by: '確認者',
+  authored_by: '作成者',
+  select_a_reason: '理由を選択',
+  scan_the_qr_code_with_the_camera_app_to_open_the_form_on_mobile_and_draw_your_signature: 'QRコードをカメラアプリで読み取り、モバイルでフォームを開いて署名を描いてください',
+  date: '日付',
+  number: '数値',
+  value_is_invalid: '無効な値です',
+  verification_code_is_invalid: '認証コードが無効です',
+  already_paid: 'すでに支払い済み',
+  image: '画像',
+  pay: '支払う',
+  take_photo: '写真を撮る',
+  number_phone_is_invalid: '{number} の電話番号は無効です',
+  file: 'ファイル',
+  digitally_signed_by: '電子署名者：',
+  reason: '理由',
+  select: '選択',
+  checkbox: 'チェックボックス',
+  multiple: '複数選択',
+  radio: 'ラジオボタン',
+  cells: 'セル',
+  stamp: 'スタンプ',
+  minimize: '最小化',
+  payment: '支払い',
+  phone: '電話',
+  start_now: '今すぐ開始',
+  continue: '続行',
+  sign_now: '今すぐ署名',
+  type_here_: 'ここに入力...',
+  optional: '任意',
+  option: 'オプション',
+  appears_on: '表示ページ',
+  page: 'ページ',
+  select_your_option: 'オプションを選択',
+  complete_hightlighted_checkboxes_and_click: 'ハイライトされたチェックボックスを完了し、クリックしてください',
+  submit: '送信',
+  next: '次へ',
+  click_to_upload: 'クリックしてアップロード',
+  or_drag_and_drop_files: 'またはファイルをドラッグ＆ドロップ',
+  send_copy_via_email: 'メールでコピーを送信',
+  download: 'ダウンロード',
+  clear: 'クリア',
+  redraw: '描き直す',
+  draw_initials: 'イニシャルを描く',
+  type_signature_here: 'ここに署名を入力',
+  type_initial_here: 'ここにイニシャルを入力',
+  form_has_been_completed: 'フォームが完了しました！',
+  document_has_been_signed: 'ドキュメントが署名されました！',
+  documents_have_been_signed: 'ドキュメントがすべて署名されました！',
+  create_a_free_account: '無料アカウントを作成',
+  powered_by: '提供元：',
+  please_check_the_box_to_continue: '続行するにはボックスにチェックを入れてください。',
+  open_source_documents_software: 'オープンソースのドキュメントソフトウェア',
+  verified_phone_number: '電話番号を認証',
+  use_international_format: '国際形式を使用してください：+1xxx',
+  six_digits_code: '6桁のコード',
+  change_phone_number: '電話番号を変更',
+  sending: '送信中...',
+  resend_code: 'コードを再送信',
+  verification_code_has_been_resent: '認証コードがSMSで再送信されました',
+  please_fill_all_required_fields: 'すべての必須項目を入力してください',
+  set_today: '今日の日付を設定',
+  toggle_multiline_text: '複数行テキスト切り替え',
+  draw_signature: '署名を描く',
+  type_initial: 'イニシャルを入力',
+  draw: '描く',
+  type: '入力',
+  type_text: 'テキストを入力',
+  email_has_been_sent: 'メールが送信されました',
+  processing: '処理中',
+  pay_with_strip: 'Stripeで支払う',
+  reupload: '再アップロード',
+  upload: 'アップロード',
+  files: 'ファイル',
+  signature_is_too_small_or_simple_please_redraw: '署名が小さすぎるか単純すぎます。もう一度描いてください。',
+  wait_countdown_seconds: '{countdown} 秒お待ちください'
+}
+
+const i18n = { en, es, it, de, fr, pl, uk, cs, pt, he, nl, ar, ko, ja }
 
 export default i18n

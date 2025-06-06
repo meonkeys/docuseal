@@ -23,18 +23,12 @@ module Submissions
           **Submissions::GenerateResultAttachments.build_signing_params(submitter, pkcs, tsa_url)
         }
 
-        begin
-          pdf.sign(io, **sign_params)
-        rescue HexaPDF::MalformedPDFError => e
-          Rollbar.error(e) if defined?(Rollbar)
+        sign_pdf(io, pdf, sign_params)
 
-          pdf.sign(io, write_options: { incremental: false }, **sign_params)
-        end
+        Submissions::GenerateResultAttachments.maybe_enable_ltv(io, sign_params)
       else
-        pdf.write(io, incremental: true, validate: false)
+        pdf.write(io, incremental: true, validate: true)
       end
-
-      Submissions::GenerateResultAttachments.maybe_enable_ltv(io, sign_params)
 
       ActiveStorage::Attachment.create!(
         blob: ActiveStorage::Blob.create_and_upload!(
@@ -43,6 +37,20 @@ module Submissions
         name: 'combined_document',
         record: submission
       )
+    end
+
+    def sign_pdf(io, pdf, sign_params)
+      pdf.sign(io, **sign_params)
+    rescue HexaPDF::MalformedPDFError => e
+      Rollbar.error(e) if defined?(Rollbar)
+
+      pdf.sign(io, write_options: { incremental: false }, **sign_params)
+    rescue HexaPDF::Error => e
+      Rollbar.error(e) if defined?(Rollbar)
+
+      pdf.validate(auto_correct: true)
+
+      pdf.sign(io, write_options: { validate: false }, **sign_params)
     end
 
     def build_combined_pdf(submitter)

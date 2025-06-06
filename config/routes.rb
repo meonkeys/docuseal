@@ -57,7 +57,7 @@ Rails.application.routes.draw do
 
   resources :verify_pdf_signature, only: %i[create]
   resource :mfa_setup, only: %i[show new edit create destroy], controller: 'mfa_setup'
-  resources :account_configs, only: %i[create]
+  resources :account_configs, only: %i[create destroy]
   resources :user_configs, only: %i[create]
   resources :encrypted_user_configs, only: %i[destroy]
   resources :timestamp_server, only: %i[create]
@@ -97,6 +97,7 @@ Rails.application.routes.draw do
   resources :templates, only: %i[new create edit update show destroy] do
     resource :debug, only: %i[show], controller: 'templates_debug' if Rails.env.development?
     resources :documents, only: %i[create], controller: 'template_documents'
+    resources :clone_and_replace, only: %i[create], controller: 'templates_clone_and_replace'
     resources :restore, only: %i[create], controller: 'templates_restore'
     resources :archived, only: %i[index], controller: 'templates_archived_submissions'
     resources :submissions, only: %i[new create]
@@ -105,6 +106,7 @@ Rails.application.routes.draw do
     resource :form, only: %i[show], controller: 'templates_form_preview'
     resource :code_modal, only: %i[show], controller: 'templates_code_modal'
     resource :preferences, only: %i[show create], controller: 'templates_preferences'
+    resource :share_link, only: %i[show create], controller: 'templates_share_link'
     resources :recipients, only: %i[create], controller: 'templates_recipients'
     resources :submissions_export, only: %i[index new]
   end
@@ -129,6 +131,8 @@ Rails.application.routes.draw do
   resources :start_form, only: %i[show update], path: 'd', param: 'slug' do
     get :completed
   end
+
+  resource :resubmit_form, controller: 'start_form', only: :update
 
   resources :submit_form, only: %i[], path: '' do
     get :success, on: :collection

@@ -31,7 +31,7 @@
               </span>
             </span>
           <% end %>
-          <%= tag.input type: 'email', multiple: true, name: 'template[preferences][bcc_completed]', autocomplete: 'off', class: 'base-input', value: ff.object.bcc_completed %>
+          <%= tag.input type: 'email', multiple: true, name: 'template[preferences][bcc_completed]', autocomplete: 'off', class: 'base-input', value: ff.object.bcc_completed, id: ff.field_id(:bcc_completed) %>
         </div>
       <% end %>
       <div class="form-control pt-3">
@@ -41,7 +41,18 @@
         </div>
       </div>
     <% end %>
-    <%= render 'templates_code_modal/preferences' %>
+    <%= form_for @template, url: template_preferences_path(@template), method: :post, html: { autocomplete: 'off', class: 'mb-5' }, data: { close_on_submit: false } do |f| %>
+      <%= f.fields_for :preferences, Struct.new(:default_expire_at_duration, :default_expire_at).new(@template.preferences['default_expire_at_duration'], @template.preferences['default_expire_at'] ? Time.zone.parse(@template.preferences['default_expire_at']).in_time_zone(current_account.timezone) : nil) do |ff| %>
+        <div class="form-control">
+          <% duration_options = Templates::EXPIRATION_DURATIONS.keys.map { |duration| [t(duration), duration] } + [[t('specified_date'), 'specified_date']] %>
+          <%= ff.label :default_expire_at_duration, t('default_expiration'), class: 'label pt-0' %>
+          <div class="flex items-center gap-2">
+            <%= ff.select :default_expire_at_duration, duration_options, { include_blank: t('none') }, required: false, class: 'base-select flex-1', dir: 'auto', autocomplete: 'off', onchange: "this.value == 'specified_date' ? window.template_preferences_default_expire_at.classList.remove('hidden') : [window.template_preferences_default_expire_at.classList.add('hidden'), window.template_preferences_default_expire_at.value = '', this.form.requestSubmit()]" %>
+            <%= ff.datetime_field :default_expire_at, required: false, class: ['base-input flex-1', ff.object.default_expire_at.blank? && 'hidden'].compact_blank.join(' '), dir: 'auto', autocomplete: 'off', onchange: 'this.value && this.form.requestSubmit()' %>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
     <div class="collapse collapse-arrow join-item border border-base-300 mb-2">
       <input type="checkbox" name="accordion">
       <div class="collapse-title text-xl font-medium">
@@ -51,7 +62,7 @@
         <%= form_for @template, url: template_preferences_path(@template), method: :post, html: { autocomplete: 'off', class: 'mt-1' }, data: { close_on_submit: false } do |f| %>
           <toggle-on-submit data-element-id="form_saved_alert"></toggle-on-submit>
           <% configs = AccountConfigs.find_or_initialize_for_key(current_account, AccountConfig::SUBMITTER_COMPLETED_EMAIL_KEY).value %>
-          <%= f.fields_for :preferences, Struct.new(:completed_redirect_url, :completed_message).new(@template.preferences['completed_redirect_url'].presence, Struct.new(:title, :body).new(*(@template.preferences['completed_message'] || {}).values_at('title', 'body'))) do |ff| %>
+          <%= f.fields_for :preferences, Struct.new(:completed_redirect_url, :completed_message, :require_phone_2fa).new(@template.preferences['completed_redirect_url'].presence, Struct.new(:title, :body).new(*(@template.preferences['completed_message'] || {}).values_at('title', 'body')), @template.preferences['require_phone_2fa'] == true) do |ff| %>
             <div class="form-control mb-2">
               <%= ff.label :completed_redirect_url, t('redirect_on_completion_url'), class: 'label' %>
               <%= ff.url_field :completed_redirect_url, required: false, class: 'base-input', dir: 'auto' %>
@@ -64,6 +75,7 @@
                 </autoresize-textarea>
               </div>
             <% end %>
+            <%= render 'templates_preferences/form_fields', ff: %>
           <% end %>
           <div class="form-control pt-2">
             <%= f.button button_title(title: t('save'), disabled_with: t('saving')), class: 'base-button' %>
@@ -206,7 +218,7 @@
                 <span>
                   <%= t('send_emails_automatically_on_completion') %>
                 </span>
-                <%= ff.check_box :documents_copy_email_enabled, { checked: ff.object.documents_copy_email_enabled != false, class: 'toggle', onchange: 'this.form.requestSubmit()' }, 'true', 'false' %>
+                <%= ff.check_box :documents_copy_email_enabled, { checked: ff.object.documents_copy_email_enabled != false && configs['enabled'] != false, class: 'toggle', onchange: 'this.form.requestSubmit()', disabled: configs['enabled'] == false }, 'true', 'false' %>
               </div>
             <% end %>
             <div class="form-control pt-2">
@@ -272,6 +284,7 @@
         </div>
       </div>
     </div>
+    <%= render 'templates_code_modal/preferences', class: 'pt-2' %>
   </div>
   <% if show_recipients %>
     <div id="recipients" class="hidden mt-2 mb-4 px-5">
@@ -322,15 +335,29 @@
           <% end %>
         </div>
       <% end %>
-      <%= form_for @template, url: template_preferences_path(@template), method: :post, html: { autocomplete: 'off', class: 'mt-2' }, data: { close_on_submit: false } do |f| %>
-        <div class="flex items-center pt-4 mt-4 justify-between border-t w-full">
-          <span>
-            <%= t('enforce_recipients_order') %>
-          </span>
-          <%= f.fields_for :preferences, Struct.new(:submitters_order).new(@template.preferences['submitters_order']) do |ff| %>
-            <%= ff.check_box :submitters_order, { class: 'toggle', onchange: 'this.form.requestSubmit()' }, 'preserved', '' %>
-          <% end %>
-        </div>
+      <% unless current_account.account_configs.exists?(key: AccountConfig::ENFORCE_SIGNING_ORDER_KEY, value: true) %>
+        <%= form_for @template, url: template_preferences_path(@template), method: :post, html: { autocomplete: 'off', class: 'mt-2' }, data: { close_on_submit: false } do |f| %>
+          <div class="flex items-center pt-4 mt-4 justify-between border-t w-full">
+            <span>
+              <%= t('enforce_recipients_order') %>
+            </span>
+            <%= f.fields_for :preferences, Struct.new(:submitters_order).new(@template.preferences['submitters_order']) do |ff| %>
+              <%= ff.check_box :submitters_order, { class: 'toggle', onchange: 'this.form.requestSubmit()' }, 'preserved', '' %>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+      <% if can?(:manage, :personalization_advanced) %>
+        <%= form_for @template, url: template_preferences_path(@template), method: :post, html: { autocomplete: 'off', class: 'mt-2' }, data: { close_on_submit: false } do |f| %>
+          <div class="flex items-center mt-4 justify-between w-full">
+            <span>
+              <%= t('ensure_unique_recipients') %>
+            </span>
+            <%= f.fields_for :preferences, Struct.new(:validate_unique_submitters).new(@template.preferences['validate_unique_submitters']) do |ff| %>
+              <%= ff.check_box :validate_unique_submitters, { class: 'toggle', onchange: 'this.form.requestSubmit()' }, 'true', '' %>
+            <% end %>
+          </div>
+        <% end %>
       <% end %>
       <div class="form-control mt-5 pb-2">
         <%= button_tag button_title(title: t('save'), disabled_with: t('updating')), class: 'base-button', form: :submitters_form %>
@@ -353,8 +380,18 @@
           <%= t('embedding_url') %>
         </label>
         <div class="flex gap-2 mb-4 mt-2">
-          <input id="embedding_url" type="text" value="<%= start_form_url(slug: @template.slug) %>" class="base-input w-full" autocomplete="off" readonly>
-          <%= render 'shared/clipboard_copy', icon: 'copy', text: start_form_url(slug: @template.slug), class: 'base-button', icon_class: 'w-6 h-6 text-white', copy_title: t('copy'), copied_title: t('copied') %>
+          <%= form_for @template, url: template_share_link_path(@template), method: :post, html: { id: 'shared_link_form', autocomplete: 'off', class: 'w-full mt-1' }, data: { close_on_submit: false } do |f| %>
+            <div class="flex gap-2">
+              <input id="embedding_url" type="text" value="<%= start_form_url(slug: @template.slug) %>" class="base-input w-full" autocomplete="off" readonly>
+              <check-on-click data-element-id="template_shared_link">
+                <%= render 'shared/clipboard_copy', icon: 'copy', text: start_form_url(slug: @template.slug), class: 'base-button', icon_class: 'w-6 h-6 text-white', copy_title: t('copy'), copied_title: t('copied') %>
+              </check-on-click>
+            </div>
+            <div class="flex items-center justify-between gap-1 pt-3">
+              <span><%= t('enable_shared_link') %></span>
+              <%= f.check_box :shared_link, { class: 'toggle', onchange: 'this.form.requestSubmit()' }, 'true', 'false' %>
+            </div>
+          <% end %>
         </div>
       </div>
       <%= render 'templates_code_modal/placeholder' %>

@@ -59,10 +59,13 @@ module Submissions
   def create_from_emails(template:, user:, emails:, source:, mark_as_sent: false, params: {})
     preferences = Submitters.normalize_preferences(user.account, user, params)
 
+    expire_at = params[:expire_at].presence || Templates.build_default_expire_at(template)
+
     parse_emails(emails, user).uniq.map do |email|
       submission = template.submissions.new(created_by_user: user,
                                             account_id: user.account_id,
                                             source:,
+                                            expire_at:,
                                             template_submitters: template.submitters)
 
       submission.submitters.new(email: normalize_email(email),
@@ -71,7 +74,13 @@ module Submissions
                                 preferences:,
                                 sent_at: mark_as_sent ? Time.current : nil)
 
-      submission.tap(&:save!)
+      submission.save!
+
+      if submission.expire_at?
+        ProcessSubmissionExpiredJob.perform_at(submission.expire_at, 'submission_id' => submission.id)
+      end
+
+      submission
     end
   end
 
@@ -109,18 +118,23 @@ module Submissions
     return if email.blank?
     return if email.is_a?(Numeric)
 
-    return email.downcase if email.to_s.include?(',') ||
-                             email.to_s.match?(/\.(?:gob|om|mm|cm|et|mo|nz|za|ie)\z/) ||
-                             email.to_s.exclude?('.')
+    email = email.to_s.tr('/', ',')
+
+    return email.downcase.sub(/@gmail?\z/i, '@gmail.com') if email.match?(/@gmail?\z/i)
+
+    return email.downcase if email.include?(',') ||
+                             email.match?(/\.(?:gob|om|mm|cm|et|mo|nz|za|ie)\z/) ||
+                             email.exclude?('.')
 
     fixed_email = EmailTypo.call(email.delete_prefix('<'))
 
     return fixed_email if fixed_email == email
 
-    domain = email.to_s.split('@').last.to_s.downcase
+    domain = email.split('@').last.to_s.downcase
     fixed_domain = fixed_email.to_s.split('@').last
 
     return email.downcase if domain == fixed_domain
+    return email.downcase if fixed_domain.match?(/\Agmail\.(?!com\z)/i)
 
     if DidYouMean::Levenshtein.distance(domain, fixed_domain) > 3
       Rails.logger.info("Skipped email fix #{domain}")
@@ -134,16 +148,11 @@ module Submissions
   end
 
   def filtered_conditions_schema(submission, values: nil, include_submitter_uuid: nil)
-    fields_uuid_index = nil
-
     (submission.template_schema || submission.template.schema).filter_map do |item|
       if item['conditions'].present?
-        fields_uuid_index ||=
-          (submission.template_fields || submission.template.fields).index_by { |f| f['uuid'] }
-
         values ||= submission.submitters.reduce({}) { |acc, sub| acc.merge(sub.values) }
 
-        next unless check_item_conditions(item, values, fields_uuid_index, include_submitter_uuid:)
+        next unless check_item_conditions(item, values, submission.fields_uuid_index, include_submitter_uuid:)
       end
 
       item
@@ -151,21 +160,21 @@ module Submissions
   end
 
   def filtered_conditions_fields(submitter, only_submitter_fields: true)
-    fields = submitter.submission.template_fields || submitter.submission.template.fields
+    submission = submitter.submission
 
-    fields_uuid_index = nil
+    fields = submission.template_fields || submission.template.fields
+
     values = nil
 
     fields.filter_map do |field|
       next if field['submitter_uuid'] != submitter.uuid && only_submitter_fields
 
       if field['conditions'].present?
-        fields_uuid_index ||= fields.index_by { |f| f['uuid'] }
-        values ||= submitter.submission.submitters.reduce({}) { |acc, sub| acc.merge(sub.values) }
+        values ||= submission.submitters.reduce({}) { |acc, sub| acc.merge(sub.values) }
 
         submitter_conditions = []
 
-        next unless check_item_conditions(field, values, fields_uuid_index,
+        next unless check_item_conditions(field, values, submission.fields_uuid_index,
                                           include_submitter_uuid: submitter.uuid,
                                           submitter_conditions_acc: submitter_conditions)
 
@@ -195,5 +204,21 @@ module Submissions
         acc.push(result)
       end
     end.exclude?(false)
+  end
+
+  def regenerate_documents(submission)
+    submitters = submission.submitters.where.not(completed_at: nil).preload(:documents_attachments)
+
+    submitters.each { |submitter| submitter.documents.each(&:destroy!) }
+
+    submission.submitters.where.not(completed_at: nil).order(:completed_at).each do |submitter|
+      GenerateResultAttachments.call(submitter)
+    end
+
+    return if submission.combined_document_attachment.blank?
+
+    submission.combined_document_attachment.destroy!
+
+    Submissions::GenerateCombinedAttachment.call(submission.submitters.completed.order(:completed_at).last)
   end
 end

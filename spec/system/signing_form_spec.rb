@@ -1,19 +1,19 @@
 # frozen_string_literal: true
 
-require 'rails_helper'
-
-RSpec.describe 'Signing Form', type: :system do
+RSpec.describe 'Signing Form' do
   let(:account) { create(:account) }
   let(:author) { create(:user, account:) }
 
   context 'when the template form link is opened' do
-    let(:template) { create(:template, account:, author:, except_field_types: %w[phone payment stamp]) }
+    let(:template) do
+      create(:template, shared_link: true, account:, author:, except_field_types: %w[phone payment stamp])
+    end
 
     before do
       visit start_form_path(slug: template.slug)
     end
 
-    it 'shows the email step', type: :system do
+    it 'shows the email step' do
       expect(page).to have_content('You have been invited to submit a form')
       expect(page).to have_content("Invited by #{account.name}")
       expect(page).to have_field('Email', type: 'email')
@@ -360,6 +360,19 @@ RSpec.describe 'Signing Form', type: :system do
       expect(field_value(submitter, 'Signature')).to be_present
     end
 
+    it 'shows an error message if the canvas is not drawn or too simple' do
+      visit submit_form_path(slug: submitter.slug)
+
+      find('#expand_form_button').click
+      page.find('canvas').click([], { x: 150, y: 100 })
+
+      alert_text = page.accept_alert do
+        click_button 'Sign and Complete'
+      end
+
+      expect(alert_text).to eq 'Signature is too small or simple. Please redraw.'
+    end
+
     it 'completes the form if the canvas is typed' do
       visit submit_form_path(slug: submitter.slug)
 
@@ -493,6 +506,9 @@ RSpec.describe 'Signing Form', type: :system do
       find('#expand_form_button').click
       find('span[data-tip="Click to upload"]').click
       find('input[type="file"]', visible: false).attach_file(Rails.root.join('spec/fixtures/sample-image.png'))
+
+      sleep 0.1
+
       click_button 'Complete'
 
       expect(page).to have_content('Document has been signed!')
@@ -793,6 +809,42 @@ RSpec.describe 'Signing Form', type: :system do
       visit submit_form_path(slug: second_submitter.slug)
 
       expect(page).to have_content('XXXX')
+    end
+  end
+
+  context 'when the template requires multiple submitters' do
+    let(:template) do
+      create(:template, shared_link: true, submitter_count: 2, account:, author:, only_field_types: %w[text])
+    end
+
+    context 'when default signer details are not defined' do
+      it 'shows an explanation error message if a logged-in user associated with the template account opens the link' do
+        sign_in author
+        visit start_form_path(slug: template.slug)
+        fill_in 'Email', with: author.email
+        click_button 'Start'
+
+        expect(page).to have_content('This submission has multiple signers, which prevents the use of a sharing link ' \
+                                     "as it's unclear which signer is responsible for specific fields. " \
+                                     'To resolve this, follow this guide to define the default signer details.')
+        expect(page).to have_link('guide', href: 'https://www.docuseal.com/resources/pre-filling-recipients')
+      end
+
+      it 'shows a "Not found" error message if a logged-out user associated with the template account opens the link' do
+        visit start_form_path(slug: template.slug)
+        fill_in 'Email', with: author.email
+        click_button 'Start'
+
+        expect(page).to have_content('Not found')
+      end
+
+      it 'shows a "Not found" error message if an unrelated user opens the link' do
+        visit start_form_path(slug: template.slug)
+        fill_in 'Email', with: 'john.doe@example.com'
+        click_button 'Start'
+
+        expect(page).to have_content('Not found')
+      end
     end
   end
 

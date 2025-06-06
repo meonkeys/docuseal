@@ -1,6 +1,6 @@
 <template>
   <div
-    class="absolute overflow-visible group"
+    class="absolute overflow-visible group field-area-container"
     :style="positionStyle"
     :class="{ 'z-[1]': isMoved || isDragged }"
     @pointerdown.stop
@@ -33,7 +33,7 @@
     </div>
     <div
       v-if="field?.type && (isSelected || isNameFocus)"
-      class="absolute bg-white rounded-t border overflow-visible whitespace-nowrap flex z-10"
+      class="absolute bg-white rounded-t border overflow-visible whitespace-nowrap flex z-10 field-area-controls"
       style="top: -25px; height: 25px"
       @mousedown.stop
       @pointerdown.stop
@@ -41,7 +41,7 @@
       <FieldSubmitter
         v-if="field.type != 'heading'"
         v-model="field.submitter_uuid"
-        class="border-r"
+        class="border-r roles-dropdown"
         :compact="true"
         :editable="editable && (!defaultField || defaultField.role !== submitter?.name)"
         :allow-add-new="!defaultSubmitters.length"
@@ -108,7 +108,7 @@
         >{{ t('editable') }}</label>
         <span
           v-if="field.type !== 'payment' && !isValueInput"
-          class="dropdown dropdown-end"
+          class="dropdown dropdown-end field-area-settings-dropdown"
           @mouseenter="renderDropdown = true"
           @touchstart="renderDropdown = true"
         >
@@ -160,15 +160,15 @@
     </div>
     <div
       ref="touchValueTarget"
-      class="flex items-center h-full w-full"
+      class="flex h-full w-full field-area"
       dir="auto"
-      :class="[isValueInput ? 'bg-opacity-50' : 'bg-opacity-80', field.type === 'heading' ? 'bg-gray-50' : bgColors[submitterIndex % bgColors.length], isDefaultValuePresent || isValueInput || (withFieldPlaceholder && field.areas) ? fontClasses : 'justify-center']"
+      :class="[isValueInput ? 'bg-opacity-50' : 'bg-opacity-80', field.type === 'heading' ? 'bg-gray-50' : bgColors[submitterIndex % bgColors.length], isDefaultValuePresent || isValueInput || (withFieldPlaceholder && field.areas) ? fontClasses : 'justify-center items-center']"
       @click="focusValueInput"
     >
       <span
         v-if="field"
         class="flex justify-center items-center space-x-1"
-        :class="{ 'w-full': ['cells', 'checkbox'].includes(field.type), 'h-full': !isValueInput }"
+        :class="{ 'w-full': ['cells', 'checkbox'].includes(field.type), 'h-full': !isValueInput && !isDefaultValuePresent }"
       >
         <div
           v-if="isDefaultValuePresent || isValueInput || (withFieldPlaceholder && field.areas && field.type !== 'checkbox')"
@@ -403,10 +403,13 @@ export default {
     },
     fontClasses () {
       if (!this.field.preferences) {
-        return {}
+        return { 'items-center': true }
       }
 
       return {
+        'items-center': !this.field.preferences.valign || this.field.preferences.valign === 'center',
+        'items-start': this.field.preferences.valign === 'top',
+        'items-end': this.field.preferences.valign === 'bottom',
         'justify-center': this.field.preferences.align === 'center',
         'justify-start': this.field.preferences.align === 'left',
         'justify-end': this.field.preferences.align === 'right',

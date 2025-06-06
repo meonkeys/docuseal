@@ -11,6 +11,9 @@ module Submissions
                   'Helvetica'
                 end
 
+    ICO_REGEXP = %r{\Aimage/(?:x-icon|vnd\.microsoft\.icon)\z}
+    BMP_REGEXP = %r{\Aimage/(?:bmp|x-bmp|x-ms-bmp)\z}
+
     FONT_BOLD_NAME = if File.exist?(FONT_BOLD_PATH)
                        FONT_BOLD_PATH
                      else
@@ -149,7 +152,8 @@ module Submissions
                   TESTING_FOOTER
                 end
               else
-                "#{I18n.t('document_id', locale: submitter.account.locale)}: #{document_id}"
+                "#{I18n.t('document_id',
+                          locale: submitter.metadata.fetch('lang', submitter.account.locale))}: #{document_id}"
               end
 
             text = HexaPDF::Layout::TextFragment.create(
@@ -178,6 +182,8 @@ module Submissions
       return pdfs_index if submitter.submission.template_fields.blank?
 
       with_headings = find_last_submitter(submitter.submission, submitter:).blank? if with_headings.nil?
+
+      locale = submitter.metadata.fetch('lang', account.locale)
 
       submitter.submission.template_fields.each do |field|
         next if field['type'] == 'heading' && !with_headings
@@ -209,7 +215,7 @@ module Submissions
           font_size   = preferences_font_size
           font_size ||= (([page.box.width, page.box.height].min / A4_SIZE[0].to_f) * FONT_SIZE).to_i
 
-          fill_color = field.dig('preferences', 'color').presence
+          fill_color = field.dig('preferences', 'color').to_s.delete_prefix('#').presence
 
           font_name = field.dig('preferences', 'font')
           font_variant = (field.dig('preferences', 'font_type').presence || 'none').to_sym
@@ -221,7 +227,7 @@ module Submissions
             font_variant = nil unless font_name.in?(DEFAULT_FONTS)
           end
 
-          font = pdf.fonts.add(font_name, variant: font_variant)
+          font = pdf.fonts.add(font_name, variant: font_variant, custom_encoding: font_name.in?(DEFAULT_FONTS))
 
           value = submitter.values[field['uuid']]
           value = field['default_value'] if field['type'] == 'heading'
@@ -229,8 +235,9 @@ module Submissions
           text_align = field.dig('preferences', 'align').to_s.to_sym.presence ||
                        (value.to_s.match?(RTL_REGEXP) ? :right : :left)
 
-          layouter = HexaPDF::Layout::TextLayouter.new(text_valign: :center, text_align:,
-                                                       font:, font_size:)
+          text_valign = (field.dig('preferences', 'valign').to_s.presence || 'center').to_sym
+
+          layouter = HexaPDF::Layout::TextLayouter.new(text_valign:, text_align:, font:, font_size:)
 
           next if Array.wrap(value).compact_blank.blank?
 
@@ -249,30 +256,12 @@ module Submissions
           when ->(type) { type == 'signature' && (with_signature_id || field.dig('preferences', 'reason_field_uuid')) }
             attachment = submitter.attachments.find { |a| a.uuid == value }
 
-            attachments_data_cache[attachment.uuid] ||= attachment.download
-
-            image = Vips::Image.new_from_buffer(attachments_data_cache[attachment.uuid], '').autorot
-
-            id_string = "ID: #{attachment.uuid}".upcase
-
-            while true
-              text = HexaPDF::Layout::TextFragment.create(id_string,
-                                                          font:,
-                                                          font_size: (font_size / 1.8).to_i)
-
-              result = layouter.fit([text], area['w'] * width, (font_size / 1.8) / 0.65)
-
-              break if result.status == :success
-
-              id_string = "#{id_string.delete_suffix('...')[0..-2]}..."
-
-              break if id_string.length < 8
-            end
+            image = load_vips_image(attachment, attachments_data_cache).autorot
 
             reason_value = submitter.values[field.dig('preferences', 'reason_field_uuid')].presence
 
             reason_string =
-              I18n.with_locale(submitter.account.locale) do
+              I18n.with_locale(locale) do
                 "#{reason_value ? "#{I18n.t('reason')}: " : ''}#{reason_value || I18n.t('digitally_signed_by')} " \
                   "#{submitter.name}#{submitter.email.present? ? " <#{submitter.email}>" : ''}\n" \
                   "#{I18n.l(attachment.created_at.in_time_zone(submitter.account.timezone), format: :long)} " \
@@ -283,43 +272,101 @@ module Submissions
                                                                font:,
                                                                font_size: (font_size / 1.8).to_i)
 
-            reason_result = layouter.fit([reason_text], area['w'] * width, height)
+            if area['h']&.positive? && (area['w'].to_f / area['h']) > 6
+              area_x = area['x'] * width
+              area_y = area['y'] * height
+              area_w = area['w'] * width
+              area_h = area['h'] * height
 
-            text_height = result.lines.sum(&:height) + reason_result.lines.sum(&:height)
+              half_width = area_w / 2.0
+              scale = [half_width / image.width, area_h / image.height].min
+              image_width = image.width * scale
+              image_height = image.height * scale
+              image_x = area_x + ((half_width - image_width) / 2.0)
+              image_y = height - area_y - image_height
 
-            image_height = (area['h'] * height) - text_height
-            image_height = (area['h'] * height) / 2 if image_height < (area['h'] * height) / 2
+              io = StringIO.new(image.resize([scale * 4, 1].select(&:positive?).min).write_to_buffer('.png'))
 
-            scale = [(area['w'] * width) / image.width, image_height / image.height].min
+              canvas.image(io, at: [image_x, image_y], width: image_width, height: image_height)
 
-            io = StringIO.new(image.resize([scale * 4, 1].select(&:positive?).min).write_to_buffer('.png'))
+              id_string = "ID: #{attachment.uuid}".upcase
 
-            layouter.fit([text], area['w'] * width, (font_size / 1.8) / 0.65)
-                    .draw(canvas, (area['x'] * width) + TEXT_LEFT_MARGIN,
-                          height - (area['y'] * height) - TEXT_TOP_MARGIN - image_height)
+              while true
+                text = HexaPDF::Layout::TextFragment.create(id_string,
+                                                            font:,
+                                                            font_size: (font_size / 1.8).to_i)
 
-            layouter.fit([reason_text], area['w'] * width, reason_result.lines.sum(&:height))
-                    .draw(canvas, (area['x'] * width) + TEXT_LEFT_MARGIN,
-                          height - (area['y'] * height) - TEXT_TOP_MARGIN -
-                          result.lines.sum(&:height) - image_height)
+                result = layouter.fit([text], half_width, (font_size / 1.8) / 0.65)
 
-            canvas.image(
-              io,
-              at: [
-                (area['x'] * width) + (area['w'] * width / 2) - ((image.width * scale) / 2),
-                height - (area['y'] * height) - (image.height * scale / 2) - (image_height / 2)
-              ],
-              width: image.width * scale,
-              height: image.height * scale
-            )
+                break if result.status == :success
+
+                id_string = "#{id_string.delete_suffix('...')[0..-2]}..."
+
+                break if id_string.length < 8
+              end
+
+              text_x = area_x + half_width
+              text_y = height - area_y
+
+              reason_result = layouter.fit([reason_text], half_width, height)
+
+              layouter.fit([text], half_width, (font_size / 1.8) / 0.65)
+                      .draw(canvas, text_x + TEXT_LEFT_MARGIN, text_y)
+
+              layouter.fit([reason_text], half_width, reason_result.lines.sum(&:height))
+                      .draw(canvas, text_x + TEXT_LEFT_MARGIN, text_y - TEXT_TOP_MARGIN - result.lines.sum(&:height))
+            else
+              id_string = "ID: #{attachment.uuid}".upcase
+
+              loop do
+                text = HexaPDF::Layout::TextFragment.create(id_string,
+                                                            font:,
+                                                            font_size: (font_size / 1.8).to_i)
+
+                result = layouter.fit([text], area['w'] * width, (font_size / 1.8) / 0.65)
+
+                break if result.status == :success
+
+                id_string = "#{id_string.delete_suffix('...')[0..-2]}..."
+
+                break if id_string.length < 8
+              end
+
+              reason_result = layouter.fit([reason_text], area['w'] * width, height)
+              text_height = result.lines.sum(&:height) + reason_result.lines.sum(&:height)
+
+              image_height = (area['h'] * height) - text_height
+              image_height = (area['h'] * height) / 2 if image_height < (area['h'] * height) / 2
+
+              scale = [(area['w'] * width) / image.width, image_height / image.height].min
+
+              io = StringIO.new(image.resize([scale * 4, 1].select(&:positive?).min).write_to_buffer('.png'))
+
+              layouter.fit([text], area['w'] * width, (font_size / 1.8) / 0.65)
+                      .draw(canvas, (area['x'] * width) + TEXT_LEFT_MARGIN,
+                            height - (area['y'] * height) - TEXT_TOP_MARGIN - image_height)
+
+              layouter.fit([reason_text], area['w'] * width, reason_result.lines.sum(&:height))
+                      .draw(canvas, (area['x'] * width) + TEXT_LEFT_MARGIN,
+                            height - (area['y'] * height) - TEXT_TOP_MARGIN -
+                            result.lines.sum(&:height) - image_height)
+
+              canvas.image(
+                io,
+                at: [
+                  (area['x'] * width) + (area['w'] * width / 2) - ((image.width * scale) / 2),
+                  height - (area['y'] * height) - (image.height * scale / 2) - (image_height / 2)
+                ],
+                width: image.width * scale,
+                height: image.height * scale
+              )
+            end
           when 'image', 'signature', 'initials', 'stamp'
             attachment = submitter.attachments.find { |a| a.uuid == value }
 
-            attachments_data_cache[attachment.uuid] ||= attachment.download
-
             image =
               begin
-                Vips::Image.new_from_buffer(attachments_data_cache[attachment.uuid], '').autorot
+                load_vips_image(attachment, attachments_data_cache).autorot
               rescue Vips::Error
                 next unless attachment.content_type.starts_with?('image/')
                 next if attachment.byte_size.zero?
@@ -398,7 +445,7 @@ module Submissions
               option = field['options']&.find { |o| o['uuid'] == area['option_uuid'] }
 
               option_name = option['value'].presence
-              option_name ||= "#{I18n.t('option', locale: account.locale)} #{field['options'].index(option) + 1}"
+              option_name ||= "#{I18n.t('option', locale: locale)} #{field['options'].index(option) + 1}"
 
               value = Array.wrap(value).include?(option_name)
             end
@@ -465,7 +512,7 @@ module Submissions
             end
           else
             if field['type'] == 'date'
-              value = TimeUtils.format_date_string(value, field.dig('preferences', 'format'), account.locale)
+              value = TimeUtils.format_date_string(value, field.dig('preferences', 'format'), locale)
             end
 
             value = NumberUtils.format_number(value, field.dig('preferences', 'format')) if field['type'] == 'number'
@@ -515,10 +562,19 @@ module Submissions
                 0
               end
 
+            align_y_diff =
+              if text_valign == :top
+                0
+              elsif text_valign == :bottom
+                height_diff + TEXT_TOP_MARGIN
+              else
+                height_diff / 2
+              end
+
             layouter.fit([text], field['type'].in?(%w[date number]) ? width : area['w'] * width,
                          height_diff.positive? ? box_height : area['h'] * height)
                     .draw(canvas, (area['x'] * width) - right_align_x_adjustment + TEXT_LEFT_MARGIN,
-                          height - (area['y'] * height) + height_diff - TEXT_TOP_MARGIN)
+                          height - (area['y'] * height) + align_y_diff - TEXT_TOP_MARGIN)
           end
         end
       end
@@ -682,14 +738,16 @@ module Submissions
 
       page = pdf.pages.add
 
-      scale = [A4_SIZE.first / attachment.metadata['width'].to_f,
-               A4_SIZE.last / attachment.metadata['height'].to_f].min
+      image = attachment.preview_images.first
 
-      page.box.width = attachment.metadata['width'] * scale
-      page.box.height = attachment.metadata['height'] * scale
+      scale = [A4_SIZE.first / image.metadata['width'].to_f,
+               A4_SIZE.last / image.metadata['height'].to_f].min
+
+      page.box.width = image.metadata['width'] * scale
+      page.box.height = image.metadata['height'] * scale
 
       page.canvas.image(
-        StringIO.new(attachment.preview_images.first.download),
+        StringIO.new(image.download),
         at: [0, 0],
         width: page.box.width,
         height: page.box.height
@@ -748,6 +806,20 @@ module Submissions
 
     def generate_detached_signature_attachments(_submitter)
       []
+    end
+
+    def load_vips_image(attachment, cache = {})
+      cache[attachment.uuid] ||= attachment.download
+
+      data = cache[attachment.uuid]
+
+      if ICO_REGEXP.match?(attachment.content_type)
+        LoadIco.call(data)
+      elsif BMP_REGEXP.match?(attachment.content_type)
+        LoadBmp.call(data)
+      else
+        Vips::Image.new_from_buffer(data, '')
+      end
     end
 
     def h

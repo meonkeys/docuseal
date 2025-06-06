@@ -63,6 +63,9 @@ const en = {
   processing_: 'Processing...',
   add_pdf_documents_or_images: 'Add PDF documents or images',
   add_documents_or_images: 'Add documents or images',
+  add_a_new_document: 'Add a new document',
+  replace_existing_document: 'Replace existing document',
+  clone_and_replace_documents: 'Clone and replace documents',
   required: 'Required',
   default_value: 'Default value',
   format: 'Format',
@@ -158,7 +161,9 @@ const en = {
   some_fields_are_missing_in_the_formula: 'Some fields are missing in the formula.',
   learn_more: 'Learn more',
   and: 'and',
-  or: 'or'
+  or: 'or',
+  start_a_quick_tour_to_learn_how_to_create_an_send_your_first_document: 'Start a quick tour to learn how to create an send your first document',
+  start_tour: 'Start Tour'
 }
 
 const es = {
@@ -223,6 +228,9 @@ const es = {
   processing_: 'Procesando...',
   add_pdf_documents_or_images: 'Agregar documentos PDF o imágenes',
   add_documents_or_images: 'Agregar documentos o imágenes',
+  add_a_new_document: 'Agregar un nuevo documento',
+  replace_existing_document: 'Reemplazar documento existente',
+  clone_and_replace_documents: 'Clonar y reemplazar documentos',
   required: 'Requerido',
   default_value: 'Valor predeterminado',
   format: 'Formato',
@@ -321,7 +329,9 @@ const es = {
   some_fields_are_missing_in_the_formula: 'Faltan algunos campos en la fórmula.',
   learn_more: 'Aprende más',
   and: 'y',
-  or: 'o'
+  or: 'o',
+  start_a_quick_tour_to_learn_how_to_create_an_send_your_first_document: 'Inicia una guía rápida para aprender a crear y enviar tu primer documento.',
+  start_tour: 'Iniciar guía'
 }
 
 const it = {
@@ -389,6 +399,9 @@ const it = {
   processing_: 'Elaborazione...',
   add_pdf_documents_or_images: 'Aggiungi documenti PDF o immagini',
   add_documents_or_images: 'Aggiungi documenti o immagini',
+  add_a_new_document: 'Aggiungi un nuovo documento',
+  replace_existing_document: 'Sostituisci documento esistente',
+  clone_and_replace_documents: 'Clona e sostituisci documenti',
   required: 'Obbligatorio',
   default_value: 'Valore predefinito',
   format: 'Formato',
@@ -484,7 +497,9 @@ const it = {
   some_fields_are_missing_in_the_formula: 'Alcuni campi mancano nella formula.',
   learn_more: 'Scopri di più',
   and: 'e',
-  or: 'o'
+  or: 'o',
+  start_a_quick_tour_to_learn_how_to_create_an_send_your_first_document: 'Inizia un tour rapido per imparare a creare e inviare il tuo primo documento.',
+  start_tour: 'Inizia il tour'
 }
 
 const pt = {
@@ -549,6 +564,9 @@ const pt = {
   processing_: 'Processando...',
   add_pdf_documents_or_images: 'Adicionar documentos PDF ou imagens',
   add_documents_or_images: 'Adicionar documentos ou imagens',
+  add_a_new_document: 'Ajouter un nouveau document',
+  replace_existing_document: 'Substituir documento existente',
+  clone_and_replace_documents: 'Clonar e substituir documentos',
   required: 'Obrigatório',
   default_value: 'Valor padrão',
   format: 'Formato',
@@ -647,7 +665,9 @@ const pt = {
   some_fields_are_missing_in_the_formula: 'Faltam alguns campos na fórmula.',
   learn_more: 'Saiba mais',
   and: 'e',
-  or: 'ou'
+  or: 'ou',
+  start_a_quick_tour_to_learn_how_to_create_an_send_your_first_document: 'Comece um tour rápido para aprender a criar e enviar seu primeiro documento.',
+  start_tour: 'Iniciar tour'
 }
 
 const fr = {
@@ -711,6 +731,9 @@ const fr = {
   processing_: 'Traitement en cours...',
   add_pdf_documents_or_images: 'Ajoutez des documents PDF ou des images',
   add_documents_or_images: 'Ajoutez des documents ou des images',
+  add_a_new_document: 'Adicionar um novo documento',
+  replace_existing_document: 'Remplacer le document existant',
+  clone_and_replace_documents: 'Cloner et remplacer les documents',
   required: 'Requis',
   default_value: 'Valeur par défaut',
   format: 'Format',
@@ -810,7 +833,9 @@ const fr = {
   some_fields_are_missing_in_the_formula: 'Certains champs manquent dans la formule.',
   learn_more: 'En savoir plus',
   and: 'et',
-  or: 'ou'
+  or: 'ou',
+  start_a_quick_tour_to_learn_how_to_create_an_send_your_first_document: 'Lancez une visite rapide pour apprendre à créer et envoyer votre premier document.',
+  start_tour: 'Démarrer'
 }
 
 const de = {
@@ -874,6 +899,9 @@ const de = {
   processing_: 'Verarbeitung...',
   add_pdf_documents_or_images: 'PDF-Dokumente oder Bilder hinzufügen',
   add_documents_or_images: 'Dokumente oder Bilder hinzufügen',
+  add_a_new_document: 'Neues Dokument hinzufügen',
+  replace_existing_document: 'Vorhandenes Dokument ersetzen',
+  clone_and_replace_documents: 'Dokumente klonen und ersetzen',
   required: 'Erforderlich',
   default_value: 'Standardwert',
   format: 'Format',
@@ -973,7 +1001,9 @@ const de = {
   some_fields_are_missing_in_the_formula: 'Einige Felder fehlen in der Formel.',
   learn_more: 'Erfahren Sie mehr',
   and: 'und',
-  or: 'oder'
+  or: 'oder',
+  start_a_quick_tour_to_learn_how_to_create_an_send_your_first_document: 'Starte eine kurze Tour, um zu lernen, wie du dein erstes Dokument erstellst und versendest.',
+  start_tour: 'Starten'
 }
 
 export { en, es, it, pt, fr, de }

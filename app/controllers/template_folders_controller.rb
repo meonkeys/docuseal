@@ -5,10 +5,11 @@ class TemplateFoldersController < ApplicationController
 
   def show
     @templates = @template_folder.templates.active.accessible_by(current_ability)
-                                 .preload(:author, :template_accesses).order(id: :desc)
+                                 .preload(:author, :template_accesses)
     @templates = Templates.search(@templates, params[:q])
+    @templates = Templates::Order.call(@templates, current_user, cookies.permanent[:dashboard_templates_order])
 
-    @pagy, @templates = pagy(@templates, limit: 12)
+    @pagy, @templates = pagy_auto(@templates, limit: 12)
   end
 
   def edit; end

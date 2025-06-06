@@ -3,7 +3,7 @@
     class="list-field group mb-2"
   >
     <div
-      class="border border-base-300 rounded rounded-tr-none relative group"
+      class="border border-base-300 rounded relative group fields-list-item"
       :style="{ backgroundColor: backgroundColor }"
     >
       <div class="flex items-center justify-between relative group/contenteditable-container">
@@ -98,7 +98,7 @@
           />
           <span
             v-else-if="field.type !== 'heading'"
-            class="dropdown dropdown-end"
+            class="dropdown dropdown-end field-settings-dropdown"
             @mouseenter="renderDropdown = true"
             @touchstart="renderDropdown = true"
           >
@@ -137,7 +137,7 @@
             </ul>
           </span>
           <button
-            class="relative text-transparent group-hover:text-base-content pr-1"
+            class="relative text-transparent group-hover:text-base-content pr-1 field-remove-button"
             :title="t('remove')"
             @click="$emit('remove', field)"
           >
@@ -149,7 +149,7 @@
         </div>
       </div>
       <div
-        v-if="field.options"
+        v-if="field.options && withOptions"
         ref="options"
         class="border-t border-base-300 mx-2 pt-2 space-y-1.5"
         draggable="true"
@@ -301,6 +301,11 @@ export default {
     field: {
       type: Object,
       required: true
+    },
+    withOptions: {
+      type: Boolean,
+      required: false,
+      default: true
     },
     defaultField: {
       type: Object,

@@ -24,6 +24,7 @@ import SubmitForm from './elements/submit_form'
 import PromptPassword from './elements/prompt_password'
 import EmailsTextarea from './elements/emails_textarea'
 import ToggleOnSubmit from './elements/toggle_on_submit'
+import CheckOnClick from './elements/check_on_click'
 import PasswordInput from './elements/password_input'
 import SearchInput from './elements/search_input'
 import ToggleAttribute from './elements/toggle_attribute'
@@ -32,10 +33,10 @@ import CheckboxGroup from './elements/checkbox_group'
 import MaskedInput from './elements/masked_input'
 import SetDateButton from './elements/set_date_button'
 import IndeterminateCheckbox from './elements/indeterminate_checkbox'
+import AppTour from './elements/app_tour'
+import DashboardDropzone from './elements/dashboard_dropzone'
 
 import * as TurboInstantClick from './lib/turbo_instant_click'
-
-import './images/preview.png'
 
 TurboInstantClick.start()
 
@@ -101,6 +102,9 @@ safeRegisterElement('checkbox-group', CheckboxGroup)
 safeRegisterElement('masked-input', MaskedInput)
 safeRegisterElement('set-date-button', SetDateButton)
 safeRegisterElement('indeterminate-checkbox', IndeterminateCheckbox)
+safeRegisterElement('app-tour', AppTour)
+safeRegisterElement('dashboard-dropzone', DashboardDropzone)
+safeRegisterElement('check-on-click', CheckOnClick)
 
 safeRegisterElement('template-builder', class extends HTMLElement {
   connectedCallback () {
@@ -125,8 +129,10 @@ safeRegisterElement('template-builder', class extends HTMLElement {
       withSendButton: this.dataset.withSendButton !== 'false',
       withSignYourselfButton: this.dataset.withSignYourselfButton !== 'false',
       withConditions: this.dataset.withConditions === 'true',
+      withReplaceAndCloneUpload: true,
       currencies: (this.dataset.currencies || '').split(',').filter(Boolean),
-      acceptFileTypes: this.dataset.acceptFileTypes
+      acceptFileTypes: this.dataset.acceptFileTypes,
+      showTourStartForm: this.dataset.showTourStartForm === 'true'
     })
 
     this.component = this.app.mount(this.appElem)

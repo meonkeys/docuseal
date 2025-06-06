@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'rails_helper'
-
 RSpec.describe 'Profile Settings' do
   let(:user) { create(:user, account: create(:account)) }
 
@@ -34,6 +32,14 @@ RSpec.describe 'Profile Settings' do
       expect(user.first_name).to eq('Devid')
       expect(user.last_name).to eq('Beckham')
       expect(user.email).to eq('david.beckham@example.com')
+    end
+
+    it 'does not update if email is invalid' do
+      fill_in 'Email', with: 'devid+test@example'
+
+      all(:button, 'Update')[0].click
+
+      expect(page).to have_content('Email is invalid')
     end
   end
 

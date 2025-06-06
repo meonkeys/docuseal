@@ -1,9 +1,9 @@
 <template>
   <div
-    class="field-area flex absolute lg:text-base -outline-offset-1"
+    class="flex absolute lg:text-base -outline-offset-1 field-area"
     dir="auto"
     :style="computedStyle"
-    :class="{ 'text-[1.6vw] lg:text-base': !textOverflowChars, 'text-[1.0vw] lg:text-xs': textOverflowChars, 'cursor-default': !submittable, 'border border-red-100 bg-red-100 cursor-pointer': submittable, 'border border-red-100': !isActive && submittable, 'bg-opacity-80': !isActive && !isValueSet && submittable, 'field-area-active outline-red-500 outline-dashed outline-2 z-10': isActive && submittable, 'bg-opacity-40': (isActive || isValueSet) && submittable }"
+    :class="{ 'text-[1.6vw] lg:text-base': !textOverflowChars, 'text-[1.0vw] lg:text-xs': textOverflowChars, 'cursor-default': !submittable, 'border border-red-100 bg-red-100 cursor-pointer': submittable, 'border border-red-100': !isActive && submittable, 'bg-opacity-80': !isActive && !isValueSet && submittable, 'outline-red-500 outline-dashed outline-2 z-10 field-area-active': isActive && submittable, 'bg-opacity-40': (isActive || isValueSet) && submittable }"
   >
     <div
       v-if="(!withFieldPlaceholder || !field.name || field.type === 'cells') && !isActive && !isValueSet && field.type !== 'checkbox' && submittable && !area.option_uuid"
@@ -23,7 +23,7 @@
     </div>
     <div
       v-if="isActive && withLabel && (!area.option_uuid || !option.value)"
-      class="absolute -top-7 rounded bg-base-content text-base-100 px-2 text-sm whitespace-nowrap pointer-events-none"
+      class="absolute -top-7 rounded bg-base-content text-base-100 px-2 text-sm whitespace-nowrap pointer-events-none field-area-active-label"
     >
       <template v-if="area.option_uuid && !option.value">
         {{ optionValue(option) }}
@@ -55,10 +55,12 @@
     >
     <div
       v-else-if="field.type === 'signature' && signature"
-      class="flex flex-col justify-between h-full overflow-hidden"
+      class="flex justify-between h-full gap-1 overflow-hidden w-full"
+      :class="isNarrow && (withSignatureId || field.preferences?.reason_field_uuid) ? 'flex-row' : 'flex-col'"
     >
       <div
-        class="flex-grow flex overflow-hidden"
+        class="flex overflow-hidden"
+        :class="isNarrow && (withSignatureId || field.preferences?.reason_field_uuid) ? 'w-1/2' : 'flex-grow'"
         style="min-height: 50%"
       >
         <img
@@ -67,8 +69,9 @@
         >
       </div>
       <div
-        v-if="withSignatureId"
-        class="w-full mt-1 text-[1vw] lg:text-[0.55rem] lg:leading-[0.65rem]"
+        v-if="withSignatureId || field.preferences?.reason_field_uuid"
+        class="text-[1vw] lg:text-[0.55rem] lg:leading-[0.65rem]"
+        :class="isNarrow ? 'w-1/2' : 'w-full'"
       >
         <div class="truncate uppercase">
           ID: {{ signature.uuid }}
@@ -183,7 +186,7 @@
       v-else
       ref="textContainer"
       dir="auto"
-      class="flex items-center px-0.5 w-full"
+      class="flex px-0.5 w-full"
       :class="{ ...alignClasses, ...fontClasses }"
     >
       <span
@@ -327,13 +330,16 @@ export default {
     },
     alignClasses () {
       if (!this.field.preferences) {
-        return {}
+        return { 'items-center': true }
       }
 
       return {
         'text-center': this.field.preferences.align === 'center',
         'text-left': this.field.preferences.align === 'left',
-        'text-right': this.field.preferences.align === 'right'
+        'text-right': this.field.preferences.align === 'right',
+        'items-center': !this.field.preferences.valign || this.field.preferences.valign === 'center',
+        'items-start': this.field.preferences.valign === 'top',
+        'items-end': this.field.preferences.valign === 'bottom'
       }
     },
     fontClasses () {
@@ -441,6 +447,9 @@ export default {
       }
 
       return style
+    },
+    isNarrow () {
+      return this.area.h > 0 && (this.area.w / this.area.h) > 6
     }
   },
   watch: {

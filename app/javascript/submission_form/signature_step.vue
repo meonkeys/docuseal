@@ -9,7 +9,7 @@
     >
       <label
         v-if="showFieldNames"
-        class="label text-xl sm:text-2xl py-0"
+        class="label text-xl sm:text-2xl py-0 field-name-label"
       >
         <MarkdownContent
           v-if="field.title"
@@ -28,7 +28,7 @@
           <a
             id="type_text_button"
             href="#"
-            class="btn btn-outline btn-sm font-medium"
+            class="btn btn-outline btn-sm font-medium type-text-button"
             @click.prevent="[toggleTextInput(), hideQr()]"
           >
             <IconSignature :width="16" />
@@ -46,7 +46,7 @@
           <a
             id="type_text_button"
             href="#"
-            class="btn btn-outline btn-sm font-medium inline-flex flex-nowrap"
+            class="btn btn-outline btn-sm font-medium inline-flex flex-nowrap type-text-button"
             @click.prevent="[toggleTextInput(), hideQr()]"
           >
             <IconTextSize :width="16" />
@@ -61,9 +61,7 @@
           :class="{ 'hidden sm:inline': modelValue || computedPreviousValue }"
           :data-tip="t('take_photo')"
         >
-          <label
-            class="btn btn-outline btn-sm font-medium inline-flex flex-nowrap"
-          >
+          <label class="btn btn-outline btn-sm font-medium inline-flex flex-nowrap upload-image-button">
             <IconCamera :width="16" />
             <input
               :key="uploadImageInputKey"
@@ -80,7 +78,7 @@
         <a
           v-if="modelValue || computedPreviousValue"
           href="#"
-          class="btn btn-outline btn-sm font-medium"
+          class="btn btn-outline btn-sm font-medium reupload-button"
           @click.prevent="remove"
         >
           <IconReload :width="16" />
@@ -119,7 +117,7 @@
     <div
       v-if="field.description"
       dir="auto"
-      class="mb-3 px-1"
+      class="mb-3 px-1 field-description-text"
     >
       <MarkdownContent :string="field.description" />
     </div>
@@ -167,7 +165,7 @@
         v-show="!modelValue && !computedPreviousValue"
         ref="canvas"
         style="padding: 1px; 0"
-        class="bg-white border border-base-300 rounded-2xl w-full"
+        class="bg-white border border-base-300 rounded-2xl w-full draw-canvas"
       />
       <div
         v-if="isShowQr"
@@ -294,6 +292,7 @@
 <script>
 import { IconReload, IconCamera, IconSignature, IconTextSize, IconArrowsDiagonalMinimize2, IconQrcode, IconX } from '@tabler/icons-vue'
 import { cropCanvasAndExportToPNG } from './crop_canvas'
+import { isValidSignatureCanvas } from './validate_signature'
 import SignaturePad from 'signature_pad'
 import AppearsOn from './appears_on'
 import FileDropzone from './dropzone'
@@ -415,7 +414,7 @@ export default {
       }
     },
     computedPreviousValue () {
-      if (this.isUsePreviousValue) {
+      if (this.isUsePreviousValue && this.field.required === true) {
         return this.previousValue
       } else {
         return null
@@ -600,6 +599,7 @@ export default {
     },
     drawImage (event) {
       this.remove()
+      this.clear()
       this.isSignatureStarted = true
 
       this.drawOnCanvas(event.target.files[0], this.$refs.canvas)
@@ -682,6 +682,16 @@ export default {
         return Promise.resolve({})
       }
 
+      if (this.isSignatureStarted && this.pad.toData().length > 0 && !isValidSignatureCanvas(this.pad.toData())) {
+        if (this.field.required === true || this.pad.toData().length > 0) {
+          alert(this.t('signature_is_too_small_or_simple_please_redraw'))
+
+          return Promise.reject(new Error('Image too small or simple'))
+        } else {
+          Promise.resolve({})
+        }
+      }
+
       return new Promise((resolve, reject) => {
         cropCanvasAndExportToPNG(this.$refs.canvas, { errorOnTooSmall: true }).then(async (blob) => {
           const file = new File([blob], 'signature.png', { type: 'image/png' })
@@ -720,10 +730,12 @@ export default {
             })
           }
         }).catch((error) => {
-          if (error.message === 'Image too small' && this.field.required === false) {
-            return resolve({})
-          } else {
+          if (this.field.required === true) {
+            alert(this.t('signature_is_too_small_or_simple_please_redraw'))
+
             return reject(error)
+          } else {
+            return resolve({})
           }
         })
       })

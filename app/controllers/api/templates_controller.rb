@@ -90,6 +90,7 @@ module Api
       templates = params[:archived].in?(['true', true]) ? templates.archived : templates.active
       templates = templates.where(external_id: params[:application_key]) if params[:application_key].present?
       templates = templates.where(external_id: params[:external_id]) if params[:external_id].present?
+      templates = templates.where(slug: params[:slug]) if params[:slug].present?
       templates = templates.joins(:folder).where(folder: { name: params[:folder] }) if params[:folder].present?
 
       templates
@@ -99,6 +100,7 @@ module Api
       permitted_params = [
         :name,
         :external_id,
+        :shared_link,
         {
           submitters: [%i[name uuid is_requester invite_by_uuid optional_invite_by_uuid linked_to_uuid email]],
           fields: [[:uuid, :submitter_uuid, :name, :type,
