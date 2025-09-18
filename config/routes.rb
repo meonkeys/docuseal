@@ -65,7 +65,9 @@ Rails.application.routes.draw do
   resources :setup, only: %i[index create]
   resource :newsletter, only: %i[show update]
   resources :enquiries, only: %i[create]
-  resources :users, only: %i[new create edit update destroy]
+  resources :users, only: %i[new create edit update destroy] do
+    resource :send_reset_password, only: %i[update], controller: 'users_send_reset_password'
+  end
   resource :user_signature, only: %i[edit update destroy]
   resource :user_initials, only: %i[edit update destroy]
   resources :submissions_archived, only: %i[index], path: 'submissions/archived'
@@ -108,6 +110,7 @@ Rails.application.routes.draw do
     resource :preferences, only: %i[show create], controller: 'templates_preferences'
     resource :share_link, only: %i[show create], controller: 'templates_share_link'
     resources :recipients, only: %i[create], controller: 'templates_recipients'
+    resources :prefillable_fields, only: %i[create], controller: 'templates_prefillable_fields'
     resources :submissions_export, only: %i[index new]
   end
   resources :preview_document_page, only: %i[show], path: '/preview/:signed_uuid'
@@ -133,6 +136,7 @@ Rails.application.routes.draw do
   end
 
   resource :resubmit_form, controller: 'start_form', only: :update
+  resources :start_form_email_2fa_send, only: :create
 
   resources :submit_form, only: %i[], path: '' do
     get :success, on: :collection
@@ -163,6 +167,7 @@ Rails.application.routes.draw do
   scope '/settings', as: :settings do
     unless Docuseal.multitenant?
       resources :storage, only: %i[index create], controller: 'storage_settings'
+      resources :search_entries_reindex, only: %i[create]
       resources :sms, only: %i[index], controller: 'sms_settings'
     end
     resources :email, only: %i[index create], controller: 'email_smtp_settings'
@@ -176,8 +181,14 @@ Rails.application.routes.draw do
                                   defaults: { status: :integration }
     resource :personalization, only: %i[show create], controller: 'personalization_settings'
     resources :api, only: %i[index create], controller: 'api_settings'
+    resource :reveal_access_token, only: %i[show create], controller: 'reveal_access_token'
     resources :webhooks, only: %i[index show new create update destroy], controller: 'webhook_settings' do
       post :resend
+
+      resources :events, only: %i[show], controller: 'webhook_events' do
+        post :resend, on: :member
+        post :refresh, on: :member
+      end
     end
     resource :account, only: %i[show update destroy]
     resources :profile, only: %i[index] do

@@ -8,6 +8,14 @@ module Submitters
     VARIABLE_REGEXP = /\{\{?(\w+)\}\}?/
     NONEDITABLE_FIELD_TYPES = %w[stamp heading].freeze
 
+    STRFTIME_MAP = {
+      'hour' => '%-k',
+      'minute' => '%M',
+      'day' => '%-d',
+      'month' => '%-m',
+      'year' => '%Y'
+    }.freeze
+
     module_function
 
     def call(submitter, params, request, validate_required: true)
@@ -16,10 +24,7 @@ module Submitters
       unless submitter.submission_events.exists?(event_type: 'start_form')
         SubmissionEvents.create_with_tracking_data(submitter, 'start_form', request)
 
-        WebhookUrls.for_account_id(submitter.account_id, 'form.started').each do |webhook_url|
-          SendFormStartedWebhookRequestJob.perform_async('submitter_id' => submitter.id,
-                                                         'webhook_url_id' => webhook_url.id)
-        end
+        WebhookUrls.enqueue_events(submitter, 'form.started')
       end
 
       update_submitter!(submitter, params, request, validate_required:)
@@ -48,6 +53,8 @@ module Submitters
         submitter.save!
       end
 
+      SearchEntries.enqueue_reindex(submitter) if submitter.completed_at?
+
       submitter
     end
 
@@ -55,6 +62,7 @@ module Submitters
       submitter.completed_at = Time.current
       submitter.ip = request.remote_ip
       submitter.ua = request.user_agent
+      submitter.timezone = request.params[:timezone]
 
       submitter.values = merge_default_values(submitter)
 
@@ -135,7 +143,7 @@ module Submitters
       end
     end
 
-    def merge_default_values(submitter)
+    def merge_default_values(submitter, with_verification: true)
       default_values = submitter.submission.template_fields.each_with_object({}) do |field, acc|
         next if field['submitter_uuid'] != submitter.uuid
 
@@ -149,7 +157,7 @@ module Submitters
           next
         end
 
-        if field['type'] == 'verification'
+        if field['type'] == 'verification' && with_verification
           acc[field['uuid']] =
             if submitter.submission_events.exists?(event_type: :complete_verification)
               I18n.t(:verified, locale: :en)
@@ -181,6 +189,8 @@ module Submitters
 
         next if formula.blank?
 
+        formula = normalize_formula(formula, submitter.submission)
+
         submission_values ||=
           if submitter.submission.template_submitters.size > 1
             merge_submitters_values(submitter)
@@ -192,6 +202,20 @@ module Submitters
       end
 
       computed_values.compact_blank
+    end
+
+    def normalize_formula(formula, submission, depth = 0)
+      raise ValidationError, 'Formula infinite loop' if depth > 10
+
+      formula.gsub(/{{(.*?)}}/) do |match|
+        uuid = Regexp.last_match(1)
+
+        if (nested_formula = submission.fields_uuid_index.dig(uuid, 'preferences', 'formula').presence)
+          "(#{normalize_formula(nested_formula, submission, depth + 1)})"
+        else
+          match
+        end
+      end
     end
 
     def calculate_formula_value(_formula, _values)
@@ -216,8 +240,7 @@ module Submitters
       submitters_values = nil
       has_other_submitters = submission.template_submitters.size > 1
 
-      has_document_conditions =
-        (submission.template_schema || submission.template.schema).any? { |e| e['conditions'].present? }
+      has_document_conditions = submission_has_document_conditions?(submission)
 
       attachments_index =
         if has_document_conditions
@@ -231,7 +254,7 @@ module Submitters
 
         if has_document_conditions && !check_field_areas_attachments(field, attachments_index)
           submitter.values.delete(field['uuid'])
-          required_field_uuids_acc.delete(field['uuid'])
+          required_field_uuids_acc&.delete(field['uuid'])
         end
 
         if has_other_submitters && !submitters_values &&
@@ -241,11 +264,15 @@ module Submitters
 
         unless check_field_conditions(submitters_values || submitter.values, field, submission.fields_uuid_index)
           submitter.values.delete(field['uuid'])
-          required_field_uuids_acc.delete(field['uuid'])
+          required_field_uuids_acc&.delete(field['uuid'])
         end
       end
 
       submitter.values
+    end
+
+    def submission_has_document_conditions?(submission)
+      (submission.template_schema || submission.template.schema).any? { |e| e['conditions'].present? }
     end
 
     def required_editable_field?(field)
@@ -297,20 +324,20 @@ module Submitters
         option = field['options'].find { |o| o['uuid'] == condition['value'] }
         values = Array.wrap(submitter_values[condition['field_uuid']])
 
-        values.include?(option['value'].presence || "#{I18n.t('option')} #{field['options'].index(option)}")
+        values.include?(option['value'].presence || "#{I18n.t('option')} #{field['options'].index(option) + 1}")
       when 'not_equal', 'does_not_contain'
         field = fields_uuid_index[condition['field_uuid']]
         option = field['options'].find { |o| o['uuid'] == condition['value'] }
         values = Array.wrap(submitter_values[condition['field_uuid']])
 
-        values.exclude?(option['value'].presence || "#{I18n.t('option')} #{field['options'].index(option)}")
+        values.exclude?(option['value'].presence || "#{I18n.t('option')} #{field['options'].index(option) + 1}")
       else
         true
       end
     end
 
     def replace_default_variables(value, attrs, submission, with_time: false)
-      return value if value.in?([true, false]) || value.is_a?(Numeric)
+      return value if value.in?([true, false]) || value.is_a?(Numeric) || value.is_a?(Array)
       return if value.blank?
 
       value.to_s.gsub(VARIABLE_REGEXP) do |e|
@@ -324,12 +351,10 @@ module Submitters
           else
             e
           end
+        when 'hour', 'minute', 'day', 'month', 'year'
+          with_time ? Time.current.in_time_zone(submission.account.timezone).strftime(STRFTIME_MAP[key]) : e
         when 'date'
-          if with_time
-            Time.current.in_time_zone(submission.account.timezone).to_date.to_s
-          else
-            e
-          end
+          with_time ? Time.current.in_time_zone(submission.account.timezone).to_date.to_s : e
         when 'role', 'email', 'phone', 'name'
           attrs[key] || e
         else

@@ -1,8 +1,9 @@
 <template>
   <div
-    class="relative select-none"
-    :class="{ 'cursor-crosshair': allowDraw }"
-    :style="drawField ? 'touch-action: none' : ''"
+    class="relative select-none mb-4 before:border before:rounded before:top-0 before:bottom-0 before:left-0 before:right-0 before:absolute"
+    :class="{ 'cursor-crosshair': allowDraw && editable, 'touch-none': !!drawField }"
+    style="container-type: size"
+    :style="{ aspectRatio: `${width} / ${height}`}"
   >
     <img
       ref="image"
@@ -10,7 +11,7 @@
       :src="image.url"
       :width="width"
       :height="height"
-      class="border rounded mb-4"
+      class="rounded"
       @load="onImageLoad"
     >
     <div
@@ -26,6 +27,8 @@
         :field="item.field"
         :editable="editable"
         :with-field-placeholder="withFieldPlaceholder"
+        :with-signature-id="withSignatureId"
+        :with-prefillable="withPrefillable"
         :default-field="defaultFieldsIndex[item.field.name]"
         :default-submitters="defaultSubmitters"
         :max-page="totalPages - 1"
@@ -76,6 +79,16 @@ export default {
       type: Object,
       required: false,
       default: null
+    },
+    withSignatureId: {
+      type: Boolean,
+      required: false,
+      default: null
+    },
+    withPrefillable: {
+      type: Boolean,
+      required: false,
+      default: false
     },
     areas: {
       type: Array,
@@ -191,8 +204,8 @@ export default {
   },
   methods: {
     onImageLoad (e) {
-      e.target.setAttribute('width', e.target.naturalWidth)
-      e.target.setAttribute('height', e.target.naturalHeight)
+      this.image.metadata.width = e.target.naturalWidth
+      this.image.metadata.height = e.target.naturalHeight
     },
     setAreaRefs (el) {
       if (el) {

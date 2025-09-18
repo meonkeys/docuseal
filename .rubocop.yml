@@ -63,10 +63,10 @@ RSpec/MultipleExpectations:
   Max: 25
 
 RSpec/ExampleLength:
-  Max: 50
+  Max: 500
 
 RSpec/MultipleMemoizedHelpers:
-  Max: 9
+  Max: 15
 
 Metrics/BlockNesting:
   Max: 5

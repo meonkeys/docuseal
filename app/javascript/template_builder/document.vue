@@ -10,6 +10,8 @@
       :data-page="index"
       :areas="areasIndex[index]"
       :allow-draw="allowDraw"
+      :with-signature-id="withSignatureId"
+      :with-prefillable="withPrefillable"
       :is-drag="isDrag"
       :with-field-placeholder="withFieldPlaceholder"
       :default-fields="defaultFields"
@@ -29,6 +31,7 @@
 </template>
 <script>
 import Page from './page'
+import { reactive } from 'vue'
 
 export default {
   name: 'TemplateDocument',
@@ -61,6 +64,16 @@ export default {
       default: () => []
     },
     withFieldPlaceholder: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
+    withSignatureId: {
+      type: Boolean,
+      required: false,
+      default: null
+    },
+    withPrefillable: {
       type: Boolean,
       required: false,
       default: false
@@ -123,14 +136,14 @@ export default {
       return this.document.metadata?.pdf?.number_of_pages || this.document.preview_images.length
     },
     sortedPreviewImages () {
-      const lazyloadMetadata = this.document.preview_images[this.document.preview_images.length - 1].metadata
+      const lazyloadMetadata = this.document.preview_images[this.document.preview_images.length - 1]?.metadata || { width: 1400, height: 1812 }
 
       return [...Array(this.numberOfPages).keys()].map((i) => {
-        return this.previewImagesIndex[i] || {
-          metadata: lazyloadMetadata,
+        return this.previewImagesIndex[i] || reactive({
+          metadata: { ...lazyloadMetadata },
           id: Math.random().toString(),
           url: this.basePreviewUrl + `/preview/${this.document.signed_uuid || this.document.uuid}/${i}.jpg`
-        }
+        })
       })
     },
     previewImagesIndex () {

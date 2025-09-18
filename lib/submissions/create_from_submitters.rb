@@ -7,7 +7,7 @@ module Submissions
     module_function
 
     # rubocop:disable Metrics
-    def call(template:, user:, submissions_attrs:, source:, submitters_order:, params: {})
+    def call(template:, user:, submissions_attrs:, source:, submitters_order:, params: {}, with_template: true)
       preferences = Submitters.normalize_preferences(user.account, user, params)
 
       submissions = Array.wrap(submissions_attrs).filter_map do |attrs|
@@ -21,6 +21,8 @@ module Submissions
         submission = template.submissions.new(created_by_user: user, source:,
                                               account_id: user.account_id,
                                               preferences: set_submission_preferences,
+                                              name: with_template ? attrs[:name] : (attrs[:name] || template.name),
+                                              variables: attrs[:variables] || {},
                                               expire_at:,
                                               template_submitters: [], submitters_order:)
 
@@ -51,16 +53,19 @@ module Submissions
             template_submitter = template_submitters.find { |e| e['uuid'] == uuid }
           end
 
-          submission.template_submitters << template_submitter.except('optional_invite_by_uuid', 'invite_by_uuid')
+          template_submitter = template_submitter.except('optional_invite_by_uuid', 'invite_by_uuid')
+          template_submitter['order'] = submitter_attrs['order'] if submitter_attrs['order'].present?
 
-          is_order_sent = submitters_order == 'random' || index.zero?
+          submission.template_submitters << template_submitter
+
+          is_order_sent = submitters_order == 'random' || (template_submitter['order'] || index).zero?
 
           build_submitter(submission:, attrs: submitter_attrs,
                           uuid:, is_order_sent:, user:, params:,
                           preferences: preferences.merge(submission_preferences))
         end
 
-        maybe_set_template_fields(submission, attrs[:submitters])
+        maybe_set_template_fields(submission, attrs[:submitters], with_template:)
 
         if submission.submitters.size > template.submitters.size
           raise BaseError, 'Defined more signing parties than in template'
@@ -75,6 +80,8 @@ module Submissions
         next if submission.submitters.blank?
 
         maybe_add_invite_submitters(submission, template)
+
+        submission.template = nil unless with_template
 
         submission.tap(&:save!)
       end
@@ -118,7 +125,7 @@ module Submissions
       }.compact_blank
     end
 
-    def maybe_set_template_fields(submission, submitters_attrs, default_submitter_uuid: nil)
+    def maybe_set_template_fields(submission, submitters_attrs, default_submitter_uuid: nil, with_template: true)
       template_fields = (submission.template_fields || submission.template.fields).deep_dup
 
       submitters = submission.template_submitters || submission.template.submitters
@@ -133,9 +140,11 @@ module Submissions
       end
 
       if template_fields != (submission.template_fields || submission.template.fields) ||
-         submitters_attrs.any? { |e| e[:completed].present? }
+         submitters_attrs.any? { |e| e[:completed].present? } || !with_template || submission.variables.present?
         submission.template_fields = template_fields
         submission.template_schema = submission.template.schema if submission.template_schema.blank?
+        submission.variables_schema = submission.template.variables_schema if submission.template_id &&
+                                                                              submission.variables_schema.blank?
       end
 
       submission
@@ -192,6 +201,8 @@ module Submissions
             merged_submitter['uuid'] = new_uuid
             merged_submitter['name'] = name
             merged_submitter.delete('linked_to_uuid')
+
+            next merged_submitter
           end
 
           submitter
@@ -267,6 +278,7 @@ module Submissions
       end
 
       field['preferences'] = (field['preferences'] || {}).merge(attrs['preferences']) if attrs['preferences'].present?
+      field['validation'] = (field['validation'] || {}).merge(attrs['validation']) if attrs['validation'].present?
 
       return field if attrs['validation_pattern'].blank?
 
@@ -323,8 +335,8 @@ module Submissions
       end
     end
 
-    def assign_completed_attributes(submitter)
-      submitter.values = Submitters::SubmitValues.merge_default_values(submitter)
+    def assign_completed_attributes(submitter, with_verification: true)
+      submitter.values = Submitters::SubmitValues.merge_default_values(submitter, with_verification:)
       submitter.values = Submitters::SubmitValues.maybe_remove_condition_values(submitter)
 
       formula_values = Submitters::SubmitValues.build_formula_values(submitter)

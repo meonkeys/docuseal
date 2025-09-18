@@ -21,7 +21,7 @@
       </label>
       <div class="space-x-2 flex flex-none">
         <span
-          v-if="isTextSignature && format !== 'typed' && format !== 'upload'"
+          v-if="isTextSignature && format !== 'typed_or_upload' && format !== 'typed' && format !== 'upload'"
           class="tooltip"
           :data-tip="t('draw_signature')"
         >
@@ -38,7 +38,7 @@
           </a>
         </span>
         <span
-          v-else-if="withTypedSignature && format !== 'typed' && format !== 'drawn' && format !== 'upload'"
+          v-else-if="withTypedSignature && format !== 'drawn_or_upload' && format !== 'typed_or_upload' && format !== 'typed' && format !== 'drawn' && format !== 'upload'"
           class="tooltip ml-2"
           :class="{ 'hidden sm:inline': modelValue || computedPreviousValue }"
           :data-tip="t('type_text')"
@@ -85,8 +85,8 @@
           {{ t(format === 'upload' ? 'reupload' : 'redraw') }}
         </a>
         <span
-          v-if="withQrButton && !modelValue && !computedPreviousValue && format !== 'typed' && format !== 'upload'"
-          class=" tooltip"
+          v-if="withQrButton && !modelValue && !computedPreviousValue && format !== 'typed_or_upload' && format !== 'typed' && format !== 'upload'"
+          class="tooltip before:translate-x-[-90%]"
           :data-tip="t('drawn_signature_on_a_touchscreen_device')"
         >
           <a
@@ -133,7 +133,7 @@
       class="mx-auto bg-white border border-base-300 rounded max-h-44"
     >
     <FileDropzone
-      v-if="format === 'upload' && !modelValue"
+      v-if="format === 'upload' && !modelValue && !computedPreviousValue"
       :message="`${t('upload')} ${field.name || t('signature')}`"
       :submitter-slug="submitterSlug"
       :dry-run="dryRun"
@@ -201,7 +201,7 @@
       </div>
     </div>
     <input
-      v-if="isTextSignature"
+      v-if="isTextSignature && !modelValue && !computedPreviousValue"
       id="signature_text_input"
       ref="textInput"
       class="base-input !text-2xl w-full mt-6"
@@ -391,11 +391,11 @@ export default {
   emits: ['attached', 'update:model-value', 'start', 'minimize', 'update:reason'],
   data () {
     return {
-      isSignatureStarted: !!this.previousValue,
+      isSignatureStarted: false,
       isShowQr: false,
       isOtherReason: false,
       isUsePreviousValue: true,
-      isTextSignature: this.field.preferences?.format === 'typed',
+      isTextSignature: this.field.preferences?.format === 'typed' || this.field.preferences?.format === 'typed_or_upload',
       uploadImageInputKey: Math.random().toString()
     }
   },
@@ -422,6 +422,8 @@ export default {
     }
   },
   created () {
+    this.isSignatureStarted = !!this.computedPreviousValue
+
     if (this.requireSigningReason) {
       this.field.preferences ||= {}
       this.field.preferences.reason_field_uuid ||= v4()
@@ -716,11 +718,20 @@ export default {
             formData.append('submitter_slug', this.submitterSlug)
             formData.append('name', 'attachments')
             formData.append('remember_signature', this.rememberSignature)
+            formData.append('type', 'signature')
 
             return fetch(this.baseUrl + '/api/attachments', {
               method: 'POST',
               body: formData
-            }).then((resp) => resp.json()).then((attachment) => {
+            }).then(async (resp) => {
+              if (resp.status === 422 || resp.status === 500) {
+                const data = await resp.json()
+
+                return Promise.reject(new Error(data.error))
+              }
+
+              const attachment = await resp.json()
+
               this.$emit('attached', attachment)
               this.$emit('update:model-value', attachment.uuid)
 

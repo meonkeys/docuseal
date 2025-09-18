@@ -317,7 +317,27 @@
     "type": "string",
     "required": false,
     "description": "Comma separated field type names to be used in the form builder. All field types are used by default.",
-    "example": "text,date"
+    "example": "text,date",
+    "enum": [
+      "heading",
+      "text",
+      "signature",
+      "initials",
+      "date",
+      "datenow",
+      "number",
+      "image",
+      "checkbox",
+      "multiple",
+      "file",
+      "radio",
+      "select",
+      "cells",
+      "stamp",
+      "payment",
+      "phone",
+      "verification"
+    ]
   },
   "data-draw-field-type": {
     "type": "string",
@@ -394,11 +414,22 @@
     "default": false,
     "description": "Set `true` to display field name placeholders instead of the field type icons."
   },
+  "data-with-signature-id": {
+    "type": "boolean",
+    "required": false,
+    "description": "Set to `true` to enable Signature ID by default for newly added fields. If set to `false`, the Signature ID toggle will be displayed under field settings, with the Signature ID turned off by default."
+  },
   "data-preview": {
     "type": "boolean",
     "required": false,
     "default": false,
     "description": "Show template in preview mode without ability to edit it."
+  },
+  "data-input-mode": {
+    "type": "boolean",
+    "required": false,
+    "default": false,
+    "description": "Open template in data input mode to prefill fields with default values."
   },
   "data-only-defined-fields": {
     "type": "boolean",

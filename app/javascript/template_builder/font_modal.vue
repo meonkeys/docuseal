@@ -9,7 +9,7 @@
     <div class="modal-box pt-4 pb-6 px-6 mt-20 max-h-none w-full max-w-xl">
       <div class="flex justify-between items-center border-b pb-2 mb-2 font-medium">
         <span class="modal-title">
-          {{ t('font') }} - {{ field.name || buildDefaultName(field, template.fields) }}
+          {{ t('font') }} - {{ (defaultField ? (defaultField.title || field.title || field.name) : field.name) || buildDefaultName(field, template.fields) }}
         </span>
         <a
           href="#"
@@ -163,7 +163,7 @@
             class="flex border border-base-content/20 rounded-xl bg-white px-4 h-16 modal-field-font-preview"
             :style="{
               color: preferences.color || 'black',
-              fontSize: (preferences.font_size || 12) + 'pt',
+              fontSize: (preferences.font_size || 11) + 'pt',
             }"
             :class="textClasses"
           >
@@ -202,6 +202,11 @@ export default {
       type: Object,
       required: true
     },
+    defaultField: {
+      type: Object,
+      required: false,
+      default: null
+    },
     editable: {
       type: Boolean,
       required: false,
@@ -222,8 +227,8 @@ export default {
     fonts () {
       return [
         { value: null, label: 'Default' },
-        { value: 'Times', label: 'Times', class: 'font-serif' },
-        { value: 'Courier', label: 'Courier', class: 'font-mono' }
+        { value: 'Times', label: 'Times', class: 'font-times' },
+        { value: 'Courier', label: 'Courier', class: 'font-courier' }
       ]
     },
     types () {
@@ -258,8 +263,8 @@ export default {
     },
     textClasses () {
       return {
-        'font-mono': this.preferences.font === 'Courier',
-        'font-serif': this.preferences.font === 'Times',
+        'font-courier': this.preferences.font === 'Courier',
+        'font-times': this.preferences.font === 'Times',
         'justify-center': this.preferences.align === 'center',
         'justify-start': this.preferences.align === 'left',
         'justify-end': this.preferences.align === 'right',

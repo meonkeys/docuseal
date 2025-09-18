@@ -11,6 +11,7 @@ gem 'azure-storage-blob', require: false
 gem 'bootsnap', require: false
 gem 'cancancan'
 gem 'csv'
+gem 'csv-safe'
 gem 'devise'
 gem 'devise-two-factor'
 gem 'dotenv', require: false
@@ -34,6 +35,7 @@ gem 'rails'
 gem 'rails_autolink'
 gem 'rails-i18n'
 gem 'rotp'
+gem 'rouge', require: false
 gem 'rqrcode'
 gem 'ruby-vips'
 gem 'rubyXL'

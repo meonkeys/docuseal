@@ -17,6 +17,11 @@ module Submissions
 
       pdf.trailer.info[:Creator] = "#{Docuseal.product_name} (#{Docuseal::PRODUCT_URL})"
 
+      if Docuseal.pdf_format == 'pdf/a-3b'
+        pdf.task(:pdfa, level: '3b')
+        pdf.config['font.map'] = GenerateResultAttachments::PDFA_FONT_MAP
+      end
+
       if pkcs
         sign_params = {
           reason: Submissions::GenerateResultAttachments.single_sign_reason(submitter),
@@ -32,7 +37,7 @@ module Submissions
 
       ActiveStorage::Attachment.create!(
         blob: ActiveStorage::Blob.create_and_upload!(
-          io: io.tap(&:rewind), filename: "#{submission.template.name}.pdf"
+          io: io.tap(&:rewind), filename: "#{submission.name || submission.template.name}.pdf"
         ),
         name: 'combined_document',
         record: submission

@@ -15,6 +15,7 @@ module Templates
     MAX_NUMBER_OF_PAGES_PROCESSED = 15
     MAX_FLATTEN_FILE_SIZE = 20.megabytes
     GENERATE_PREVIEW_SIZE_LIMIT = 50.megabytes
+    US_LETTER_SIZE = { 'width' => MAX_WIDTH, 'height' => 1812 }.freeze
 
     module_function
 
@@ -36,6 +37,24 @@ module Templates
       attachment
     end
 
+    def process(attachment, data, extract_fields: false)
+      if attachment.content_type == PDF_CONTENT_TYPE && extract_fields && data.size < MAX_FLATTEN_FILE_SIZE
+        pdf = HexaPDF::Document.new(io: StringIO.new(data))
+
+        fields = Templates::FindAcroFields.call(pdf, attachment, data)
+      end
+
+      pdf ||= HexaPDF::Document.new(io: StringIO.new(data))
+
+      number_of_pages = pdf.pages.size
+
+      attachment.metadata['pdf'] ||= {}
+      attachment.metadata['pdf']['number_of_pages'] = number_of_pages
+      attachment.metadata['pdf']['fields'] = fields if fields
+
+      attachment
+    end
+
     def generate_preview_image(attachment, data)
       ActiveStorage::Attachment.where(name: ATTACHMENT_NAME, record: attachment).destroy_all
 
@@ -51,7 +70,7 @@ module Templates
       bitdepth = 2**image.stats.to_a[1..3].pluck(2).uniq.size
 
       io = StringIO.new(image.write_to_buffer(FORMAT, compression: 7, filter: 0, bitdepth:,
-                                                      palette: true, Q: bitdepth == 8 ? Q : 5, dither: 0))
+                                                      palette: true, Q: Q, dither: 0))
 
       ActiveStorage::Attachment.create!(
         blob: ActiveStorage::Blob.create_and_upload!(
@@ -123,7 +142,7 @@ module Templates
           bitdepth = 2**page.stats.to_a[1..3].pluck(2).uniq.size
 
           page.write_to_buffer(format, compression: 7, filter: 0, bitdepth:,
-                                       palette: true, Q: bitdepth == 8 ? Q : 5, dither: 0)
+                                       palette: true, Q: Q, dither: 0)
         else
           page.write_to_buffer(format, interlace: true, Q: JPEG_Q)
         end

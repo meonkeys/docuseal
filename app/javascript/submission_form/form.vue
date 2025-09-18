@@ -67,7 +67,7 @@
   <button
     v-if="!isFormVisible"
     id="expand_form_button"
-    class="btn btn-neutral flex text-white absolute bottom-0 w-full mb-3 expand-form-button"
+    class="btn btn-neutral flex text-white absolute bottom-0 w-full mb-3 expand-form-button text-base"
     style="width: 96%; margin-left: 2%"
     @click.prevent="[isFormVisible = true, scrollIntoField(currentField)]"
   >
@@ -572,6 +572,7 @@ import FormCompleted from './completed'
 import { IconInnerShadowTop, IconArrowsDiagonal, IconWritingSign, IconArrowsDiagonalMinimize2 } from '@tabler/icons-vue'
 import AppearsOn from './appears_on'
 import i18n from './i18n'
+import { sanitizeUrl } from '@braintree/sanitize-url'
 
 const isEmpty = (obj) => {
   if (obj == null) return true
@@ -1014,7 +1015,11 @@ export default {
           const aArea = (fieldAreasIndex[aField.uuid] ||= [...(aField.areas || [])].sort(sortArea)[0])
           const bArea = (fieldAreasIndex[bField.uuid] ||= [...(bField.areas || [])].sort(sortArea)[0])
 
-          return sortArea(aArea, bArea)
+          if (aArea && bArea) {
+            return sortArea(aArea, bArea)
+          } else {
+            return 0
+          }
         })
       }
 
@@ -1390,6 +1395,7 @@ export default {
 
         if (isLastStep && !emptyRequiredField && !this.inviteSubmitters.length && !this.optionalInviteSubmitters.length) {
           formData.append('completed', 'true')
+          formData.append('timezone', Intl.DateTimeFormat().resolvedOptions().timeZone)
         }
 
         let saveStepRequest
@@ -1475,7 +1481,7 @@ export default {
       }
 
       if (this.completedRedirectUrl) {
-        window.location.href = this.completedRedirectUrl
+        window.location.href = sanitizeUrl(this.completedRedirectUrl)
       }
     }
   }
