@@ -6,6 +6,9 @@
 #
 #  id                     :bigint           not null, primary key
 #  archived_at            :datetime
+#  confirmation_sent_at   :datetime
+#  confirmation_token     :string
+#  confirmed_at           :datetime
 #  consumed_timestep      :integer
 #  current_sign_in_at     :datetime
 #  current_sign_in_ip     :string
@@ -24,8 +27,9 @@
 #  reset_password_token   :string
 #  role                   :string           not null
 #  sign_in_count          :integer          default(0), not null
+#  unconfirmed_email      :string
 #  unlock_token           :string
-#  uuid                   :text             not null
+#  uuid                   :string           not null
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
 #  account_id             :bigint           not null
@@ -50,7 +54,7 @@ class User < ApplicationRecord
   EMAIL_REGEXP = /[^@;,<>\s]+@[^@;,<>\s]+/
 
   FULL_EMAIL_REGEXP =
-    /\A[a-z0-9][\.']?(?:(?:[a-z0-9_-]+[\.\+'])*[a-z0-9_-]+)*@(?:[a-z0-9]+[\.-])*[a-z0-9]+\.[a-z]{2,}\z/i
+    /\A[a-z0-9][.']?(?:(?:[a-z0-9_-]+[.+'])*[a-z0-9_-]+)*@(?:[a-z0-9]+[.-])*[a-z0-9]+\.[a-z]{2,}\z/i
 
   has_one_attached :signature
   has_one_attached :initials

@@ -13,6 +13,17 @@ module Submitters
 
   UnableToSendCode = Class.new(StandardError)
   InvalidOtp = Class.new(StandardError)
+  MaliciousFileExtension = Class.new(StandardError)
+
+  DANGEROUS_EXTENSIONS = Set.new(%w[
+    exe com bat cmd scr pif vbs vbe js jse wsf wsh msi msp
+    hta cpl jar app deb rpm dmg pkg mpkg dll so dylib sys
+    inf reg ps1 psm1 psd1 ps1xml psc1 pssc bat cmd vb vba
+    sh bash zsh fish run out bin elf gadget workflow lnk scf
+    url desktop application action workflow apk ipa xap appx
+    appxbundle msix msixbundle diagcab diagpkg cpl msc ocx
+    drv scr ins isp mst paf prf shb shs slk ws wsc inf1 inf2
+  ].freeze)
 
   module_function
 
@@ -56,7 +67,7 @@ module Submitters
           end
 
         [sql, number, weight, number.length > 1 ? number.delete_prefix('0') : number, weight]
-      elsif keyword.match?(/[^\p{L}\d&@.\-]/) || keyword.match?(/[.\-]{2,}/)
+      elsif keyword.match?(/[^\p{L}\d&@.-]/) || keyword.match?(/[.-]{2,}/)
         terms = TextUtils.transliterate(keyword.downcase).split(/\b/).map(&:squish).compact_blank.uniq
 
         if terms.size > 1
@@ -95,12 +106,13 @@ module Submitters
     if AccountConfig.exists?(account_id: submitter.submission.account_id,
                              key: AccountConfig::COMBINE_PDF_RESULT_KEY,
                              value: true) &&
-       submitter.submission.submitters.all?(&:completed_at?)
+       submitter.submission.submitters.all?(&:completed_at?) &&
+       submitter.submission.template_fields.none? { |f| f['type'] == 'verification' }
       return [submitter.submission.combined_document_attachment || Submissions::EnsureCombinedGenerated.call(submitter)]
     end
 
     original_documents = submitter.submission.schema_documents.preload(:blob)
-    is_more_than_two_images = original_documents.count(&:image?) > 1
+    is_more_than_two_images = original_documents.many?(&:image?)
 
     submitter.documents.preload(:blob).reject do |attachment|
       is_more_than_two_images &&
@@ -111,6 +123,12 @@ module Submitters
   def create_attachment!(submitter, params)
     blob =
       if (file = params[:file])
+        extension = File.extname(file.original_filename).delete_prefix('.').downcase
+
+        if DANGEROUS_EXTENSIONS.include?(extension)
+          raise MaliciousFileExtension, "File type '.#{extension}' is not allowed."
+        end
+
         ActiveStorage::Blob.create_and_upload!(io: file.open,
                                                filename: file.original_filename,
                                                content_type: file.content_type)
@@ -140,6 +158,7 @@ module Submitters
     preferences['send_email'] = params['send_email'].in?(TRUE_VALUES) if params.key?('send_email')
     preferences['send_sms'] = params['send_sms'].in?(TRUE_VALUES) if params.key?('send_sms')
     preferences['require_phone_2fa'] = params['require_phone_2fa'].in?(TRUE_VALUES) if params.key?('require_phone_2fa')
+    preferences['require_email_2fa'] = params['require_email_2fa'].in?(TRUE_VALUES) if params.key?('require_email_2fa')
     preferences['bcc_completed'] = params['bcc_completed'] if params.key?('bcc_completed')
     preferences['reply_to'] = params['reply_to'] if params.key?('reply_to')
     preferences['go_to_last'] = params['go_to_last'] if params.key?('go_to_last')
@@ -233,5 +252,21 @@ module Submitters
     raise InvalidOtp, I18n.t(:invalid_code) unless EmailVerificationCodes.verify(otp, link_2fa_key)
 
     true
+  end
+
+  def populate_completed_is_first
+    Account.find_each do |account|
+      submissions_index = {}
+
+      CompletedSubmitter.where(account_id: account.id).order(:account_id, :completed_at).each do |cs|
+        submissions_index[cs.submission_id] ||= cs.submitter_id
+
+        cs.update_columns(is_first: submissions_index[cs.submission_id] == cs.submitter_id)
+      rescue ActiveRecord::RecordNotUnique
+        CompletedSubmitter.where(submission_id: cs.submission_id).update_all(is_first: false)
+
+        cs.update_columns(is_first: submissions_index[cs.submission_id] == cs.submitter_id)
+      end
+    end
   end
 end

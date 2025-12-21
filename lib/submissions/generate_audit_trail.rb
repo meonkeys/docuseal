@@ -23,6 +23,8 @@ module Submissions
     RTL_REGEXP = TextUtils::RTL_REGEXP
     MAX_IMAGE_HEIGHT = 100
 
+    CHECKSUM_LIMIT = 30
+
     US_TIMEZONES = TimeUtils::US_TIMEZONES
 
     module_function
@@ -216,7 +218,7 @@ module Submissions
           composer.document.layout.formatted_text_box(
             [
               { text: "#{I18n.t('original_sha256')}:\n", font: [FONT_NAME, { variant: :bold }] },
-              original_documents.map { |d| d.metadata['sha256'] || d.checksum }.join("\n"),
+              original_documents.map { |d| d.metadata['sha256'] || d.checksum }.first(CHECKSUM_LIMIT).join("\n"),
               "\n",
               { text: "#{I18n.t('result_sha256')}:\n", font: [FONT_NAME, { variant: :bold }] },
               document.metadata['sha256'] || document.checksum,
@@ -248,7 +250,7 @@ module Submissions
           submission.submission_events.find { |e| e.submitter_id == submitter.id && e.click_email? }
 
         verify_email_event =
-          submission.submission_events.find { |e| e.submitter_id == submitter.id && e.phone_verified? }
+          submission.submission_events.find { |e| e.submitter_id == submitter.id && e.email_verified? }
 
         is_phone_verified =
           submission.template_fields.any? do |e|
@@ -329,7 +331,7 @@ module Submissions
           submitter_field_counters[field['type']] += 1
 
           next if field['submitter_uuid'] != submitter.uuid
-          next if field['type'] == 'heading'
+          next if field['type'] == 'heading' || field['type'] == 'strikethrough'
           next if !with_audit_values && !field['type'].in?(%w[signature initials])
           next if skip_grouped_field_uuids[field['uuid']]
 
@@ -481,7 +483,7 @@ module Submissions
 
     def select_attachments(submitter)
       original_documents = submitter.submission.schema_documents.preload(:blob)
-      is_more_than_two_images = original_documents.count(&:image?) > 1
+      is_more_than_two_images = original_documents.many?(&:image?)
 
       submitter.documents.preload(:blob).reject do |attachment|
         is_more_than_two_images &&

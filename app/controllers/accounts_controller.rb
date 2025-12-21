@@ -8,7 +8,8 @@ class AccountsController < ApplicationController
     'es-ES' => 'Español',
     'pt-PT' => 'Português',
     'de-DE' => 'Deutsch',
-    'it-IT' => 'Italiano'
+    'it-IT' => 'Italiano',
+    'nl-NL' => 'Nederlands'
   }.freeze
 
   before_action :load_account
@@ -45,7 +46,9 @@ class AccountsController < ApplicationController
   def destroy
     authorize!(:manage, current_account)
 
+    true_user.skip_reconfirmation!
     true_user.update!(locked_at: Time.current, email: true_user.email.sub('@', '+removed@'))
+    true_user.account.update!(archived_at: Time.current)
 
     # rubocop:disable Layout/LineLength
     render turbo_stream: turbo_stream.replace(

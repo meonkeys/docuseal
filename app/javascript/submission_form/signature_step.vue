@@ -22,7 +22,7 @@
       <div class="space-x-2 flex flex-none">
         <span
           v-if="isTextSignature && format !== 'typed_or_upload' && format !== 'typed' && format !== 'upload'"
-          class="tooltip"
+          class="md:tooltip"
           :data-tip="t('draw_signature')"
         >
           <a
@@ -39,7 +39,7 @@
         </span>
         <span
           v-else-if="withTypedSignature && format !== 'drawn_or_upload' && format !== 'typed_or_upload' && format !== 'typed' && format !== 'drawn' && format !== 'upload'"
-          class="tooltip ml-2"
+          class="md:tooltip ml-2"
           :class="{ 'hidden sm:inline': modelValue || computedPreviousValue }"
           :data-tip="t('type_text')"
         >
@@ -57,7 +57,7 @@
         </span>
         <span
           v-if="format !== 'typed' && format !== 'drawn' && format !== 'upload' && format !== 'drawn_or_typed'"
-          class="tooltip"
+          class="md:tooltip"
           :class="{ 'hidden sm:inline': modelValue || computedPreviousValue }"
           :data-tip="t('take_photo')"
         >
@@ -86,8 +86,8 @@
         </a>
         <span
           v-if="withQrButton && !modelValue && !computedPreviousValue && format !== 'typed_or_upload' && format !== 'typed' && format !== 'upload'"
-          class="tooltip before:translate-x-[-90%]"
-          :data-tip="t('drawn_signature_on_a_touchscreen_device')"
+          class="md:tooltip before:translate-x-[-90%]"
+          :data-tip="t('sign_on_the_touchscreen')"
         >
           <a
             href="#"
@@ -142,7 +142,7 @@
     />
     <div
       v-else
-      class="relative"
+      class="relative select-none"
     >
       <div
         v-if="!modelValue && !computedPreviousValue && !isShowQr && !isTextSignature && isSignatureStarted"
@@ -176,7 +176,7 @@
         class="top-0 bottom-0 right-0 left-0 absolute bg-base-content/10 rounded-2xl"
       >
         <div
-          class="absolute top-1.5 right-1.5 tooltip"
+          class="absolute top-1.5 right-1.5 md:tooltip"
         >
           <a
             href="#"
@@ -211,7 +211,7 @@
       @input="updateWrittenSignature"
     >
     <select
-      v-if="requireSigningReason && !isOtherReason"
+      v-if="withSigningReason && !isOtherReason"
       class="select base-input !text-2xl w-full mt-6 text-center"
       :class="{ 'text-gray-300': !reason }"
       required
@@ -226,24 +226,37 @@
       >
         {{ t('select_a_reason') }}
       </option>
-      <option
-        v-for="(label, option) in defaultReasons"
-        :key="option"
-        :value="option"
-        :selected="reason === option"
-        class="text-base-content"
-      >
-        {{ label }}
-      </option>
-      <option
-        value="other"
-        class="text-base-content"
-      >
-        {{ t('other') }}
-      </option>
+      <template v-if="field.preferences?.reasons">
+        <option
+          v-for="option in field.preferences.reasons"
+          :key="option"
+          :value="option"
+          :selected="reason === option"
+          class="text-base-content"
+        >
+          {{ option }}
+        </option>
+      </template>
+      <template v-else>
+        <option
+          v-for="(label, option) in defaultReasons"
+          :key="option"
+          :value="option"
+          :selected="reason === option"
+          class="text-base-content"
+        >
+          {{ label }}
+        </option>
+        <option
+          value="other"
+          class="text-base-content"
+        >
+          {{ t('other') }}
+        </option>
+      </template>
     </select>
     <input
-      v-if="requireSigningReason && isOtherReason"
+      v-if="withSigningReason && isOtherReason"
       class="base-input !text-2xl w-full mt-6"
       required
       :name="`values[${field.preferences.reason_field_uuid}]`"
@@ -253,7 +266,7 @@
       @input="$emit('update:reason', $event.target.value)"
     >
     <input
-      v-if="requireSigningReason"
+      v-if="withSigningReason"
       hidden
       name="with_reason"
       :value="field.preferences.reason_field_uuid"
@@ -268,7 +281,7 @@
     <div
       v-else-if="withDisclosure"
       dir="auto"
-      class="text-base-content/60 text-xs text-center w-full mt-1"
+      class="text-base-content/60 text-xs text-center w-full mt-1 select-none"
     >
       {{ t('by_clicking_you_agree_to_the').replace('{button}', buttonText.charAt(0).toUpperCase() + buttonText.slice(1)) }} <a
         href="https://www.docuseal.com/esign-disclosure"
@@ -406,6 +419,9 @@ export default {
     format () {
       return this.field.preferences?.format
     },
+    withSigningReason () {
+      return this.requireSigningReason || this.field.preferences?.reasons?.length
+    },
     defaultReasons () {
       return {
         [this.t('approved_by')]: this.t('approved'),
@@ -424,10 +440,11 @@ export default {
   created () {
     this.isSignatureStarted = !!this.computedPreviousValue
 
-    if (this.requireSigningReason) {
+    if (this.withSigningReason) {
       this.field.preferences ||= {}
       this.field.preferences.reason_field_uuid ||= v4()
-      this.isOtherReason = this.reason && !this.defaultReasons[this.reason]
+      this.isOtherReason = this.reason && !this.defaultReasons[this.reason] &&
+        (!this.field.preferences?.reasons?.length || !this.field.preferences.reasons.includes(this.reason))
     }
   },
   async mounted () {

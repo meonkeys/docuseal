@@ -175,7 +175,10 @@
                 {{ t('save') }}
               </span>
             </button>
-            <div class="dropdown dropdown-end">
+            <div
+              class="dropdown dropdown-end"
+              :class="{ 'dropdown-open': isDownloading }"
+            >
               <label
                 tabindex="0"
                 class="base-button !rounded-l-none !pl-1 !pr-2 !border-l-neutral-500"
@@ -208,6 +211,30 @@
                     <IconAdjustments class="w-6 h-6 flex-shrink-0" />
                     <span class="whitespace-nowrap">{{ t('preferences') }}</span>
                   </a>
+                </li>
+                <li v-if="withDownload">
+                  <button
+                    class="flex space-x-2"
+                    :disabled="isDownloading"
+                    @click.stop.prevent="download"
+                  >
+                    <IconInnerShadowTop
+                      v-if="isDownloading"
+                      class="animate-spin w-6 h-6 flex-shrink-0"
+                    />
+                    <IconDownload
+                      v-else
+                      class="w-6 h-6 flex-shrink-0"
+                    />
+                    <span
+                      v-if="isDownloading"
+                      class="whitespace-nowrap"
+                    >{{ t('downloading_') }}</span>
+                    <span
+                      v-else
+                      class="whitespace-nowrap"
+                    >{{ t('download') }}</span>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -260,8 +287,12 @@
           :style="{ backgroundColor }"
         >
           <Upload
-            v-if="sortedDocuments.length && editable && withUploadButton"
+            v-if="editable && withUploadButton"
+            v-show="sortedDocuments.length"
+            ref="upload"
             :accept-file-types="acceptFileTypes"
+            :authenticity-token="authenticityToken"
+            :with-google-drive="withGoogleDrive"
             :template-id="template.id"
             @success="updateFromUpload"
           />
@@ -297,6 +328,8 @@
               v-if="withUploadButton"
               :template-id="template.id"
               :accept-file-types="acceptFileTypes"
+              :with-google-drive="withGoogleDrive"
+              @click-google-drive="$refs.upload.openGoogleDriveModal()"
               @success="updateFromUpload"
             />
             <button
@@ -368,6 +401,8 @@
                 v-if="withUploadButton"
                 :template-id="template.id"
                 :accept-file-types="acceptFileTypes"
+                :authenticity-token="authenticityToken"
+                :with-google-drive="withGoogleDrive"
                 @success="updateFromUpload"
               />
               <button
@@ -402,7 +437,10 @@
           :style="{ backgroundColor }"
         >
           <div class="bg-base-200 rounded-lg p-5 text-center space-y-4 draw-field-container">
-            <p>
+            <p v-if="(drawField?.type || drawFieldType) === 'strikethrough'">
+              {{ t('draw_strikethrough_the_document') }}
+            </p>
+            <p v-else>
               {{ t('draw_field_on_the_document') }}
             </p>
             <div>
@@ -413,7 +451,7 @@
                 {{ t('cancel') }}
               </button>
               <a
-                v-if="!drawField && !drawOption && !['stamp', 'signature', 'initials', 'heading'].includes(drawField?.type || drawFieldType)"
+                v-if="!drawField && !drawOption && !['stamp', 'signature', 'initials', 'heading', 'strikethrough'].includes(drawField?.type || drawFieldType)"
                 href="#"
                 class="link block mt-3 text-sm"
                 @click.prevent="[addField(drawFieldType), drawField = null, drawOption = null, withSelectedFieldType ? '' : drawFieldType = '', showDrawField = false]"
@@ -438,6 +476,7 @@
             :default-required-fields="defaultRequiredFields"
             :field-types="fieldTypes"
             :with-sticky-submitters="withStickySubmitters"
+            :with-fields-detection="withFieldsDetection"
             :with-signature-id="withSignatureId"
             :with-prefillable="withPrefillable"
             :only-defined-fields="onlyDefinedFields"
@@ -445,6 +484,7 @@
             :show-tour-start-form="showTourStartForm"
             @add-field="addField"
             @set-draw="[drawField = $event.field, drawOption = $event.option]"
+            @select-submitter="selectedSubmitter = $event"
             @set-draw-type="[drawFieldType = $event, showDrawField = true]"
             @set-drag="dragField = $event"
             @set-drag-placeholder="$refs.dragPlaceholder.dragPlaceholder = $event"
@@ -499,7 +539,7 @@ import DocumentPreview from './preview'
 import DocumentControls from './controls'
 import MobileFields from './mobile_fields'
 import FieldSubmitter from './field_submitter'
-import { IconPlus, IconUsersPlus, IconDeviceFloppy, IconChevronDown, IconEye, IconWritingSign, IconInnerShadowTop, IconInfoCircle, IconAdjustments } from '@tabler/icons-vue'
+import { IconPlus, IconUsersPlus, IconDeviceFloppy, IconChevronDown, IconEye, IconWritingSign, IconInnerShadowTop, IconInfoCircle, IconAdjustments, IconDownload } from '@tabler/icons-vue'
 import { v4 } from 'uuid'
 import { ref, computed, toRaw } from 'vue'
 import * as i18n from './i18n'
@@ -525,6 +565,7 @@ export default {
     Contenteditable,
     IconUsersPlus,
     IconChevronDown,
+    IconDownload,
     IconAdjustments,
     IconEye,
     IconDeviceFloppy
@@ -572,6 +613,11 @@ export default {
       required: false,
       default: null
     },
+    withDownload: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
     backgroundColor: {
       type: String,
       required: false,
@@ -606,6 +652,11 @@ export default {
       type: Boolean,
       required: false,
       default: true
+    },
+    withFieldsDetection: {
+      type: Boolean,
+      required: false,
+      default: false
     },
     withAddPageButton: {
       type: Boolean,
@@ -763,6 +814,11 @@ export default {
       required: false,
       default: false
     },
+    withGoogleDrive: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
     onlyDefinedFields: {
       type: Boolean,
       required: false,
@@ -783,6 +839,7 @@ export default {
     return {
       documentRefs: [],
       isBreakpointLg: false,
+      isDownloading: false,
       isLoadingBlankPage: false,
       isSaving: false,
       selectedSubmitter: null,
@@ -941,6 +998,75 @@ export default {
   },
   methods: {
     toRaw,
+    download () {
+      this.isDownloading = true
+
+      this.baseFetch(`/templates/${this.template.id}/documents`).then(async (response) => {
+        if (response.ok) {
+          const urls = await response.json()
+          const isMobileSafariIos = 'ontouchstart' in window && navigator.maxTouchPoints > 0 && /AppleWebKit/i.test(navigator.userAgent)
+          const isSafariIos = isMobileSafariIos || /iPhone|iPad|iPod/i.test(navigator.userAgent)
+
+          if (isSafariIos && urls.length > 1) {
+            this.downloadSafariIos(urls)
+          } else {
+            this.downloadUrls(urls)
+          }
+        } else {
+          alert(this.t('failed_to_download_files'))
+        }
+      })
+    },
+    downloadUrls (urls) {
+      const fileRequests = urls.map((url) => {
+        return () => {
+          return fetch(url).then(async (resp) => {
+            const blobUrl = URL.createObjectURL(await resp.blob())
+            const link = document.createElement('a')
+
+            link.href = blobUrl
+            link.setAttribute('download', decodeURI(url.split('/').pop()))
+
+            link.click()
+
+            URL.revokeObjectURL(blobUrl)
+          })
+        }
+      })
+
+      fileRequests.reduce(
+        (prevPromise, request) => prevPromise.then(() => request()),
+        Promise.resolve()
+      ).finally(() => {
+        this.isDownloading = false
+      })
+    },
+    downloadSafariIos (urls) {
+      const fileRequests = urls.map((url) => {
+        return fetch(url).then(async (resp) => {
+          const blob = await resp.blob()
+          const blobUrl = URL.createObjectURL(blob.slice(0, blob.size, 'application/octet-stream'))
+          const link = document.createElement('a')
+
+          link.href = blobUrl
+          link.setAttribute('download', decodeURI(url.split('/').pop()))
+
+          return link
+        })
+      })
+
+      Promise.all(fileRequests).then((links) => {
+        links.forEach((link, index) => {
+          setTimeout(() => {
+            link.click()
+
+            URL.revokeObjectURL(link.href)
+          }, index * 50)
+        })
+      }).finally(() => {
+        this.isDownloading = false
+      })
+    },
     onDragover (e) {
       if (this.$refs.dragPlaceholder?.dragPlaceholder) {
         this.$refs.dragPlaceholder.isMask = e.target.id === 'mask'
@@ -1082,6 +1208,11 @@ export default {
         field.preferences = {
           format: this.defaultDateFormat
         }
+      }
+
+      if (field.type === 'strikethrough') {
+        field.readonly = true
+        field.default_value = true
       }
 
       if (type === 'signature' && [true, false].includes(this.withSignatureId)) {
@@ -1357,6 +1488,9 @@ export default {
       } else if (type === 'initials') {
         area.w = pageMask.clientWidth / 10 / pageMask.clientWidth
         area.h = (pageMask.clientWidth / 35 / pageMask.clientWidth)
+      } else if (type === 'strikethrough') {
+        area.w = pageMask.clientWidth / 5 / pageMask.clientWidth
+        area.h = (pageMask.clientWidth / 70 / pageMask.clientWidth)
       } else {
         area.w = pageMask.clientWidth / 5 / pageMask.clientWidth
         area.h = (pageMask.clientWidth / 35 / pageMask.clientWidth)
@@ -1500,8 +1634,12 @@ export default {
           field.default_value = '{{date}}'
         }
 
-        if (['stamp', 'heading'].includes(field.type)) {
+        if (['stamp', 'heading', 'strikethrough'].includes(field.type)) {
           field.readonly = true
+
+          if (field.type === 'strikethrough') {
+            field.default_value = true
+          }
         }
 
         if (field.type === 'date') {
@@ -1588,6 +1726,11 @@ export default {
           baseArea = {
             w: area.maskW / 10 / area.maskW,
             h: area.maskW / 35 / area.maskW
+          }
+        } else if (fieldType === 'strikethrough') {
+          baseArea = {
+            w: area.maskW / 5 / area.maskW,
+            h: area.maskW / 70 / area.maskW
           }
         } else {
           baseArea = {
@@ -1737,8 +1880,9 @@ export default {
     },
     onDocumentReplace (data) {
       const { replaceSchemaItem, schema, documents } = data
+      const { google_drive_file_id, ...cleanedReplaceSchemaItem } = replaceSchemaItem
 
-      this.template.schema.splice(this.template.schema.indexOf(replaceSchemaItem), 1, { ...replaceSchemaItem, ...schema[0] })
+      this.template.schema.splice(this.template.schema.indexOf(replaceSchemaItem), 1, { ...cleanedReplaceSchemaItem, ...schema[0] })
       this.template.documents.push(...documents)
 
       if (data.fields) {

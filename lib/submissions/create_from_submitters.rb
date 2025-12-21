@@ -18,13 +18,15 @@ module Submissions
         set_submission_preferences['send_email'] = true if params['send_completed_email']
         expire_at = attrs[:expire_at] || Templates.build_default_expire_at(template)
 
-        submission = template.submissions.new(created_by_user: user, source:,
-                                              account_id: user.account_id,
-                                              preferences: set_submission_preferences,
-                                              name: with_template ? attrs[:name] : (attrs[:name] || template.name),
-                                              variables: attrs[:variables] || {},
-                                              expire_at:,
-                                              template_submitters: [], submitters_order:)
+        submission = template.submissions.new(
+          created_by_user: user, source:,
+          account_id: user.account_id,
+          preferences: set_submission_preferences,
+          name: with_template ? attrs[:name] : (attrs[:name].presence || template.name),
+          variables: attrs[:variables] || {},
+          expire_at:,
+          template_submitters: [], submitters_order:
+        )
 
         template_submitters = template.submitters.deep_dup
 
@@ -79,7 +81,7 @@ module Submissions
 
         next if submission.submitters.blank?
 
-        maybe_add_invite_submitters(submission, template)
+        maybe_add_invite_submitters(submission, template, attrs[:submitters])
 
         submission.template = nil unless with_template
 
@@ -100,8 +102,16 @@ module Submissions
       end
     end
 
-    def maybe_add_invite_submitters(submission, template)
+    def maybe_add_invite_submitters(submission, template, submitter_attrs)
       template.submitters.each_with_index do |item, index|
+        submitter_attr = submitter_attrs.find { |e| e['role'].to_s.casecmp?(item['name'].to_s) }
+
+        if submitter_attr && submitter_attr['invite_by'].present?
+          invite_by_uuid = template.submitters.find { |s| s['name'] == submitter_attr['invite_by'] }&.dig('uuid')
+
+          item = item.merge('invite_by_uuid' => invite_by_uuid) if invite_by_uuid
+        end
+
         next if item['invite_by_uuid'].blank? && item['optional_invite_by_uuid'].blank?
         next if submission.template_submitters.any? { |e| e['uuid'] == item['uuid'] }
 
@@ -143,7 +153,7 @@ module Submissions
          submitters_attrs.any? { |e| e[:completed].present? } || !with_template || submission.variables.present?
         submission.template_fields = template_fields
         submission.template_schema = submission.template.schema if submission.template_schema.blank?
-        submission.variables_schema = submission.template.variables_schema if submission.template_id &&
+        submission.variables_schema = submission.template.variables_schema if submission.template &&
                                                                               submission.variables_schema.blank?
       end
 

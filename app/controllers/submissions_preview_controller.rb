@@ -41,6 +41,9 @@ class SubmissionsPreviewController < ApplicationController
 
   def completed
     @submission = Submission.find_by!(slug: params[:submissions_preview_slug])
+
+    raise ActionController::RoutingError, I18n.t('not_found') if @submission.account.archived_at?
+
     @template = @submission.template
 
     render :completed, layout: 'form'
@@ -50,8 +53,11 @@ class SubmissionsPreviewController < ApplicationController
 
   def use_signature?(submission)
     return false if current_user && can?(:read, submission)
-    return true if submission.submitters.any? { |e| e.preferences['require_phone_2fa'] }
+    return true if submission.submitters.any? do |e|
+      e.preferences['require_phone_2fa'] || e.preferences['require_email_2fa']
+    end
     return true if submission.template&.preferences&.dig('require_phone_2fa')
+    return true if submission.template&.preferences&.dig('require_email_2fa')
 
     !submission_valid_ttl?(submission)
   end

@@ -209,6 +209,43 @@
     </ul>
   </div>
   <div
+    v-if="withFieldsDetection && editable && fields.length < 2"
+    class="my-2"
+  >
+    <button
+      class="btn w-full"
+      :class="{ 'bg-base-300': fieldPagesLoaded !== null }"
+      @click="fieldPagesLoaded !== null ? null : detectFields()"
+    >
+      <template v-if="fieldPagesLoaded !== null">
+        <IconInnerShadowTop
+          width="22"
+          class="animate-spin"
+        />
+        <span
+          v-if="analyzingProgress"
+          class="hidden md:inline"
+        >
+          {{ Math.round(analyzingProgress * 100) }}% {{ t('analyzing_') }}
+        </span>
+        <span
+          v-else
+          class="hidden md:inline"
+        >
+          {{ fieldPagesLoaded }} / {{ numberOfPages }} {{ t('processing_') }}
+        </span>
+      </template>
+      <template v-else>
+        <IconSparkles width="22" />
+        <span
+          class="hidden md:inline"
+        >
+          {{ t('autodetect_fields') }}
+        </span>
+      </template>
+    </button>
+  </div>
+  <div
     v-show="fields.length < 4 && editable && withHelp && showTourStartForm"
     class="rounded py-2 px-4 w-full border border-dashed border-base-300"
   >
@@ -231,7 +268,7 @@
 import Field from './field'
 import FieldType from './field_type'
 import FieldSubmitter from './field_submitter'
-import { IconLock, IconCirclePlus } from '@tabler/icons-vue'
+import { IconLock, IconCirclePlus, IconInnerShadowTop, IconSparkles } from '@tabler/icons-vue'
 import IconDrag from './icon_drag'
 
 export default {
@@ -240,11 +277,13 @@ export default {
     Field,
     FieldType,
     IconCirclePlus,
+    IconSparkles,
+    IconInnerShadowTop,
     FieldSubmitter,
     IconDrag,
     IconLock
   },
-  inject: ['save', 'backgroundColor', 'withPhone', 'withVerification', 'withPayment', 't', 'fieldsDragFieldRef'],
+  inject: ['save', 'backgroundColor', 'withPhone', 'withVerification', 'withPayment', 't', 'fieldsDragFieldRef', 'baseFetch'],
   props: {
     fields: {
       type: Array,
@@ -254,6 +293,11 @@ export default {
       type: Boolean,
       required: false,
       default: null
+    },
+    withFieldsDetection: {
+      type: Boolean,
+      required: false,
+      default: false
     },
     withSignatureId: {
       type: Boolean,
@@ -328,15 +372,22 @@ export default {
       default: false
     }
   },
-  emits: ['add-field', 'set-draw', 'set-draw-type', 'set-drag', 'drag-end', 'scroll-to-area', 'change-submitter', 'set-drag-placeholder'],
+  emits: ['add-field', 'set-draw', 'set-draw-type', 'set-drag', 'drag-end', 'scroll-to-area', 'change-submitter', 'set-drag-placeholder', 'select-submitter'],
   data () {
     return {
+      fieldPagesLoaded: null,
+      analyzingProgress: 0,
       defaultFieldsSearch: ''
     }
   },
   computed: {
     fieldNames: FieldType.computed.fieldNames,
     fieldIcons: FieldType.computed.fieldIcons,
+    numberOfPages () {
+      return this.template.documents.reduce((acc, doc) => {
+        return acc + doc.metadata?.pdf?.number_of_pages || doc.preview_images.length
+      }, 0)
+    },
     isShowFieldSearch () {
       if (this.withFieldsSearch === false) {
         return false
@@ -351,6 +402,9 @@ export default {
         return acc
       }, {})
     },
+    skipTypes () {
+      return ['heading', 'datenow', 'strikethrough']
+    },
     fieldIconsSorted () {
       if (this.fieldTypes.length) {
         return this.fieldTypes.reduce((acc, type) => {
@@ -359,7 +413,7 @@ export default {
           return acc
         }, {})
       } else {
-        return Object.fromEntries(Object.entries(this.fieldIcons).filter(([key]) => key !== 'heading' && key !== 'datenow'))
+        return Object.fromEntries(Object.entries(this.fieldIcons).filter(([key]) => !this.skipTypes.includes(key)))
       }
     },
     submitterFields () {
@@ -385,6 +439,84 @@ export default {
       this.setDragPlaceholder(event)
 
       this.$emit('set-drag', field)
+    },
+    detectFields () {
+      const fields = []
+
+      this.fieldPagesLoaded = 0
+
+      this.baseFetch(`/templates/${this.template.id}/detect_fields`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }).then(async (response) => {
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder('utf-8')
+        let buffer = ''
+
+        while (true) {
+          const { value, done } = await reader.read()
+
+          buffer += decoder.decode(value, { stream: true })
+
+          const lines = buffer.split('\n\n')
+
+          buffer = lines.pop()
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const jsonStr = line.replace(/^data: /, '')
+              const data = JSON.parse(jsonStr)
+
+              if (data.error) {
+                if ((data.fields || fields).length) {
+                  this.template.fields = data.fields || fields
+
+                  this.save()
+                } else {
+                  alert(data.error)
+                }
+
+                break
+              } else if (data.analyzing) {
+                this.analyzingProgress = data.progress
+              } else if (data.completed) {
+                this.fieldPagesLoaded = null
+
+                if (data.submitters) {
+                  this.template.submitters = data.submitters
+                  this.$emit('select-submitter', this.template.submitters[0])
+                }
+
+                this.template.fields = data.fields || fields
+
+                this.save()
+
+                break
+              } else if (data.fields) {
+                data.fields.forEach((f) => {
+                  if (!f.submitter_uuid) {
+                    f.submitter_uuid = this.template.submitters[0].uuid
+                  }
+                })
+
+                this.fieldPagesLoaded += 1
+
+                fields.push(...data.fields)
+              }
+            }
+          }
+
+          if (done) break
+        }
+      }).catch(error => {
+        console.error('Error in streaming message: ', error)
+      }).finally(() => {
+        this.fieldPagesLoaded = null
+        this.analyzingProgress = null
+        this.isFieldsLoading = false
+      })
     },
     setDragPlaceholder (event) {
       this.$emit('set-drag-placeholder', {

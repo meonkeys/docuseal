@@ -14,7 +14,7 @@
     <MarkdownContent :string="field.description" />
   </div>
   <div
-    v-if="emptyValueRequiredStep && emptyValueRequiredStep[0] !== field"
+    v-if="isRequiredFieldEmpty"
     class="px-1 field-description-text"
   >
     {{ t('complete_all_required_fields_to_proceed_with_identity_verification') }}
@@ -100,6 +100,9 @@ export default {
     }
   },
   computed: {
+    isRequiredFieldEmpty () {
+      return this.emptyValueRequiredStep && this.emptyValueRequiredStep[0] !== this.field
+    },
     countryCode () {
       const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
       const browserTz = browserTimeZone.split('/')[1]
@@ -131,17 +134,19 @@ export default {
     }
   },
   async mounted () {
-    this.isLoading = true
+    if (!this.isRequiredFieldEmpty) {
+      this.isLoading = true
 
-    if (new URLSearchParams(window.location.search).get('submit') === 'true') {
-      this.$emit('submit')
-    } else {
-      Promise.all([
-        import('@eid-easy/eideasy-widget'),
-        this.start()
-      ]).finally(() => {
-        this.isLoading = false
-      })
+      if (new URLSearchParams(window.location.search).get('submit') === 'true') {
+        this.$emit('submit')
+      } else {
+        Promise.all([
+          import('@eid-easy/eideasy-widget'),
+          this.start()
+        ]).finally(() => {
+          this.isLoading = false
+        })
+      }
     }
   },
   methods: {
@@ -156,6 +161,10 @@ export default {
       }).then(async (resp) => {
         this.eidEasyData = await resp.json()
 
+        if (this.eidEasyData.check_completed) {
+          this.$emit('submit')
+        }
+
         if (this.eidEasyData.available_methods[0] === 'itsme-qes-signature' &&
             this.eidEasyData.available_methods.length === 1) {
           const redirectUrl = new URL('https://id.eideasy.com/sign_contract_external')
@@ -166,7 +175,7 @@ export default {
           redirectUrl.searchParams.append('lang', this.locale)
 
           this.redirectUrl = redirectUrl.toString()
-        } else {
+        } else if (this.$refs.widgetContainer) {
           const eidEasyWidget = document.createElement('eideasy-widget')
 
           for (const key in this.widgetSettings) {
@@ -179,15 +188,23 @@ export default {
       })
     },
     async submit () {
-      return fetch(this.baseUrl + '/api/identity_verification', {
+      const resp = await fetch(this.baseUrl + '/api/identity_verification', {
         method: 'POST',
         body: JSON.stringify({
           submitter_slug: this.submitterSlug
         }),
         headers: { 'Content-Type': 'application/json' }
-      }).then(async (resp) => {
-        return resp
       })
+
+      if (resp.status === 404) {
+        throw new Error('Verification not completed yet')
+      }
+
+      if (resp.ok) {
+        return resp
+      } else {
+        throw new Error('Verification failed')
+      }
     }
   }
 }

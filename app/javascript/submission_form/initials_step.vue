@@ -19,7 +19,7 @@
       <div class="space-x-2 flex flex-none">
         <span
           v-if="isDrawInitials"
-          class="tooltip"
+          class="md:tooltip"
           :data-tip="t('type_initial')"
         >
           <a
@@ -36,7 +36,7 @@
         </span>
         <span
           v-else
-          class="tooltip ml-2"
+          class="md:tooltip ml-2"
           :data-tip="t('draw_initials')"
         >
           <a
@@ -52,7 +52,7 @@
           </a>
         </span>
         <span
-          class="tooltip"
+          class="md:tooltip"
           :data-tip="t('click_to_upload')"
         >
           <label class="btn btn-outline btn-sm font-medium inline-flex flex-nowrap upload-image-button">
@@ -121,6 +121,11 @@
     <div class="relative">
       <div
         v-if="!isDrawInitials"
+        class="absolute top-0 right-0 left-0 bottom-0"
+      />
+      <label
+        v-if="!isDrawInitials && !modelValue && !computedPreviousValue"
+        for="initials_text_input"
         class="absolute top-0 right-0 left-0 bottom-0"
       />
       <canvas
