@@ -5,6 +5,8 @@
       :key="image.id"
       :ref="setPageRefs"
       :input-mode="inputMode"
+      :conditional-field-index="conditionalFieldIndex"
+      :formula-values-index="formulaValuesIndex"
       :number="index"
       :editable="editable"
       :data-page="index"
@@ -13,17 +15,28 @@
       :with-signature-id="withSignatureId"
       :with-prefillable="withPrefillable"
       :is-drag="isDrag"
+      :is-mobile="isMobile"
       :with-field-placeholder="withFieldPlaceholder"
       :default-fields="defaultFields"
       :drag-field-placeholder="dragFieldPlaceholder"
       :default-submitters="defaultSubmitters"
       :draw-field="drawField"
       :draw-field-type="drawFieldType"
+      :draw-custom-field="drawCustomField"
       :selected-submitter="selectedSubmitter"
       :total-pages="sortedPreviewImages.length"
       :image="image"
-      @drop-field="$emit('drop-field', {...$event, attachment_uuid: document.uuid })"
+      :attachment-uuid="document.uuid"
+      :with-fields-detection="withFieldsDetection"
+      @drop-field="$emit('drop-field', { ...$event, attachment_uuid: document.uuid })"
       @remove-area="$emit('remove-area', $event)"
+      @copy-field="$emit('copy-field', $event)"
+      @paste-field="$emit('paste-field', { ...$event, attachment_uuid: document.uuid })"
+      @add-custom-field="$emit('add-custom-field', $event)"
+      @set-draw="$emit('set-draw', $event)"
+      @copy-selected-areas="$emit('copy-selected-areas')"
+      @delete-selected-areas="$emit('delete-selected-areas')"
+      @autodetect-fields="$emit('autodetect-fields', $event)"
       @scroll-to="scrollToArea"
       @draw="$emit('draw', { area: {...$event.area, attachment_uuid: document.uuid }, isTooSmall: $event.isTooSmall })"
     />
@@ -52,6 +65,16 @@ export default {
       type: Boolean,
       required: false,
       default: false
+    },
+    conditionalFieldIndex: {
+      type: Object,
+      required: false,
+      default: () => ({})
+    },
+    formulaValuesIndex: {
+      type: Object,
+      required: false,
+      default: () => ({})
     },
     areasIndex: {
       type: Object,
@@ -88,6 +111,11 @@ export default {
       required: false,
       default: () => []
     },
+    isMobile: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
     allowDraw: {
       type: Boolean,
       required: false,
@@ -107,6 +135,11 @@ export default {
       required: false,
       default: null
     },
+    drawCustomField: {
+      type: Object,
+      required: false,
+      default: null
+    },
     baseUrl: {
       type: String,
       required: false,
@@ -116,9 +149,19 @@ export default {
       type: Boolean,
       required: false,
       default: false
+    },
+    pagePreviewFormat: {
+      type: String,
+      required: false,
+      default: '.jpg'
+    },
+    withFieldsDetection: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   },
-  emits: ['draw', 'drop-field', 'remove-area'],
+  emits: ['draw', 'drop-field', 'remove-area', 'paste-field', 'copy-field', 'copy-selected-areas', 'delete-selected-areas', 'autodetect-fields', 'add-custom-field', 'set-draw'],
   data () {
     return {
       pageRefs: []
@@ -142,7 +185,7 @@ export default {
         return this.previewImagesIndex[i] || reactive({
           metadata: { ...lazyloadMetadata },
           id: Math.random().toString(),
-          url: this.basePreviewUrl + `/preview/${this.document.signed_uuid || this.document.uuid}/${i}.jpg`
+          url: this.basePreviewUrl + `/preview/${this.document.signed_key || this.document.signed_uuid || this.document.uuid}/${i}${this.pagePreviewFormat}`
         })
       })
     },
@@ -160,7 +203,15 @@ export default {
   methods: {
     scrollToArea (area) {
       this.$nextTick(() => {
-        this.pageRefs[area.page].areaRefs.find((e) => e.area === area).$el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        const pageRef = this.pageRefs[area.page]
+
+        if (pageRef && pageRef.areaRefs) {
+          const areaRef = pageRef.areaRefs.find((e) => e.area === area)
+
+          if (areaRef && areaRef.$el) {
+            areaRef.$el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }
       })
     },
     setPageRefs (el) {

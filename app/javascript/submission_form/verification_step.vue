@@ -20,13 +20,17 @@
     {{ t('complete_all_required_fields_to_proceed_with_identity_verification') }}
   </div>
   <div v-else>
+    <div v-if="errorMessage">
+      {{ errorMessage }}
+    </div>
     <div
-      v-if="isLoading"
+      v-else-if="isLoading"
       class="w-full flex space-x-2 justify-center mb-2"
     >
       <IconInnerShadowTop
         width="40"
         class="animate-spin h-10"
+        aria-hidden="true"
       />
     </div>
     <div v-else-if="redirectUrl">
@@ -96,6 +100,7 @@ export default {
       isMathLoaded: false,
       redirectUrl: '',
       isLoading: false,
+      errorMessage: '',
       eidEasyData: {}
     }
   },
@@ -119,6 +124,7 @@ export default {
         docId: this.eidEasyData.doc_id,
         language: this.locale,
         countryCode: this.countryCode,
+        sandbox: ['demo.docuseal.tech'].includes(location.host),
         enabledMethods: {
           signature: this.eidEasyData.available_methods
         },
@@ -160,6 +166,12 @@ export default {
         headers: { 'Content-Type': 'application/json' }
       }).then(async (resp) => {
         this.eidEasyData = await resp.json()
+
+        if (this.eidEasyData.error) {
+          this.errorMessage = this.eidEasyData.error
+
+          return
+        }
 
         if (this.eidEasyData.check_completed) {
           this.$emit('submit')

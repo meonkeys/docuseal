@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 module Docuseal
-  URL_CACHE = ActiveSupport::Cache::MemoryStore.new
   PRODUCT_URL = 'https://www.docuseal.com'
   PRODUCT_EMAIL_URL = ENV.fetch('PRODUCT_EMAIL_URL', PRODUCT_URL)
   NEWSLETTER_URL = "#{PRODUCT_URL}/newsletters".freeze
@@ -39,6 +38,7 @@ module Docuseal
   CERTS = JSON.parse(ENV.fetch('CERTS', '{}'))
   TIMESERVER_URL = ENV.fetch('TIMESERVER_URL', nil)
   VERSION_FILE_PATH = Rails.root.join('.version')
+  VERSION_FILE2_PATH = Rails.public_path.join('version')
 
   DEFAULT_URL_OPTIONS = {
     host: HOST,
@@ -48,7 +48,12 @@ module Docuseal
   module_function
 
   def version
-    @version ||= VERSION_FILE_PATH.read.strip if VERSION_FILE_PATH.exist?
+    @version ||=
+      if VERSION_FILE_PATH.exist?
+        VERSION_FILE_PATH.read.strip
+      elsif VERSION_FILE2_PATH.exist?
+        VERSION_FILE2_PATH.each_line.first.to_s.strip
+      end
   end
 
   def multitenant?

@@ -12,7 +12,7 @@ module Submitters
 
     def call(submitter, expires_at: Accounts.link_expires_at(Account.new(id: submitter.account_id)))
       ActiveRecord::Associations::Preloader.new(
-        records: [submitter], associations: [documents_attachments: :blob, attachments_attachments: :blob]
+        records: [submitter], associations: [{ documents_attachments: :blob, attachments_attachments: :blob }]
       ).call
 
       values = build_values_array(submitter, expires_at:)
@@ -111,7 +111,7 @@ module Submitters
     end
 
     def fetch_field_value(field, value, attachments_index, expires_at: nil)
-      if field['type'].in?(%w[image signature initials stamp payment])
+      if field['type'].in?(%w[image signature initials stamp payment kba])
         rails_storage_proxy_url(attachments_index[value], expires_at:)
       elsif field['type'] == 'file'
         Array.wrap(value).compact_blank.filter_map { |e| rails_storage_proxy_url(attachments_index[e], expires_at:) }

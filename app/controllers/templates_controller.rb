@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
 class TemplatesController < ApplicationController
-  load_and_authorize_resource :template
+  TEMPLATE_FIELDS = %i[id author_id folder_id external_id name slug
+                       schema fields submitters variables_schema preferences
+                       shared_link source archived_at created_at updated_at].freeze
 
-  before_action :load_base_template, only: %i[new create]
+  load_and_authorize_resource :template
 
   def show
     submissions = @template.submissions.accessible_by(current_ability)
@@ -26,21 +28,20 @@ class TemplatesController < ApplicationController
     redirect_to root_path
   end
 
-  def new
-    @template.name = "#{@base_template.name} (#{I18n.t('clone')})" if @base_template
-  end
+  def new; end
 
   def edit
     ActiveRecord::Associations::Preloader.new(
       records: [@template],
-      associations: [schema_documents: [:blob, { preview_images_attachments: :blob }]]
+      associations: [{ schema_documents: [:blob, { preview_images_attachments: :blob }] }]
     ).call
 
     @template_data =
-      @template.as_json.merge(
+      @template.as_json(only: TEMPLATE_FIELDS).merge(
         documents: @template.schema_documents.as_json(
-          methods: %i[metadata signed_uuid],
-          include: { preview_images: { methods: %i[url metadata filename] } }
+          only: %i[id uuid],
+          methods: %i[metadata signed_key],
+          include: { preview_images: { only: %i[id], methods: %i[url metadata filename] } }
         )
       ).to_json
 
@@ -48,37 +49,18 @@ class TemplatesController < ApplicationController
   end
 
   def create
-    if @base_template
-      ActiveRecord::Associations::Preloader.new(
-        records: [@base_template],
-        associations: [schema_documents: :preview_images_attachments]
-      ).call
-
-      @template = Templates::Clone.call(@base_template, author: current_user,
-                                                        name: params.dig(:template, :name),
-                                                        folder_name: params[:folder_name])
-    else
-      @template.author = current_user
-      @template.folder = TemplateFolders.find_or_create_by_name(current_user, params[:folder_name])
-    end
-
-    if params[:account_id].present? && authorized_clone_account_id?(params[:account_id])
-      @template.account_id = params[:account_id]
-      @template.folder = @template.account.default_template_folder if @template.account_id != current_account.id
-    else
-      @template.account = current_account
-    end
+    @template.author = current_user
+    @template.folder = TemplateFolders.find_or_create_by_name(current_user, params[:folder_name])
+    @template.account = current_account
 
     Templates.maybe_assign_access(@template)
 
     if @template.save
-      Templates::CloneAttachments.call(template: @template, original_template: @base_template) if @base_template
-
       SearchEntries.enqueue_reindex(@template)
 
       WebhookUrls.enqueue_events(@template, 'template.created')
 
-      maybe_redirect_to_template(@template)
+      redirect_to(edit_template_path(@template))
     else
       render turbo_stream: turbo_stream.replace(:modal, template: 'templates/new'), status: :unprocessable_content
     end
@@ -107,6 +89,8 @@ class TemplatesController < ApplicationController
       else
         @template.update!(archived_at: Time.current)
 
+        WebhookUrls.enqueue_events(@template, 'template.archived')
+
         I18n.t('template_has_been_archived')
       end
 
@@ -118,9 +102,11 @@ class TemplatesController < ApplicationController
   def template_params
     params.require(:template).permit(
       :name,
-      { schema: [[:attachment_uuid, :google_drive_file_id, :name,
+      { schema: [[:attachment_uuid, :google_drive_file_id, :name, :dynamic,
                   { conditions: [%i[field_uuid value action operation]] }]],
-        submitters: [%i[name uuid is_requester linked_to_uuid invite_by_uuid optional_invite_by_uuid email order]],
+        submitters: [%i[name uuid is_requester linked_to_uuid invite_via_field_uuid
+                        invite_by_uuid optional_invite_by_uuid email order]],
+        variables_schema: {},
         fields: [[:uuid, :submitter_uuid, :name, :type,
                   :required, :readonly, :default_value,
                   :title, :description, :prefillable,
@@ -129,26 +115,7 @@ class TemplatesController < ApplicationController
                     conditions: [%i[field_uuid value action operation]],
                     options: [%i[value uuid]],
                     validation: %i[message pattern min max step],
-                    areas: [%i[x y w h cell_w attachment_uuid option_uuid page]] }]] }
+                    areas: [%i[uuid x y w h cell_w attachment_uuid option_uuid page]] }]] }
     )
-  end
-
-  def authorized_clone_account_id?(account_id)
-    true_user.account_id.to_s == account_id.to_s ||
-      true_user.account.linked_accounts.accessible_by(current_ability).exists?(id: account_id)
-  end
-
-  def maybe_redirect_to_template(template)
-    if template.account == current_account
-      redirect_to(edit_template_path(@template))
-    else
-      redirect_back(fallback_location: root_path, notice: I18n.t('template_has_been_cloned'))
-    end
-  end
-
-  def load_base_template
-    return if params[:base_template_id].blank?
-
-    @base_template = Template.accessible_by(current_ability).find_by(id: params[:base_template_id])
   end
 end

@@ -18,18 +18,27 @@ module Templates
     ].freeze
 
     ANNOTATIONS_SIZE_LIMIT = 6.megabytes
+    MAX_ZIP_SIZE = 100.megabytes
     InvalidFileType = Class.new(StandardError)
     PdfEncrypted = Class.new(StandardError)
 
     module_function
 
-    def call(template, params, extract_fields: false)
-      extract_zip_files(params[:files].presence || params[:file]).flat_map do |file|
-        handle_file_types(template, file, params, extract_fields:)
+    def call(template, params, extract_fields: false, dynamic: false)
+      documents = []
+      dynamic_documents = []
+
+      extract_zip_files(params[:files].presence || params[:file]).each do |file|
+        docs, dynamic_docs = handle_file_types(template, file, params, extract_fields:, dynamic:)
+
+        documents.push(*docs)
+        dynamic_documents.push(*dynamic_docs)
       end
+
+      [documents, dynamic_documents]
     end
 
-    def handle_pdf_or_image(template, file, document_data = nil, params = {}, extract_fields: false)
+    def handle_pdf_or_image(template, file, document_data = nil, params = {}, extract_fields: false, metadata: {})
       document_data ||= file.read
 
       if file.content_type == PDF_CONTENT_TYPE
@@ -45,6 +54,7 @@ module Templates
         io: StringIO.new(document_data),
         filename: file.original_filename,
         metadata: {
+          **metadata,
           identified: file.content_type == PDF_CONTENT_TYPE,
           analyzed: file.content_type == PDF_CONTENT_TYPE,
           pdf: { annotations: }.compact_blank, sha256:
@@ -72,8 +82,14 @@ module Templates
 
       Array.wrap(files).each do |file|
         if file.content_type == ZIP_CONTENT_TYPE || file.content_type == X_ZIP_CONTENT_TYPE
+          total_size = 0
+
           Zip::File.open(file.tempfile).each do |entry|
             next if entry.directory?
+
+            total_size += entry.size
+
+            raise InvalidFileType, 'zip_too_large' if total_size > MAX_ZIP_SIZE
 
             tempfile = Tempfile.new(entry.name)
             tempfile.binmode
@@ -101,12 +117,12 @@ module Templates
       extracted_files
     end
 
-    def handle_file_types(template, file, params, extract_fields:)
+    def handle_file_types(template, file, params, extract_fields:, dynamic: false)
       if file.content_type.include?('image') || file.content_type == PDF_CONTENT_TYPE
-        return handle_pdf_or_image(template, file, file.read, params, extract_fields:)
+        return [handle_pdf_or_image(template, file, file.read, params, extract_fields:), []]
       end
 
-      raise InvalidFileType, file.content_type
+      raise InvalidFileType, "#{file.content_type}/#{dynamic}"
     end
   end
 end

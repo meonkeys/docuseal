@@ -58,7 +58,7 @@ module Submissions
     end
 
     def build_table_rows(submissions, expires_at: nil)
-      submissions.preload(submitters: [attachments_attachments: :blob, documents_attachments: :blob])
+      submissions.preload(submitters: [{ attachments_attachments: :blob, documents_attachments: :blob }])
                  .find_each.map do |submission|
         submission_data = []
         submitters_count = submission.submitters.size
@@ -150,6 +150,8 @@ module Submissions
 
               ActiveStorage::Blob.proxy_url(attachment.blob, expires_at:) if attachment
             end
+          elsif submitter_value == true || submitter_value == false
+            submitter_value.to_s
           else
             submitter_value
           end

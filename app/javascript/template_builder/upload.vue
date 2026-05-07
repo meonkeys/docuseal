@@ -195,7 +195,7 @@ export default {
     acceptFileTypes: {
       type: String,
       required: false,
-      default: 'image/*, application/pdf, application/zip'
+      default: 'image/*, application/pdf, application/zip, application/json'
     }
   },
   emits: ['success', 'error'],
@@ -216,6 +216,9 @@ export default {
     queryParams () {
       return new URLSearchParams(window.location.search)
     },
+    uploadUrl () {
+      return `/templates/${this.templateId}/documents`
+    },
     googleDriveOauthPath () {
       const params = {
         access_type: 'offline',
@@ -225,7 +228,7 @@ export default {
           'https://www.googleapis.com/auth/userinfo.email',
           'https://www.googleapis.com/auth/drive.file'
         ].join(' '),
-        state: new URLSearchParams({
+        oauth_data: new URLSearchParams({
           redir: `/templates/${this.templateId}/edit?google_drive_open=1`
         }).toString()
       }
@@ -279,7 +282,7 @@ export default {
     async upload ({ path } = {}) {
       this.isLoading = true
 
-      return this.baseFetch(path || `/templates/${this.templateId}/documents`, {
+      return this.baseFetch(path || this.uploadUrl, {
         method: 'POST',
         headers: { Accept: 'application/json' },
         body: new FormData(this.$refs.form)
@@ -287,7 +290,11 @@ export default {
         if (resp.ok) {
           resp.json().then((data) => {
             this.$emit('success', data)
-            this.$refs.input.value = ''
+
+            if (this.$refs.input) {
+              this.$refs.input.value = ''
+            }
+
             this.isLoading = false
           })
         } else if (resp.status === 422) {

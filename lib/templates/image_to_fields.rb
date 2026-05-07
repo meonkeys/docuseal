@@ -4,7 +4,7 @@ module Templates
   module ImageToFields
     module_function
 
-    Field = Struct.new(:type, :x, :y, :w, :h, :confidence, keyword_init: true) do
+    Field = Struct.new(:type, :x, :y, :w, :h, :confidence) do
       def endy
         @endy ||= y + h
       end
@@ -16,7 +16,7 @@ module Templates
 
     MODEL_PATH = Rails.root.join('tmp/model.onnx')
 
-    RESOLUTION = 704
+    INPUT_NAMES = %w[images input].freeze
 
     ID_TO_CLASS = %w[text checkbox].freeze
 
@@ -26,13 +26,15 @@ module Templates
     CPU_THREADS = Etc.nprocessors
 
     # rubocop:disable Metrics
-    def call(image, confidence: 0.3, nms: 0.1, temperature: 1,
-             split_page: false, aspect_ratio: true, padding: nil, resolution: RESOLUTION)
-      base_image = image.extract_band(0, n: 3)
+    def call(image, confidence: 0.3, nms: 0.1, nmm: 0.9, temperature: 1,
+             split_page: false, aspect_ratio: true, padding: nil, resolution: self.resolution)
+      image = image.extract_band(0, n: 3) if image.bands > 3
 
-      trimmed_base, base_offset_x, base_offset_y = trim_image_with_padding(base_image, padding)
+      trimmed_base, base_offset_x, base_offset_y = trim_image_with_padding(image, padding)
 
-      if split_page && image.height > image.width
+      if model_v2?
+        detections = call_v2(trimmed_base, base_offset_x, base_offset_y, split_page, confidence:, resolution:)
+      elsif split_page && image.height > image.width
         regions = build_split_image_regions(trimmed_base)
 
         detections = { xyxy: Numo::SFloat[], confidence: Numo::SFloat[], class_id: Numo::Int32[] }
@@ -66,9 +68,142 @@ module Templates
         detections = postprocess_outputs(boxes, logits, transform_info, confidence:, temperature:, resolution:)
       end
 
-      detections = apply_nms(detections, nms)
+      detections = apply_nms_nmm(detections, nms_threshold: nms, nmm_threshold: nmm)
 
       build_fields_from_detections(detections, image)
+    end
+
+    def prepare_input(image, **opts)
+      { image:, **opts }
+    end
+
+    def enqueue(image:, **infer_opts)
+      -> { call(image, **infer_opts) }
+    end
+
+    def process_outputs(outputs, **)
+      outputs
+    end
+
+    def call_v2(image, offset_x, offset_y, split_page, confidence:, resolution:)
+      if split_page && image.height > image.width
+        regions = build_split_image_regions(image)
+
+        detections = { xyxy: Numo::SFloat[], confidence: Numo::SFloat[], class_id: Numo::Int32[] }
+
+        regions.reduce(detections) do |acc, r|
+          next acc if r[:img].height <= 0 || r[:img].width <= 0
+
+          input_tensor, orig_size_tensor, transform_info = preprocess_image_v2(r[:img], resolution)
+
+          outputs = model.predict({ 'images' => input_tensor, 'orig_target_sizes' => orig_size_tensor },
+                                  output_type: :numo)
+
+          boxes = outputs['boxes'][0, true, true]
+          labels = outputs['labels'][0, true]
+          scores = outputs['scores'][0, true]
+
+          postprocess_outputs_v2(boxes, labels, scores, acc,
+                                 offset_x:, offset_y: offset_y + r[:offset_y],
+                                 confidence:, transform_info:)
+        end
+      else
+        input_tensor, orig_size_tensor, transform_info = preprocess_image_v2(image, resolution)
+
+        outputs = model.predict({ 'images' => input_tensor, 'orig_target_sizes' => orig_size_tensor },
+                                output_type: :numo)
+
+        boxes = outputs['boxes'][0, true, true]
+        labels = outputs['labels'][0, true]
+        scores = outputs['scores'][0, true]
+
+        postprocess_outputs_v2(boxes, labels, scores, offset_x:, offset_y:,
+                                                      confidence:, transform_info:)
+      end
+    end
+
+    def preprocess_image_v2(image, resolution)
+      image = image.extract_band(0, n: 3) if image.bands > 3
+
+      ratio = [resolution.to_f / image.width, resolution.to_f / image.height].min
+      new_width = (image.width * ratio).to_i
+      new_height = (image.height * ratio).to_i
+
+      image = image.resize(ratio, vscale: ratio, kernel: :linear) if ratio != 1
+
+      pad_w = (resolution - new_width) / 2
+      pad_h = (resolution - new_height) / 2
+
+      padded = image.embed(pad_w, pad_h, resolution, resolution, background: [255, 255, 255])
+
+      padded /= 255.0
+
+      img_array = Numo::SFloat.from_binary(padded.write_to_memory, [resolution, resolution, 3])
+
+      img_array = img_array.transpose(2, 0, 1)
+
+      input_tensor = img_array.reshape(1, 3, resolution, resolution)
+
+      orig_size_tensor = Numo::Int64[[resolution, resolution]]
+
+      transform_info = { ratio: ratio, pad_w: pad_w, pad_h: pad_h }
+
+      [input_tensor, orig_size_tensor, transform_info]
+    end
+
+    def postprocess_outputs_v2(boxes, labels, scores, detections = nil, offset_x:, offset_y:, confidence:,
+                               transform_info:)
+      keep_mask = scores.gt(confidence)
+      keep_indices = keep_mask.where
+
+      if keep_indices.empty?
+        detections || {
+          xyxy: Numo::SFloat[],
+          confidence: Numo::SFloat[],
+          class_id: Numo::Int32[]
+        }
+      else
+        scores = scores[keep_indices]
+        labels = labels[keep_indices]
+        boxes_xyxy = boxes[keep_indices, true]
+
+        ratio = transform_info[:ratio]
+        pad_w = transform_info[:pad_w]
+        pad_h = transform_info[:pad_h]
+
+        boxes_xyxy[true, 0] = ((boxes_xyxy[true, 0] - pad_w) / ratio) + offset_x
+        boxes_xyxy[true, 1] = ((boxes_xyxy[true, 1] - pad_h) / ratio) + offset_y
+        boxes_xyxy[true, 2] = ((boxes_xyxy[true, 2] - pad_w) / ratio) + offset_x
+        boxes_xyxy[true, 3] = ((boxes_xyxy[true, 3] - pad_h) / ratio) + offset_y
+
+        if detections
+          existing_n = detections[:xyxy].shape[0]
+          new_n = boxes_xyxy.shape[0]
+          total = existing_n + new_n
+
+          xyxy = Numo::SFloat.zeros(total, 4)
+          conf = Numo::SFloat.zeros(total)
+          cls = Numo::Int32.zeros(total)
+
+          if existing_n.positive?
+            xyxy[0...existing_n, true] = detections[:xyxy]
+            conf[0...existing_n] = detections[:confidence]
+            cls[0...existing_n] = detections[:class_id]
+          end
+
+          xyxy[existing_n...(existing_n + new_n), true] = boxes_xyxy
+          conf[existing_n...(existing_n + new_n)] = scores
+          cls[existing_n...(existing_n + new_n)] = labels
+
+          { xyxy: xyxy, confidence: conf, class_id: cls }
+        else
+          {
+            xyxy: boxes_xyxy,
+            confidence: scores,
+            class_id: labels
+          }
+        end
+      end
     end
 
     def build_split_image_regions(image)
@@ -122,6 +257,8 @@ module Templates
 
       left, top, trim_width, trim_height = image.find_trim(threshold: 10, background: [255, 255, 255])
 
+      trim_width = [trim_width, image.width - (left * 1.9)].max
+
       padded_left = [left - padding, 0].max
       padded_top = [top - padding, 0].max
       padded_right = [left + trim_width + padding, image.width].min
@@ -172,7 +309,10 @@ module Templates
       [img_array.reshape(1, 3, resolution, resolution), transform_info]
     end
 
-    def nms(boxes, scores, iou_threshold = 0.5)
+    def nms(detections, iou_threshold = 0.5)
+      boxes = detections[:xyxy]
+      scores = detections[:confidence]
+
       return Numo::Int32[] if boxes.shape[0].zero?
 
       x1 = boxes[true, 0]
@@ -208,11 +348,77 @@ module Templates
         order = order[inds + 1]
       end
 
-      Numo::Int32.cast(keep)
+      {
+        xyxy: detections[:xyxy][keep, true],
+        confidence: detections[:confidence][keep],
+        class_id: detections[:class_id][keep]
+      }
+    end
+
+    def nmm(detections, overlap_threshold = 0.9, confidence: 0.3)
+      boxes = detections[:xyxy]
+      scores = detections[:confidence]
+      classes = detections[:class_id]
+
+      return detections if boxes.shape[0].zero?
+
+      x1 = boxes[true, 0]
+      y1 = boxes[true, 1]
+      x2 = boxes[true, 2]
+      y2 = boxes[true, 3]
+
+      areas = (x2 - x1) * (y2 - y1)
+      order = areas.sort_index.reverse
+
+      keep = []
+
+      while order.size.positive?
+        i = order[0]
+        keep << i
+        break if order.size == 1
+
+        xx1 = Numo::SFloat.maximum(x1[i], x1[order[1..]])
+        yy1 = Numo::SFloat.maximum(y1[i], y1[order[1..]])
+        xx2 = Numo::SFloat.minimum(x2[i], x2[order[1..]])
+        yy2 = Numo::SFloat.minimum(y2[i], y2[order[1..]])
+
+        w = Numo::SFloat.maximum(0.0, xx2 - xx1)
+        h = Numo::SFloat.maximum(0.0, yy2 - yy1)
+
+        intersection = w * h
+
+        overlap = intersection / areas[order[1..]]
+
+        merge_mask = scores[i] > confidence ? (overlap.gt(overlap_threshold) & classes[order[1..]].eq(classes[i])) : nil
+
+        if merge_mask && (merge_inds = merge_mask.where).size.positive?
+          candidates = order[merge_inds + 1]
+
+          scores[i] = [scores[i], scores[candidates].max].max
+
+          x1[i] = [x1[i], x1[candidates].min].min
+          y1[i] = [y1[i], y1[candidates].min].min
+          x2[i] = [x2[i], x2[candidates].max].max
+          y2[i] = [y2[i], y2[candidates].max].max
+        end
+
+        if merge_mask
+          inds = (~merge_mask).where
+          order = order[inds + 1]
+        else
+          order = order[1..]
+        end
+      end
+
+      {
+        xyxy: detections[:xyxy][keep, true],
+        confidence: detections[:confidence][keep],
+        class_id: detections[:class_id][keep]
+      }
     end
 
     def postprocess_outputs(boxes, logits, transform_info, detections = nil, confidence: 0.3, temperature: 1,
-                            resolution: RESOLUTION)
+                            resolution: self.resolution)
       scaled_logits = logits / temperature
 
       probs = 1.0 / (1.0 + Numo::NMath.exp(-scaled_logits))
@@ -304,27 +510,31 @@ module Templates
       end
     end
 
-    def apply_nms(detections, threshold = 0.5)
+    def apply_nms_nmm(detections, nms_threshold: 0.5, nmm_threshold: 0.7, confidence: 0.3)
       return detections if detections[:xyxy].shape[0].zero?
 
-      keep_indices = nms(detections[:xyxy], detections[:confidence], threshold)
+      nms_result = nms(detections, nms_threshold)
 
-      {
-        xyxy: detections[:xyxy][keep_indices, true],
-        confidence: detections[:confidence][keep_indices],
-        class_id: detections[:class_id][keep_indices]
-      }
+      nmm(nms_result, nmm_threshold, confidence:)
     end
 
     def model
       @model ||= OnnxRuntime::Model.new(
         MODEL_PATH.to_s,
-        inter_op_num_threads: CPU_THREADS,
+        inter_op_num_threads: 1,
         intra_op_num_threads: CPU_THREADS,
         enable_mem_pattern: false,
-        enable_cpu_mem_arena: false,
+        enable_cpu_mem_arena: Docuseal.multitenant? || Rails.env.development?,
         providers: ['CPUExecutionProvider']
       )
+    end
+
+    def resolution
+      @resolution ||= model.inputs.find { |i| INPUT_NAMES.include?(i[:name]) }.dig(:shape, 2)
+    end
+
+    def model_v2?
+      @model_v2 ||= model.inputs.pluck(:name).include?('orig_target_sizes')
     end
     # rubocop:enable Metrics
   end

@@ -17,7 +17,9 @@ module Submitters
 
     module_function
 
-    def call(template, values, submitter_name: nil, role_names: nil, for_submitter: nil, throw_errors: false)
+    # rubocop:disable Metrics
+    def call(template, values, submitter_name: nil, role_names: nil, for_submitter: nil, throw_errors: false,
+             add_fields: false, purpose: nil)
       fields =
         if role_names.present?
           fetch_roles_fields(template, roles: role_names)
@@ -29,6 +31,8 @@ module Submitters
       fields_name_index = build_fields_index(fields)
 
       attachments = []
+      new_fields = []
+      recipient_form_fields = nil
 
       normalized_values = values.to_h.each_with_object({}) do |(key, value), acc|
         next if key.blank?
@@ -40,7 +44,23 @@ module Submitters
         if value_fields.blank?
           value_fields = fields_name_index[key].presence || fields_name_index[key.to_s.downcase]
 
-          raise(UnknownFieldName, "Unknown field: #{key}") if value_fields.blank? && throw_errors
+          if value_fields.blank?
+            if add_fields && (recipient_form_fields ||= Accounts.load_recipient_form_fields(template.account))
+              new_field = recipient_form_fields.to_a.find { |e| e['name'] == key }.deep_dup
+
+              if new_field && fields.present?
+                new_field = new_field.except('conditions')
+                                     .merge('uuid' => SecureRandom.uuid,
+                                            'readonly' => true,
+                                            'submitter_uuid' => fields.first['submitter_uuid'])
+
+                new_fields.push(new_field)
+                value_fields = [new_field]
+              end
+            elsif throw_errors
+              raise(UnknownFieldName, "Unknown field: #{key}")
+            end
+          end
         end
 
         next if value_fields.blank?
@@ -48,7 +68,7 @@ module Submitters
         value_fields.each do |field|
           if field['type'].in?(%w[initials signature image file stamp]) && value.present?
             new_value, new_attachments =
-              normalize_attachment_value(value, field, template.account, attachments, for_submitter)
+              normalize_attachment_value(value, field, template.account, attachments, for_submitter:, purpose:)
 
             attachments.push(*new_attachments)
 
@@ -59,8 +79,9 @@ module Submitters
         end
       end
 
-      [normalized_values, attachments]
+      [normalized_values, attachments, new_fields]
     end
+    # rubocop:enable Metrics
 
     def normalize_value(field, value)
       if field['type'] == 'checkbox'
@@ -82,15 +103,41 @@ module Submitters
     end
 
     def normalize_date(field, value)
-      if value.is_a?(Integer)
+      format = field.dig('preferences', 'format')
+
+      if TimeUtils.format_with_time?(format)
+        normalize_date_time(value, format)
+      elsif TimeUtils.month_only_format?(format)
+        normalize_date_month(value, format)
+      elsif value.is_a?(Integer)
         Time.zone.at(value.to_s.first(10).to_i).to_date.to_s
-      elsif value.gsub(/\w/, '0') == field.dig('preferences', 'format').to_s.gsub(/\w/, '0')
-        TimeUtils.parse_date_string(value, field.dig('preferences', 'format')).to_s
+      elsif value.gsub(/\w/, '0') == format.to_s.gsub(/\w/, '0')
+        TimeUtils.parse_date_string(value, format).to_s
       else
         Date.parse(value).to_s
       end
-    rescue Date::Error
+    rescue ArgumentError
       value
+    end
+
+    def normalize_date_time(value, format)
+      if value.is_a?(Integer)
+        Time.zone.at(value.to_s.first(10).to_i).utc.iso8601
+      elsif value.to_s.match?(/T\d{2}:\d{2}/)
+        Time.iso8601(value).utc.iso8601
+      else
+        TimeUtils.parse_date_string(value, format).utc.iso8601
+      end
+    end
+
+    def normalize_date_month(value, format)
+      if value.is_a?(Integer)
+        Time.zone.at(value.to_s.first(10).to_i).strftime('%Y-%m')
+      elsif value.to_s.match?(/\A\d{4}-\d{2}\z/)
+        value
+      else
+        TimeUtils.parse_date_string(value, format).strftime('%Y-%m')
+      end
     end
 
     def fetch_fields(template, submitter_name: nil, for_submitter: nil)
@@ -132,17 +179,17 @@ module Submitters
             .merge(fields.group_by { |e| e['name'].to_s.downcase })
     end
 
-    def normalize_attachment_value(value, field, account, attachments, for_submitter = nil)
+    def normalize_attachment_value(value, field, account, attachments, for_submitter: nil, purpose: nil)
       if value.is_a?(Array)
         new_attachments = value.map do |v|
-          new_attachment = find_or_build_attachment(v, field, account, for_submitter)
+          new_attachment = find_or_build_attachment(v, field, account, for_submitter:, purpose:)
 
           attachments.find { |a| a.blob_id == new_attachment.blob_id } || new_attachment
         end
 
         [new_attachments.map(&:uuid), new_attachments]
       else
-        new_attachment = find_or_build_attachment(value, field, account, for_submitter)
+        new_attachment = find_or_build_attachment(value, field, account, for_submitter:, purpose:)
 
         existing_attachment = attachments.find { |a| a.blob_id == new_attachment.blob_id }
 
@@ -152,11 +199,15 @@ module Submitters
       end
     end
 
-    def find_or_build_attachment(value, field, account, for_submitter = nil)
+    def find_or_build_attachment(value, field, account, for_submitter: nil, purpose: nil)
       type = field['type']
+
+      raise InvalidDefaultValue, "Invalid #{type} value" if purpose == :bulk
 
       blob =
         if value.match?(%r{\Ahttps?://})
+          raise InvalidDefaultValue, "Invalid #{type} value" unless purpose == :api
+
           find_or_create_blob_from_url(account, value)
         elsif type.in?(%w[signature initials]) && value.length < 60
           find_or_create_blob_from_text(account, value, type)
@@ -164,6 +215,8 @@ module Submitters
               Marcel::MimeType.for(data).exclude?('octet-stream')
           find_or_create_blob_from_base64(account, data, type)
         elsif type == 'image' && (value.starts_with?('<html>') || value.starts_with?('<!DOCTYPE'))
+          raise InvalidDefaultValue, "Invalid #{type} value" unless purpose == :api
+
           find_or_create_blob_from_html(account, value, field)
         else
           raise InvalidDefaultValue, "Invalid value, url, base64 or text < 60 chars is expected: #{value.first(200)}..."
@@ -215,7 +268,7 @@ module Submitters
 
       return blob if blob
 
-      data = DownloadUtils.call(url).body
+      data = DownloadUtils.call(url, validate: true).body
 
       checksum = Digest::MD5.base64digest(data)
 

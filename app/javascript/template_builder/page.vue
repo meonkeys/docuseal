@@ -1,7 +1,7 @@
 <template>
   <div
     class="relative select-none mb-4 before:border before:rounded before:top-0 before:bottom-0 before:left-0 before:right-0 before:absolute"
-    :class="{ 'cursor-crosshair': allowDraw && editable, 'touch-none': !!drawField }"
+    :class="{ 'cursor-crosshair': allowDraw && editable && !isSelectMode, 'touch-none': !!drawField }"
     style="container-type: size"
     :style="{ aspectRatio: `${width} / ${height}`}"
   >
@@ -17,13 +17,28 @@
     <div
       class="top-0 bottom-0 left-0 right-0 absolute"
       @pointerdown="onStartDraw"
+      @contextmenu="openContextMenu"
     >
+      <SelectionBox
+        v-if="showSelectionBox"
+        :selection-box="selectionBox"
+        :page-width="width"
+        :page-height="height"
+        :is-resizing="!!resizeDirection"
+        :is-drawing="!!drawFieldType"
+        :is-drag="isDrag"
+        @move="onSelectionBoxMove"
+        @contextmenu="openSelectionContextMenu"
+        @close-context-menu="closeContextMenu"
+      />
       <FieldArea
         v-for="(item, i) in areas"
         :key="i"
         :ref="setAreaRefs"
         :area="item.area"
         :input-mode="inputMode"
+        :conditional-field-index="conditionalFieldIndex"
+        :formula-values-index="formulaValuesIndex"
         :page-width="width"
         :page-height="height"
         :field="item.field"
@@ -34,31 +49,81 @@
         :default-field="defaultFieldsIndex[item.field.name]"
         :default-submitters="defaultSubmitters"
         :max-page="totalPages - 1"
+        :is-select-mode="isSelectMode"
+        :is-mobile="isMobile"
         @start-resize="resizeDirection = $event"
         @stop-resize="resizeDirection = null"
         @remove="$emit('remove-area', item.area)"
         @scroll-to="$emit('scroll-to', $event)"
+        @add-custom-field="$emit('add-custom-field', $event)"
+        @contextmenu="openAreaContextMenu($event, item.area, item.field)"
       />
       <FieldArea
-        v-if="newArea"
+        v-for="(area, index) in newAreas"
+        :key="index"
         :is-draw="true"
         :page-width="width"
         :page-height="height"
-        :field="{ submitter_uuid: selectedSubmitter.uuid, type: drawField?.type || dragFieldPlaceholder?.type || defaultFieldType }"
-        :area="newArea"
+        :field="{ submitter_uuid: selectedSubmitter.uuid, type: newAreaFieldType }"
+        :area="area"
+      />
+      <div
+        v-if="newAreas.length > 1"
+        class="absolute outline-dashed outline-gray-400 pointer-events-none z-20"
+        :style="newAreasBoxStyle"
+      />
+      <div
+        v-if="selectionRect"
+        class="absolute outline-dashed outline-gray-400 pointer-events-none z-20"
+        :style="selectionRectStyle"
+      />
+      <FieldContextMenu
+        v-if="contextMenu && contextMenu.field"
+        :context-menu="contextMenu"
+        :field="contextMenu.field"
+        :with-signature-id="withSignatureId"
+        :with-prefillable="withPrefillable"
+        :editable="editable"
+        :default-field="defaultFieldsIndex[contextMenu.field.name]"
+        @copy="handleCopy"
+        @delete="handleDelete"
+        @close="closeContextMenu"
+        @set-draw="$emit('set-draw', $event)"
+        @scroll-to="$emit('scroll-to', $event)"
+        @save="save"
+        @add-custom-field="$emit('add-custom-field', $event)"
+      />
+      <SelectionContextMenu
+        v-else-if="contextMenu && contextMenu.areas"
+        :context-menu="contextMenu"
+        :editable="editable"
+        :template="template"
+        @copy="handleSelectionCopy"
+        @delete="handleSelectionDelete"
+        @close="closeContextMenu"
+      />
+      <PageContextMenu
+        v-else-if="contextMenu && !contextMenu.field && !contextMenu.areas"
+        :context-menu="contextMenu"
+        :editable="editable"
+        :with-fields-detection="withFieldsDetection"
+        @paste="handlePaste"
+        @autodetect-fields="handleAutodetectFields"
+        @close="closeContextMenu"
       />
     </div>
     <div
-      v-show="resizeDirection || isDrag || showMask || (drawField && isMobile) || fieldsDragFieldRef.value"
+      v-show="resizeDirection || isDrag || showMask || (drawField && isMobile) || fieldsDragFieldRef.value || customDragFieldRef?.value || selectionRect"
       id="mask"
       ref="mask"
       class="top-0 bottom-0 left-0 right-0 absolute"
-      :class="{ 'z-10': !isMobile, 'cursor-grab': isDrag, 'cursor-nwse-resize': drawField, [resizeDirectionClasses[resizeDirection]]: !!resizeDirectionClasses }"
+      :class="{ 'z-10': !isMobile, 'cursor-grab': isDrag, 'cursor-nwse-resize': drawField && !isSelectMode, [resizeDirectionClasses[resizeDirection]]: !!resizeDirectionClasses }"
       @pointermove="onPointermove"
       @pointerdown="onStartDraw"
+      @contextmenu="openContextMenu"
       @dragover.prevent="onDragover"
       @dragenter="onDragenter"
-      @dragleave="newArea = null"
+      @dragleave="newAreas = []"
       @drop="onDrop"
       @pointerup="onPointerup"
     />
@@ -67,13 +132,21 @@
 
 <script>
 import FieldArea from './area'
+import FieldContextMenu from './field_context_menu'
+import SelectionContextMenu from './selection_context_menu'
+import PageContextMenu from './page_context_menu'
+import SelectionBox from './selection_box'
 
 export default {
   name: 'TemplatePage',
   components: {
-    FieldArea
+    FieldArea,
+    FieldContextMenu,
+    SelectionContextMenu,
+    PageContextMenu,
+    SelectionBox
   },
-  inject: ['fieldTypes', 'defaultDrawFieldType', 'fieldsDragFieldRef', 'assignDropAreaSize'],
+  inject: ['fieldTypes', 'defaultDrawFieldType', 'fieldsDragFieldRef', 'customDragFieldRef', 'assignDropAreaSize', 'selectedAreasRef', 'template', 'isSelectModeRef', 'save'],
   props: {
     image: {
       type: Object,
@@ -83,6 +156,11 @@ export default {
       type: Object,
       required: false,
       default: null
+    },
+    isMobile: {
+      type: Boolean,
+      required: false,
+      default: false
     },
     withSignatureId: {
       type: Boolean,
@@ -103,6 +181,16 @@ export default {
       type: Boolean,
       required: false,
       default: false
+    },
+    conditionalFieldIndex: {
+      type: Object,
+      required: false,
+      default: () => ({})
+    },
+    formulaValuesIndex: {
+      type: Object,
+      required: false,
+      default: () => ({})
     },
     defaultFields: {
       type: Array,
@@ -142,6 +230,11 @@ export default {
       required: false,
       default: null
     },
+    drawCustomField: {
+      type: Object,
+      required: false,
+      default: null
+    },
     editable: {
       type: Boolean,
       required: false,
@@ -155,24 +248,82 @@ export default {
     number: {
       type: Number,
       required: true
+    },
+    attachmentUuid: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    withFieldsDetection: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   },
-  emits: ['draw', 'drop-field', 'remove-area', 'scroll-to'],
+  emits: ['draw', 'drop-field', 'remove-area', 'copy-field', 'paste-field', 'scroll-to', 'copy-selected-areas', 'delete-selected-areas', 'autodetect-fields', 'add-custom-field', 'set-draw'],
   data () {
     return {
       areaRefs: [],
       showMask: false,
       resizeDirection: null,
-      newArea: null
+      newAreas: [],
+      contextMenu: null,
+      selectionRect: null
     }
   },
   computed: {
+    isSelectMode () {
+      return this.isSelectModeRef.value && !this.drawFieldType && this.editable && !this.drawField && !this.drawCustomField
+    },
+    pageSelectedAreas () {
+      if (!this.selectedAreasRef.value) return []
+
+      return this.selectedAreasRef.value.filter((a) =>
+        a.attachment_uuid === this.attachmentUuid && a.page === this.number
+      )
+    },
+    showSelectionBox () {
+      return this.pageSelectedAreas.length >= 2 && this.editable
+    },
+    minSelectionBoxHeight () {
+      const ys = this.pageSelectedAreas.map((a) => a.y)
+
+      return Math.max(...ys) - Math.min(...ys)
+    },
+    minSelectionBoxWidth () {
+      const xs = this.pageSelectedAreas.map((a) => a.x)
+
+      return Math.max(...xs) - Math.min(...xs)
+    },
+    selectionBox () {
+      if (!this.pageSelectedAreas.length) return null
+
+      const minX = Math.min(...this.pageSelectedAreas.map((a) => a.x))
+      const minY = Math.min(...this.pageSelectedAreas.map((a) => a.y))
+      const maxX = Math.max(...this.pageSelectedAreas.map((a) => a.x + a.w))
+      const maxY = Math.max(...this.pageSelectedAreas.map((a) => a.y + a.h))
+
+      return {
+        x: minX,
+        y: minY,
+        w: Math.max(maxX - minX, this.minSelectionBoxWidth),
+        h: Math.max(maxY - minY, this.minSelectionBoxHeight)
+      }
+    },
     defaultFieldsIndex () {
       return this.defaultFields.reduce((acc, field) => {
         acc[field.name] = field
 
         return acc
       }, {})
+    },
+    newAreaFieldType () {
+      if (this.drawField?.type) return this.drawField.type
+      if (this.drawCustomField?.type) return this.drawCustomField.type
+      if (this.dragFieldPlaceholder?.type) return this.dragFieldPlaceholder.type
+      if (this.customDragFieldRef?.value?.type) return this.customDragFieldRef.value.type
+
+      return this.defaultFieldType
     },
     defaultFieldType () {
       if (this.drawFieldType) {
@@ -185,11 +336,6 @@ export default {
         return 'text'
       }
     },
-    isMobile () {
-      const isMobileSafariIos = 'ontouchstart' in window && navigator.maxTouchPoints > 0 && /AppleWebKit/i.test(navigator.userAgent)
-
-      return isMobileSafariIos || /android|iphone|ipad/i.test(navigator.userAgent)
-    },
     resizeDirectionClasses () {
       return {
         nwse: 'cursor-nwse-resize',
@@ -201,6 +347,31 @@ export default {
     },
     height () {
       return this.image.metadata.height
+    },
+    newAreasBoxStyle () {
+      if (this.newAreas.length < 2) return {}
+
+      const minX = Math.min(...this.newAreas.map(a => a.x))
+      const minY = Math.min(...this.newAreas.map(a => a.y))
+      const maxX = Math.max(...this.newAreas.map(a => a.x + a.w))
+      const maxY = Math.max(...this.newAreas.map(a => a.y + a.h))
+
+      return {
+        left: minX * 100 + '%',
+        top: minY * 100 + '%',
+        width: (maxX - minX) * 100 + '%',
+        height: (maxY - minY) * 100 + '%'
+      }
+    },
+    selectionRectStyle () {
+      if (!this.selectionRect) return {}
+
+      return {
+        left: this.selectionRect.x * 100 + '%',
+        top: this.selectionRect.y * 100 + '%',
+        width: this.selectionRect.w * 100 + '%',
+        height: this.selectionRect.h * 100 + '%'
+      }
     }
   },
   beforeUpdate () {
@@ -211,28 +382,183 @@ export default {
       this.image.metadata.width = e.target.naturalWidth
       this.image.metadata.height = e.target.naturalHeight
     },
+    openContextMenu (event) {
+      if (!this.editable) {
+        return
+      }
+
+      event.preventDefault()
+      event.stopPropagation()
+
+      const rect = this.$refs.image.getBoundingClientRect()
+
+      this.newAreas = []
+      this.showMask = false
+
+      this.contextMenu = {
+        x: event.clientX,
+        y: event.clientY,
+        relativeX: (event.clientX - rect.left) / rect.width,
+        relativeY: (event.clientY - rect.top) / rect.height
+      }
+    },
+    openAreaContextMenu (event, area, field) {
+      if (!this.editable) {
+        return
+      }
+
+      event.preventDefault()
+      event.stopPropagation()
+
+      const rect = this.$refs.image.getBoundingClientRect()
+
+      this.newAreas = []
+      this.showMask = false
+
+      this.contextMenu = {
+        x: event.clientX,
+        y: event.clientY,
+        relativeX: (event.clientX - rect.left) / rect.width,
+        relativeY: (event.clientY - rect.top) / rect.height,
+        area,
+        field
+      }
+    },
+    openSelectionContextMenu (event) {
+      if (!this.editable) {
+        return
+      }
+
+      event.preventDefault()
+      event.stopPropagation()
+
+      const rect = this.$el.getBoundingClientRect()
+
+      this.contextMenu = {
+        x: event.clientX,
+        y: event.clientY,
+        relativeX: (event.clientX - rect.left) / rect.width,
+        relativeY: (event.clientY - rect.top) / rect.height,
+        areas: this.selectedAreasRef.value
+      }
+    },
+    handleSelectionCopy () {
+      this.$emit('copy-selected-areas')
+
+      this.closeContextMenu()
+    },
+    handleSelectionDelete () {
+      this.$emit('delete-selected-areas')
+
+      this.closeContextMenu()
+    },
+    closeContextMenu () {
+      this.contextMenu = null
+      this.newAreas = []
+      this.showMask = false
+    },
+    handleCopy () {
+      if (this.contextMenu.area) {
+        this.selectedAreasRef.value = [this.contextMenu.area]
+
+        this.$emit('copy-field')
+      }
+
+      this.closeContextMenu()
+    },
+    handleDelete () {
+      if (this.contextMenu.area) {
+        this.$emit('remove-area', this.contextMenu.area)
+      }
+
+      this.closeContextMenu()
+    },
+    handlePaste () {
+      this.newAreas = []
+      this.showMask = false
+
+      this.$emit('paste-field', {
+        page: this.number,
+        x: this.contextMenu.relativeX,
+        y: this.contextMenu.relativeY
+      })
+
+      this.closeContextMenu()
+    },
+    handleAutodetectFields () {
+      this.$emit('autodetect-fields', {
+        page: this.number,
+        attachmentUuid: this.attachmentUuid
+      })
+
+      this.closeContextMenu()
+    },
     setAreaRefs (el) {
       if (el) {
         this.areaRefs.push(el)
       }
     },
     onDragenter (e) {
-      this.newArea = {}
+      const customField = this.customDragFieldRef?.value
+      const customAreas = customField?.areas || []
+      const dropX = (e.offsetX - 6) / this.$refs.mask.clientWidth
+      const dropY = e.offsetY / this.$refs.mask.clientHeight
 
-      this.assignDropAreaSize(this.newArea, this.dragFieldPlaceholder, {
-        maskW: this.$refs.mask.clientWidth,
-        maskH: this.$refs.mask.clientHeight
-      })
+      if (customAreas.length > 1) {
+        const refArea = customAreas[0]
 
-      this.newArea.x = (e.offsetX - 6) / this.$refs.mask.clientWidth
-      this.newArea.y = e.offsetY / this.$refs.mask.clientHeight - this.newArea.h / 2
+        this.newAreas = customAreas.map((customArea) => ({
+          x: dropX + (customArea.x - refArea.x),
+          y: dropY + (customArea.y - refArea.y) - (customArea.h / 2),
+          w: customArea.w,
+          h: customArea.h
+        }))
+      } else {
+        const newArea = {}
+
+        if (customAreas.length === 1) {
+          newArea.w = customAreas[0].w
+          newArea.h = customAreas[0].h
+        } else if (customField) {
+          this.assignDropAreaSize(newArea, customField, {
+            maskW: this.$refs.mask.clientWidth,
+            maskH: this.$refs.mask.clientHeight
+          })
+        } else {
+          this.assignDropAreaSize(newArea, this.dragFieldPlaceholder, {
+            maskW: this.$refs.mask.clientWidth,
+            maskH: this.$refs.mask.clientHeight
+          })
+        }
+
+        newArea.x = dropX
+        newArea.y = dropY - newArea.h / 2
+
+        this.newAreas = [newArea]
+      }
     },
     onDragover (e) {
-      this.newArea.x = (e.offsetX - 6) / this.$refs.mask.clientWidth
-      this.newArea.y = e.offsetY / this.$refs.mask.clientHeight - this.newArea.h / 2
+      const customField = this.customDragFieldRef?.value
+      const customAreas = customField?.areas || []
+      const dropX = (e.offsetX - 6) / this.$refs.mask.clientWidth
+      const dropY = e.offsetY / this.$refs.mask.clientHeight
+
+      if (customAreas.length > 1) {
+        const refArea = customAreas[0]
+
+        this.newAreas.forEach((newArea, index) => {
+          const customArea = customAreas[index]
+
+          newArea.x = dropX + (customArea.x - refArea.x)
+          newArea.y = dropY + (customArea.y - refArea.y) - (customArea.h / 2)
+        })
+      } else if (this.newAreas.length) {
+        this.newAreas[0].x = dropX
+        this.newAreas[0].y = dropY - this.newAreas[0].h / 2
+      }
     },
     onDrop (e) {
-      this.newArea = null
+      this.newAreas = []
 
       this.$emit('drop-field', {
         x: e.offsetX,
@@ -243,11 +569,25 @@ export default {
       })
     },
     onStartDraw (e) {
+      if (e.button === 2) {
+        return
+      }
+
+      if (this.selectedAreasRef.value.length >= 2) {
+        this.selectedAreasRef.value = []
+      }
+
+      if (this.isSelectMode) {
+        this.startSelectionRect(e)
+
+        return
+      }
+
       if (!this.allowDraw) {
         return
       }
 
-      if (this.isMobile && !this.drawField) {
+      if (this.isMobile && !this.drawField && !this.drawCustomField) {
         return
       }
 
@@ -258,65 +598,154 @@ export default {
       this.showMask = true
 
       this.$nextTick(() => {
-        this.newArea = {
+        this.newAreas = [{
           initialX: e.offsetX / this.$refs.mask.clientWidth,
           initialY: e.offsetY / this.$refs.mask.clientHeight,
           x: e.offsetX / this.$refs.mask.clientWidth,
           y: e.offsetY / this.$refs.mask.clientHeight,
           w: 0,
           h: 0
+        }]
+      })
+    },
+    startSelectionRect (e) {
+      this.selectedAreasRef.value = []
+
+      this.showMask = true
+
+      this.$nextTick(() => {
+        const x = e.offsetX / this.$refs.mask.clientWidth
+        const y = e.offsetY / this.$refs.mask.clientHeight
+
+        this.selectionRect = {
+          initialX: x,
+          initialY: y,
+          x,
+          y,
+          w: 0,
+          h: 0
         }
       })
     },
+    onSelectionBoxMove (dx, dy) {
+      let clampedDx = dx
+      let clampedDy = dy
+
+      this.pageSelectedAreas.forEach((area) => {
+        const maxDxLeft = -area.x
+        const maxDxRight = 1 - area.w - area.x
+        const maxDyTop = -area.y
+        const maxDyBottom = 1 - area.h - area.y
+
+        if (dx < maxDxLeft) clampedDx = Math.max(clampedDx, maxDxLeft)
+        if (dx > maxDxRight) clampedDx = Math.min(clampedDx, maxDxRight)
+        if (dy < maxDyTop) clampedDy = Math.max(clampedDy, maxDyTop)
+        if (dy > maxDyBottom) clampedDy = Math.min(clampedDy, maxDyBottom)
+      })
+
+      this.pageSelectedAreas.forEach((area) => {
+        area.x += clampedDx
+        area.y += clampedDy
+      })
+    },
     onPointermove (e) {
-      if (this.newArea) {
-        const dx = e.offsetX / this.$refs.mask.clientWidth - this.newArea.initialX
-        const dy = e.offsetY / this.$refs.mask.clientHeight - this.newArea.initialY
+      if (this.selectionRect) {
+        const dx = e.offsetX / this.$refs.mask.clientWidth - this.selectionRect.initialX
+        const dy = e.offsetY / this.$refs.mask.clientHeight - this.selectionRect.initialY
 
         if (dx > 0) {
-          this.newArea.x = this.newArea.initialX
+          this.selectionRect.x = this.selectionRect.initialX
         } else {
-          this.newArea.x = e.offsetX / this.$refs.mask.clientWidth
+          this.selectionRect.x = e.offsetX / this.$refs.mask.clientWidth
         }
 
         if (dy > 0) {
-          this.newArea.y = this.newArea.initialY
+          this.selectionRect.y = this.selectionRect.initialY
         } else {
-          this.newArea.y = e.offsetY / this.$refs.mask.clientHeight
+          this.selectionRect.y = e.offsetY / this.$refs.mask.clientHeight
         }
 
-        if ((this.drawField?.type || this.drawFieldType) === 'cells') {
-          this.newArea.cell_w = this.newArea.h * (this.$refs.mask.clientHeight / this.$refs.mask.clientWidth)
+        this.selectionRect.w = Math.abs(dx)
+        this.selectionRect.h = Math.abs(dy)
+
+        return
+      }
+
+      const drawArea = this.newAreas[0]
+
+      if (drawArea?.initialX !== undefined) {
+        const dx = e.offsetX / this.$refs.mask.clientWidth - drawArea.initialX
+        const dy = e.offsetY / this.$refs.mask.clientHeight - drawArea.initialY
+
+        if (dx > 0) {
+          drawArea.x = drawArea.initialX
+        } else {
+          drawArea.x = e.offsetX / this.$refs.mask.clientWidth
         }
 
-        this.newArea.w = Math.abs(dx)
-        this.newArea.h = Math.abs(dy)
+        if (dy > 0) {
+          drawArea.y = drawArea.initialY
+        } else {
+          drawArea.y = e.offsetY / this.$refs.mask.clientHeight
+        }
+
+        if ((this.drawField?.type || this.drawCustomField?.type || this.drawFieldType) === 'cells') {
+          drawArea.cell_w = drawArea.h * (this.$refs.mask.clientHeight / this.$refs.mask.clientWidth)
+        }
+
+        drawArea.w = Math.abs(dx)
+        drawArea.h = Math.abs(dy)
       }
     },
     onPointerup (e) {
-      if (this.newArea) {
-        const area = {
-          x: this.newArea.x,
-          y: this.newArea.y,
-          w: this.newArea.w,
-          h: this.newArea.h,
-          page: this.number
+      if (this.selectionRect) {
+        const selRect = this.selectionRect
+        const areasToSelect = this.areas || []
+
+        areasToSelect.forEach((item) => {
+          const area = item.area
+
+          if (this.rectsOverlap(selRect, area)) {
+            this.selectedAreasRef.value.push(area)
+          }
+        })
+
+        this.selectionRect = null
+      } else {
+        const drawArea = this.newAreas[0]
+
+        if (drawArea?.initialX !== undefined) {
+          const area = {
+            x: drawArea.x,
+            y: drawArea.y,
+            w: drawArea.w,
+            h: drawArea.h,
+            page: this.number
+          }
+
+          if ('cell_w' in drawArea) {
+            area.cell_w = drawArea.cell_w
+          }
+
+          const dx = Math.abs(e.offsetX - this.$refs.mask.clientWidth * drawArea.initialX)
+          const dy = Math.abs(e.offsetY - this.$refs.mask.clientHeight * drawArea.initialY)
+
+          const isTooSmall = dx < 8 && dy < 8
+
+          this.$emit('draw', { area, isTooSmall })
         }
-
-        if ('cell_w' in this.newArea) {
-          area.cell_w = this.newArea.cell_w
-        }
-
-        const dx = Math.abs(e.offsetX - this.$refs.mask.clientWidth * this.newArea.initialX)
-        const dy = Math.abs(e.offsetY - this.$refs.mask.clientHeight * this.newArea.initialY)
-
-        const isTooSmall = dx < 8 && dy < 8
-
-        this.$emit('draw', { area, isTooSmall })
       }
 
       this.showMask = false
-      this.newArea = null
+      this.newAreas = []
+    },
+    rectsOverlap (r1, r2) {
+      return !(
+        r1.x + r1.w < r2.x ||
+        r2.x + r2.w < r1.x ||
+        r1.y + r1.h < r2.y ||
+        r2.y + r2.h < r1.y
+      )
     }
   }
 }

@@ -5,73 +5,127 @@
 <% fields_index = Templates.build_field_areas_index(@submitter.submission.template_fields || @submitter.submission.template.fields) %>
 <% values = @submitter.submission.submitters.reduce({}) { |acc, sub| acc.merge(sub.values) } %>
 <% submitters_index = @submitter.submission.submitters.index_by(&:uuid) %>
-<% page_blob_struct = Struct.new(:url, :metadata, keyword_init: true) %>
+<% page_blob_struct = Struct.new(:url, :metadata) %>
 <% schema = Submissions.filtered_conditions_schema(@submitter.submission, values:, include_submitter_uuid: @submitter.uuid) %>
 <% font_scale = 1000.0 / PdfUtils::US_LETTER_W %>
+<% decline_modal_id = nil %>
+<% delegate_modal_id = nil %>
 <div style="max-height: -webkit-fill-available;">
-  <div id="scrollbox">
+  <main id="scrollbox">
+    <div id="sr_only_content"></div>
     <div class="mx-auto block pb-72" style="max-width: 1000px">
       <%# flex block w-full sticky top-0 z-50 space-x-2 items-center bg-yellow-100 p-2 border-y border-yellow-200 transition-transform duration-300 %>
       <%= local_assigns[:banner_html] || capture do %>
         <%= render('submit_form/banner') %>
-        <div id="signing_form_header" class="sticky min-[1230px]:static top-0 z-50 bg-base-100 py-2 px-2 flex items-center md:-mx-[8px]" style="margin-bottom: -16px">
-          <div class="text-xl md:text-2xl font-medium focus:text-clip" style="width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        <header id="signing_form_header" class="sticky min-[1230px]:static top-0 z-50 bg-base-100 py-2 px-2 flex items-center md:-mx-[8px]" style="margin-bottom: -16px">
+          <h1 class="text-xl md:text-2xl font-medium focus:text-clip" style="width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             <%= @submitter.submission.name || @submitter.submission.template.name %>
-          </div>
+          </h1>
           <div class="flex items-center space-x-2" style="margin-left: 20px; flex-shrink: 0">
-            <% if @form_configs[:with_decline] %>
-              <% decline_modal_checkbox_uuid = SecureRandom.uuid %>
-              <div>
-                <%= render 'shared/html_modal', title: t(:decline), btn_text: t(:decline), btn_class: 'btn btn-sm !px-5', button_id: 'decline_button', uuid: decline_modal_checkbox_uuid do %>
-                  <%= render 'submit_form/decline_form', submitter: @submitter %>
-                <% end %>
-              </div>
-            <% end %>
-            <% if @form_configs[:with_partial_download] %>
-              <download-button data-src="<%= submit_form_download_index_path(@submitter.slug) %>" class="btn btn-neutral text-white btn-sm !px-4">
-                <span class="flex items-center justify-center" data-target="download-button.defaultButton">
-                  <%= svg_icon('download', class: 'w-6 h-6 inline md:hidden') %>
-                  <span class="hidden md:inline"><%= t('download') %></span>
-                </span>
-                <span class="flex items-center justify-center space-x-2 hidden" data-target="download-button.loadingButton">
-                  <%= svg_icon('loader', class: 'w-6 h-6 animate-spin') %>
-                  <span class="hidden md:inline"><%= t('downloading') %></span>
-                </span>
-              </download-button>
+            <% if @form_configs[:with_delegate] %>
+              <modal-button data-target="<%= delegate_modal_id = SecureRandom.uuid %>">
+                <button id="delegate_button" type="button" class="btn btn-sm !px-5"><%= t(:delegate) %></button>
+              </modal-button>
+              <% if @form_configs[:with_decline] %>
+                <modal-button data-target="<%= decline_modal_id = SecureRandom.uuid %>">
+                  <button id="decline_button" type="button" class="btn btn-sm px-2" aria-label="<%= t(:decline) %>">
+                    <%= svg_icon('x', class: 'w-5 h-5') %>
+                  </button>
+                </modal-button>
+              <% end %>
+              <% if @form_configs[:with_partial_download] %>
+                <download-button role="button" tabindex="0" data-src="<%= submit_form_download_index_path(@submitter.slug) %>" class="btn btn-neutral text-white btn-sm px-2" title="<%= t('download') %>" aria-label="<%= t('download') %>">
+                  <span data-target="download-button.defaultButton">
+                    <%= svg_icon('download', class: 'w-5 h-5') %>
+                  </span>
+                  <span class="hidden" data-target="download-button.loadingButton">
+                    <%= svg_icon('loader', class: 'w-5 h-5 animate-spin') %>
+                  </span>
+                </download-button>
+              <% end %>
+            <% else %>
+              <% if @form_configs[:with_decline] %>
+                <modal-button data-target="<%= decline_modal_id = SecureRandom.uuid %>">
+                  <button id="decline_button" type="button" class="btn btn-sm !px-5"><%= t(:decline) %></button>
+                </modal-button>
+              <% end %>
+              <% if @form_configs[:with_partial_download] %>
+                <download-button role="button" tabindex="0" data-src="<%= submit_form_download_index_path(@submitter.slug) %>" class="btn btn-neutral text-white btn-sm !px-4" aria-label="<%= t('download') %>">
+                  <span class="flex items-center justify-center" data-target="download-button.defaultButton">
+                    <%= svg_icon('download', class: 'w-6 h-6 inline md:hidden') %>
+                    <span class="hidden md:inline"><%= t('download') %></span>
+                  </span>
+                  <span class="flex items-center justify-center space-x-2 hidden" data-target="download-button.loadingButton">
+                    <%= svg_icon('loader', class: 'w-6 h-6 animate-spin') %>
+                    <span class="hidden md:inline"><%= t('downloading') %></span>
+                  </span>
+                </download-button>
+              <% end %>
             <% end %>
           </div>
-        </div>
-        <scroll-buttons class="fixed right-5 top-2 hidden md:flex gap-1 z-50 ease-in-out opacity-0 -translate-y-10">
-          <% if @form_configs[:with_decline] %>
-            <label id="decline_button" for="<%= decline_modal_checkbox_uuid %>" class="btn btn-sm px-0">
-              <span class="min-[1366px]:inline hidden px-3">
-                <%= t(:decline) %>
+        </header>
+        <scroll-buttons inert class="fixed right-5 top-2 hidden md:flex gap-1 z-50 ease-in-out opacity-0 -translate-y-10">
+          <% if @form_configs[:with_delegate] %>
+            <modal-button data-target="<%= delegate_modal_id %>">
+              <button id="delegate_button_mobile" type="button" class="btn btn-sm px-0" aria-label="<%= t(:delegate) %>">
+                <span class="min-[1366px]:inline hidden px-3">
+                  <%= t(:delegate) %>
+                </span>
+                <span class="inline min-[1366px]:hidden px-2">
+                  <%= svg_icon('user_share', class: 'w-5 h-5') %>
+                </span>
+              </button>
+            </modal-button>
+            <% if @form_configs[:with_decline] %>
+              <modal-button data-target="<%= decline_modal_id %>">
+                <button id="decline_button_mobile" type="button" class="btn btn-sm px-2" aria-label="<%= t(:decline) %>">
+                  <%= svg_icon('x', class: 'w-5 h-5') %>
+                </button>
+              </modal-button>
+            <% end %>
+            <download-button role="button" tabindex="0" data-src="<%= submit_form_download_index_path(@submitter.slug) %>" class="btn btn-neutral text-white btn-sm px-2" aria-label="<%= t('download') %>">
+              <span data-target="download-button.defaultButton">
+                <%= svg_icon('download', class: 'w-5 h-5') %>
               </span>
-              <span class="inline min-[1366px]:hidden px-2">
-                <%= svg_icon('x', class: 'w-5 h-5') %>
+              <span class="hidden" data-target="download-button.loadingButton">
+                <%= svg_icon('loader', class: 'w-5 h-5 animate-spin') %>
               </span>
-            </label>
+            </download-button>
+          <% else %>
+            <% if @form_configs[:with_decline] %>
+              <modal-button data-target="<%= decline_modal_id %>">
+                <button id="decline_button_mobile" type="button" class="btn btn-sm px-0" aria-label="<%= t(:decline) %>">
+                  <span class="min-[1366px]:inline hidden px-3">
+                    <%= t(:decline) %>
+                  </span>
+                  <span class="inline min-[1366px]:hidden px-2">
+                    <%= svg_icon('x', class: 'w-5 h-5') %>
+                  </span>
+                </button>
+              </modal-button>
+            <% end %>
+            <download-button role="button" tabindex="0" data-src="<%= submit_form_download_index_path(@submitter.slug) %>" class="btn btn-neutral text-white btn-sm px-2" aria-label="<%= t('download') %>">
+              <span data-target="download-button.defaultButton">
+                <%= svg_icon('download', class: 'w-5 h-5') %>
+              </span>
+              <span class="hidden" data-target="download-button.loadingButton">
+                <%= svg_icon('loader', class: 'w-5 h-5 animate-spin') %>
+              </span>
+            </download-button>
           <% end %>
-          <download-button data-src="<%= submit_form_download_index_path(@submitter.slug) %>" class="btn btn-neutral text-white btn-sm px-2">
-            <span data-target="download-button.defaultButton">
-              <%= svg_icon('download', class: 'w-5 h-5') %>
-            </span>
-            <span class="hidden" data-target="download-button.loadingButton">
-              <%= svg_icon('loader', class: 'w-5 h-5 animate-spin') %>
-            </span>
-          </download-button>
         </scroll-buttons>
       <% end %>
       <% schema.each do |item| %>
         <% document = @submitter.submission.schema_documents.find { |a| a.uuid == item['attachment_uuid'] } %>
         <div id="document-<%= document.uuid %>">
+          <div class="sr_only_content"></div>
           <% document_annots_index = document.metadata.dig('pdf', 'annotations')&.group_by { |e| e['page'] } || {} %>
           <% preview_images_index = document.preview_images.loaded? ? document.preview_images.index_by { |e| e.filename.base.to_i } : {} %>
           <% lazyload_metadata = document.preview_images.last&.metadata || Templates::ProcessDocument::US_LETTER_SIZE %>
           <% (document.metadata.dig('pdf', 'number_of_pages') || (document.preview_images.loaded? ? preview_images_index.size : document.preview_images.size)).times do |index| %>
-            <% page = preview_images_index[index] || page_blob_struct.new(metadata: lazyload_metadata, url: preview_document_page_path(document.signed_uuid, "#{index}.jpg")) %>
+            <% page = preview_images_index[index] || page_blob_struct.new(metadata: lazyload_metadata, url: preview_document_page_path(document.signed_key, "#{index}#{Templates::ProcessDocument::PREVIEW_FORMAT}")) %>
             <page-container class="block relative my-4 shadow-md" style="container-type: size; aspect-ratio: <%= width = page.metadata['width'] %> / <%= height = page.metadata['height'] %>">
-              <img loading="lazy" src="<%= page.url %>" width="<%= width %>" height="<%= height %>">
+              <img loading="lazy" src="<%= page.url %>" width="<%= width %>" height="<%= height %>" alt="<%= "#{item['name']} - #{t('page')} #{index + 1}" %>">
               <div id="page-<%= [document.uuid, index].join('-') %>" class="top-0 bottom-0 left-0 right-0 absolute">
                 <% if annots = document_annots_index[index] %>
                   <%= render 'submit_form/annotations', annots: %>
@@ -84,7 +138,7 @@
                   <% next if field['conditions'].present? && values[field['uuid']].blank? && field['submitter_uuid'] != @submitter.uuid %>
                   <% next if field['conditions'].present? && field['submitter_uuid'] == @submitter.uuid %>
                   <% next if field.dig('preferences', 'formula').present? && field['submitter_uuid'] == @submitter.uuid %>
-                  <%= render 'submissions/value', page_width: width, page_height: height, font_scale:, area:, field:, attachments_index: @attachments_index, value: field.dig('preferences', 'mask').present? ? TextUtils.mask_value(value, field.dig('preferences', 'mask')) : value, locale: @submitter.account.locale, timezone: @submitter.account.timezone, submitter: submitters_index[field['submitter_uuid']], with_signature_id: @form_configs[:with_signature_id], with_submitter_timezone: @form_configs[:with_submitter_timezone], with_signature_id_reason: @form_configs[:with_signature_id_reason] %>
+                  <%= render 'submissions/value', page_width: width, page_height: height, font_scale:, area:, field:, attachments_index: @attachments_index, value: field.dig('preferences', 'mask').present? ? TextUtils.mask_value(value, field.dig('preferences', 'mask')) : value, locale: @submitter.account.locale, timezone: @submitter.account.timezone, submitter: submitters_index[field['submitter_uuid']], with_signature_id: @form_configs[:with_signature_id], with_submitter_timezone: @form_configs[:with_submitter_timezone], with_timestamp_seconds: @form_configs[:with_timestamp_seconds], with_signature_id_reason: @form_configs[:with_signature_id_reason] %>
                 <% end %>
               </div>
             </page-container>
@@ -95,18 +149,28 @@
       <% if @form_configs[:policy_links].present? %>
         <div class="text-center md:text-neutral-500 md:pr-3 md:pb-3 md:text-sm md:text-left mt-2 md:mt-0 md:fixed md:bottom-0 md:right-0">
           <div class="md:max-w-[8rem] flex flex-wrap md:flex-col justify-center md:justify-start md:items-start space-x-2 md:space-x-0">
-            <%= auto_link(MarkdownToHtml.call(@form_configs[:policy_links])) %>
+            <%= MarkdownToHtml.call(@form_configs[:policy_links]) %>
           </div>
         </div>
       <% end %>
     </div>
-  </div>
+  </main>
 </div>
-<div class="fixed bottom-0 w-full h-0 z-20">
+<div class="fixed bottom-0 w-full h-0 z-50">
   <div class="mx-auto" style="max-width: 1000px">
     <div class="relative md:mx-32">
       <%= render 'submit_form/submission_form', attachments_index: @attachments_index, submitter: @submitter, signature_attachment: @signature_attachment, configs: @form_configs, dry_run: local_assigns[:dry_run], expand: local_assigns[:expand], scroll_padding: local_assigns.fetch(:scroll_padding, '-110px'), schema: %>
     </div>
   </div>
 </div>
+<% if @form_configs[:with_decline] %>
+  <%= render 'shared/html_modal', title: t(:decline), uuid: decline_modal_id do %>
+    <%= render 'submit_form/decline_form', submitter: @submitter %>
+  <% end %>
+<% end %>
+<% if @form_configs[:with_delegate] %>
+  <%= render 'shared/html_modal', title: t(:delegate), uuid: delegate_modal_id do %>
+    <%= render 'submit_form/delegate_form', submitter: @submitter %>
+  <% end %>
+<% end %>
 <%= render 'scripts/autosize_field' %>

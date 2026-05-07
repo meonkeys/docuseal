@@ -16,9 +16,10 @@ module Submissions
 
       raise NotCompletedYet unless submitter.completed_at?
 
+      total_wait_time ||= 0
       key = ['result_attachments', submitter.id].join(':')
 
-      return submitter.documents if ApplicationRecord.uncached { LockEvent.exists?(key:, event_name: :complete) }
+      return submitter.documents.reload if ApplicationRecord.uncached { LockEvent.exists?(key:, event_name: :complete) }
 
       events = ApplicationRecord.uncached { LockEvent.where(key:).order(:id).to_a }
 
@@ -31,12 +32,15 @@ module Submissions
 
         LockEvent.create!(key:, event_name: :complete)
 
+        submitter.documents.reset
+
         documents
       end
     rescue ActiveRecord::RecordNotUnique
       sleep WAIT_FOR_RETRY
+      total_wait_time += WAIT_FOR_RETRY
 
-      retry
+      total_wait_time > CHECK_COMPLETE_TIMEOUT ? raise : retry
     rescue StandardError => e
       Rollbar.error(e) if defined?(Rollbar)
       Rails.logger.error(e)

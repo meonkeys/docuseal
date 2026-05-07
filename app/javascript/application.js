@@ -40,6 +40,7 @@ import DashboardDropzone from './elements/dashboard_dropzone'
 import RequiredCheckboxGroup from './elements/required_checkbox_group'
 import PageContainer from './elements/page_container'
 import EmailEditor from './elements/email_editor'
+import MarkdownEditor from './elements/markdown_editor'
 import MountOnClick from './elements/mount_on_click'
 import RemoveOnEvent from './elements/remove_on_event'
 import ScrollTo from './elements/scroll_to'
@@ -52,6 +53,7 @@ import AutosizeField from './elements/autosize_field'
 import GoogleDriveFilePicker from './elements/google_drive_file_picker'
 import OpenModal from './elements/open_modal'
 import BarChart from './elements/bar_chart'
+import FieldCondition from './elements/field_condition'
 
 import * as TurboInstantClick from './lib/turbo_instant_click'
 
@@ -130,6 +132,7 @@ safeRegisterElement('check-on-click', CheckOnClick)
 safeRegisterElement('required-checkbox-group', RequiredCheckboxGroup)
 safeRegisterElement('page-container', PageContainer)
 safeRegisterElement('email-editor', EmailEditor)
+safeRegisterElement('markdown-editor', MarkdownEditor)
 safeRegisterElement('mount-on-click', MountOnClick)
 safeRegisterElement('remove-on-event', RemoveOnEvent)
 safeRegisterElement('scroll-to', ScrollTo)
@@ -142,6 +145,7 @@ safeRegisterElement('autosize-field', AutosizeField)
 safeRegisterElement('google-drive-file-picker', GoogleDriveFilePicker)
 safeRegisterElement('open-modal', OpenModal)
 safeRegisterElement('bar-chart', BarChart)
+safeRegisterElement('field-condition', FieldCondition)
 
 safeRegisterElement('template-builder', class extends HTMLElement {
   connectedCallback () {
@@ -151,23 +155,33 @@ safeRegisterElement('template-builder', class extends HTMLElement {
 
     this.appElem.classList.add('md:h-screen')
 
+    const template = reactive(JSON.parse(this.dataset.template))
+
     this.app = createApp(TemplateBuilder, {
-      template: reactive(JSON.parse(this.dataset.template)),
+      template,
+      customFields: reactive(JSON.parse(this.dataset.customFields || '[]')),
+      dynamicDocuments: reactive(JSON.parse(this.dataset.dynamicDocuments || '[]')),
       backgroundColor: '#faf7f5',
       locale: this.dataset.locale,
       withPhone: this.dataset.withPhone === 'true',
+      withPrefillable: template.fields?.some((f) => f.prefillable),
       withVerification: ['true', 'false'].includes(this.dataset.withVerification) ? this.dataset.withVerification === 'true' : null,
+      withKba: ['true', 'false'].includes(this.dataset.withKba) ? this.dataset.withKba === 'true' : null,
       withLogo: this.dataset.withLogo !== 'false',
       withFieldsDetection: this.dataset.withFieldsDetection === 'true',
+      withDetectExistingFields: this.dataset.withDetectExistingFields === 'true',
       editable: this.dataset.editable !== 'false',
       authenticityToken: document.querySelector('meta[name="csrf-token"]')?.content,
+      withCustomFields: true,
       withPayment: this.dataset.withPayment === 'true',
       isPaymentConnected: this.dataset.isPaymentConnected === 'true',
       withFormula: this.dataset.withFormula === 'true',
       withSendButton: this.dataset.withSendButton !== 'false',
       withSignYourselfButton: this.dataset.withSignYourselfButton !== 'false',
       withConditions: this.dataset.withConditions === 'true',
+      withDynamicDocuments: this.dataset.withDynamicDocuments === 'true',
       withGoogleDrive: this.dataset.withGoogleDrive === 'true',
+      pagePreviewFormat: this.dataset.pagePreviewFormat || '.jpg',
       withReplaceAndCloneUpload: true,
       withDownload: true,
       currencies: (this.dataset.currencies || '').split(',').filter(Boolean),

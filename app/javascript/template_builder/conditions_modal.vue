@@ -9,7 +9,7 @@
     <div class="modal-box pt-4 pb-6 px-6 mt-20 max-h-none w-full max-w-xl">
       <div class="flex justify-between items-center border-b pb-2 mb-2 font-medium">
         <span class="modal-title">
-          {{ t('condition') }} - {{ (defaultField ? (defaultField.title || item.title || item.name) : item.name) || buildDefaultName(item, template.fields) }}
+          {{ t('condition') }} - {{ (defaultField ? (defaultField.title || item.title || item.name) : item.name) || buildDefaultName(item) }}
         </span>
         <a
           href="#"
@@ -83,7 +83,7 @@
                   class="text-base-content"
                   :selected="condition.field_uuid === f.uuid"
                 >
-                  {{ f.name || buildDefaultName(f, template.fields) }}
+                  {{ f.name || buildDefaultName(f) }}
                 </option>
               </select>
               <select
@@ -124,6 +124,16 @@
                   {{ option.value || `${t('option')} ${index + 1}` }}
                 </option>
               </select>
+              <input
+                v-else-if="conditionField(condition)?.type === 'number' && ['equal', 'not_equal', 'greater_than', 'less_than'].includes(condition.action)"
+                v-model="condition.value"
+                type="number"
+                step="any"
+                class="input input-bordered input-sm w-full bg-white h-11 pl-4 text-base font-normal"
+                :class="{ 'text-gray-300': !condition.value }"
+                :placeholder="t('type_value')"
+                required
+              >
             </div>
           </div>
           <a
@@ -154,7 +164,7 @@
 <script>
 export default {
   name: 'ConditionModal',
-  inject: ['t', 'save', 'template', 'withConditions'],
+  inject: ['t', 'template', 'withConditions'],
   props: {
     item: {
       type: Object,
@@ -168,9 +178,14 @@ export default {
     buildDefaultName: {
       type: Function,
       required: true
+    },
+    excludeFieldUuids: {
+      type: Array,
+      required: false,
+      default: () => []
     }
   },
-  emits: ['close'],
+  emits: ['close', 'save'],
   data () {
     return {
       conditions: this.item.conditions?.[0] ? JSON.parse(JSON.stringify(this.item.conditions)) : [{}]
@@ -183,14 +198,14 @@ export default {
     fields () {
       if (this.item.submitter_uuid) {
         return this.template.fields.reduce((acc, f) => {
-          if (f !== this.item && !this.excludeTypes.includes(f.type) && (!f.conditions?.length || !f.conditions.find((c) => c.field_uuid === this.item.uuid))) {
+          if (f !== this.item && !this.excludeTypes.includes(f.type) && !this.excludeFieldUuids.includes(f.uuid) && (!f.conditions?.length || !f.conditions.find((c) => c.field_uuid === this.item.uuid))) {
             acc.push(f)
           }
 
           return acc
         }, [])
       } else {
-        return this.template.fields
+        return this.template.fields.filter((f) => !this.excludeFieldUuids.includes(f.uuid))
       }
     }
   },
@@ -217,6 +232,8 @@ export default {
         actions.push('equal', 'not_equal')
       } else if (['multiple'].includes(field.type)) {
         actions.push('contains', 'does_not_contain')
+      } else if (field.type === 'number') {
+        actions.push('not_empty', 'empty', 'equal', 'not_equal', 'greater_than', 'less_than')
       } else {
         actions.push('not_empty', 'empty')
       }
@@ -234,7 +251,7 @@ export default {
         delete this.item.conditions
       }
 
-      this.save()
+      this.$emit('save')
       this.$emit('close')
     }
   }

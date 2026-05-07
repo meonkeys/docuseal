@@ -9,7 +9,7 @@
     <div class="modal-box pt-4 pb-6 px-6 mt-20 max-h-none w-full max-w-xl">
       <div class="flex justify-between items-center border-b pb-2 mb-2 font-medium">
         <span class="modal-title">
-          {{ t('font') }} - {{ (defaultField ? (defaultField.title || field.title || field.name) : field.name) || buildDefaultName(field, template.fields) }}
+          {{ t('font') }} - {{ (defaultField ? (defaultField.title || field.title || field.name) : field.name) || buildDefaultName(field) }}
         </span>
         <a
           href="#"
@@ -171,7 +171,7 @@
               contenteditable="true"
               class="outline-none whitespace-nowrap truncate"
             >
-              {{ field.default_value || field.name || buildDefaultName(field, template.fields) }}
+              {{ field.default_value || field.name || buildDefaultName(field) }}
             </span>
           </div>
         </div>
@@ -196,7 +196,7 @@ export default {
   components: {
     IconChevronDown
   },
-  inject: ['t', 'save', 'template'],
+  inject: ['t', 'template'],
   props: {
     field: {
       type: Object,
@@ -217,7 +217,7 @@ export default {
       required: true
     }
   },
-  emits: ['close'],
+  emits: ['close', 'save'],
   data () {
     return {
       preferences: {}
@@ -257,6 +257,7 @@ export default {
     colors () {
       return [
         { label: '⬛', value: 'black' },
+        { label: '⬜', value: 'white' },
         { label: '🟦', value: 'blue' },
         { label: '🟥', value: 'red' }
       ]
@@ -271,6 +272,7 @@ export default {
         'items-center': !this.preferences.valign || this.preferences.valign === 'center',
         'items-start': this.preferences.valign === 'top',
         'items-end': this.preferences.valign === 'bottom',
+        'bg-black': this.preferences.color === 'white',
         'font-bold': ['bold_italic', 'bold'].includes(this.preferences.font_type),
         italic: ['bold_italic', 'italic'].includes(this.preferences.font_type)
       }
@@ -322,8 +324,7 @@ export default {
 
       Object.assign(this.field.preferences, this.preferences)
 
-      this.save()
-
+      this.$emit('save')
       this.$emit('close')
     }
   }

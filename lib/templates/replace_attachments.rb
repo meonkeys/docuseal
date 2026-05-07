@@ -6,7 +6,7 @@ module Templates
 
     # rubocop:disable Metrics
     def call(template, params = {}, extract_fields: false)
-      documents = Templates::CreateAttachments.call(template, params, extract_fields:)
+      documents, = Templates::CreateAttachments.call(template, params, extract_fields:)
       submitter = template.submitters.first
 
       documents.each_with_index do |document, index|
@@ -34,7 +34,7 @@ module Templates
 
         if index.positive? && pdf_fields.present?
           preview_document = template.schema[index - 1]
-          preview_document_last_field = template.fields.reverse.find do |f|
+          preview_document_last_field = template.fields.rfind do |f|
             f['areas']&.any? do |a|
               a['attachment_uuid'] == preview_document[:attachment_uuid]
             end

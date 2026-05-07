@@ -69,6 +69,7 @@ module Api
       SearchEntries.enqueue_reindex(@template)
 
       WebhookUrls.enqueue_events(@template, 'template.updated')
+      WebhookUrls.enqueue_events(@template, 'template.archived') if archived == true
 
       render json: @template.as_json(only: %i[id updated_at])
     end
@@ -78,6 +79,8 @@ module Api
         @template.destroy!
       else
         @template.update!(archived_at: Time.current)
+
+        WebhookUrls.enqueue_events(@template, 'template.archived')
       end
 
       render json: @template.as_json(only: %i[id archived_at])
@@ -107,7 +110,8 @@ module Api
         :external_id,
         :shared_link,
         {
-          submitters: [%i[name uuid is_requester invite_by_uuid optional_invite_by_uuid linked_to_uuid email order]],
+          submitters: [%i[name uuid is_requester invite_by_uuid invite_via_field_uuid
+                          optional_invite_by_uuid linked_to_uuid email order]],
           fields: [[:uuid, :submitter_uuid, :name, :type,
                     :required, :readonly, :default_value,
                     :title, :description, :prefillable,
@@ -116,7 +120,7 @@ module Api
                       conditions: [%i[field_uuid value action operation]],
                       options: [%i[value uuid]],
                       validation: %i[message pattern min max step],
-                      areas: [%i[x y w h cell_w attachment_uuid option_uuid page]] }]]
+                      areas: [%i[uuid x y w h cell_w attachment_uuid option_uuid page]] }]]
         }
       ]
 

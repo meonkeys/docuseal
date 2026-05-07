@@ -4,19 +4,22 @@ module Templates
   module Clone
     module_function
 
-    # rubocop:disable Metrics, Style/CombinableLoops
+    # rubocop:disable Metrics
     def call(original_template, author:, external_id: nil, name: nil, folder_name: nil)
-      template = original_template.account.templates.new
+      template = author.account.templates.new
 
       template.external_id = external_id
       template.shared_link = original_template.shared_link
+      template.variables_schema = original_template.variables_schema
       template.author = author
       template.name = name.presence || "#{original_template.name} (#{I18n.t('clone')})"
 
       if folder_name.present?
         template.folder = TemplateFolders.find_or_create_by_name(author, folder_name)
-      else
+      elsif author.account_id == original_template.account_id
         template.folder_id = original_template.folder_id
+      else
+        template.folder = author.account.default_template_folder
       end
 
       template.submitters, template.fields, template.schema, template.preferences =
@@ -47,20 +50,6 @@ module Templates
 
         submitter_uuids_replacements[submitter['uuid']] = new_submitter_uuid
         submitter['uuid'] = new_submitter_uuid
-      end
-
-      cloned_submitters.each do |submitter|
-        if submitter['optional_invite_by_uuid'].present?
-          submitter['optional_invite_by_uuid'] = submitter_uuids_replacements[submitter['optional_invite_by_uuid']]
-        end
-
-        if submitter['invite_by_uuid'].present?
-          submitter['invite_by_uuid'] = submitter_uuids_replacements[submitter['invite_by_uuid']]
-        end
-
-        if submitter['linked_to_uuid'].present?
-          submitter['linked_to_uuid'] = submitter_uuids_replacements[submitter['linked_to_uuid']]
-        end
       end
 
       cloned_preferences['submitters'].to_a.each do |submitter|
@@ -97,8 +86,26 @@ module Templates
         end
       end
 
+      cloned_submitters.each do |submitter|
+        if submitter['optional_invite_by_uuid'].present?
+          submitter['optional_invite_by_uuid'] = submitter_uuids_replacements[submitter['optional_invite_by_uuid']]
+        end
+
+        if submitter['invite_by_uuid'].present?
+          submitter['invite_by_uuid'] = submitter_uuids_replacements[submitter['invite_by_uuid']]
+        end
+
+        if submitter['linked_to_uuid'].present?
+          submitter['linked_to_uuid'] = submitter_uuids_replacements[submitter['linked_to_uuid']]
+        end
+
+        if submitter['invite_via_field_uuid'].present?
+          submitter['invite_via_field_uuid'] = field_uuids_replacements[submitter['invite_via_field_uuid']]
+        end
+      end
+
       [cloned_submitters, cloned_fields, cloned_schema, cloned_preferences]
     end
-    # rubocop:enable Metrics, Style/CombinableLoops
+    # rubocop:enable Metrics
   end
 end

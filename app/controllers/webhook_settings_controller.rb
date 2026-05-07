@@ -15,7 +15,7 @@ class WebhookSettingsController < ApplicationController
 
       @webhook_events = @webhook_events.where(status: params[:status]) if %w[success error].include?(params[:status])
 
-      @pagy, @webhook_events = pagy_countless(@webhook_events.order(id: :desc))
+      @pagy, @webhook_events = pagy(:countless, @webhook_events.order(id: :desc))
 
       render :show
     end
@@ -26,15 +26,19 @@ class WebhookSettingsController < ApplicationController
 
     @webhook_events = @webhook_events.where(status: params[:status]) if %w[success error].include?(params[:status])
 
-    @pagy, @webhook_events = pagy_countless(@webhook_events.order(id: :desc))
+    @pagy, @webhook_events = pagy(:countless, @webhook_events.order(id: :desc))
   end
 
   def new; end
 
   def create
-    @webhook_url.save!
+    if @webhook_url.url.present?
+      @webhook_url.save!
 
-    redirect_to settings_webhooks_path, notice: I18n.t('webhook_url_has_been_saved')
+      redirect_to settings_webhooks_path, notice: I18n.t('webhook_url_has_been_saved')
+    else
+      redirect_back fallback_location: settings_webhooks_path
+    end
   end
 
   def update

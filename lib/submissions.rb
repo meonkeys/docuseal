@@ -3,8 +3,6 @@
 module Submissions
   DEFAULT_SUBMITTERS_ORDER = 'random'
 
-  PRELOAD_ALL_PAGES_AMOUNT = 200
-
   module_function
 
   def search(current_user, submissions, keyword, search_values: false, search_template: false)
@@ -18,7 +16,8 @@ module Submissions
   def plain_search(submissions, keyword, search_values: false, search_template: false)
     return submissions if keyword.blank?
 
-    term = "%#{keyword.downcase}%"
+    sanitized = ActiveRecord::Base.sanitize_sql_like(keyword.downcase)
+    term = "%#{sanitized}%"
 
     arel_table = Submitter.arel_table
 
@@ -31,7 +30,7 @@ module Submissions
     if search_template
       submissions = submissions.left_joins(:template)
 
-      arel = arel.or(Template.arel_table[:name].lower.matches("%#{keyword.downcase}%"))
+      arel = arel.or(Template.arel_table[:name].lower.matches("%#{sanitized}%"))
     end
 
     submissions.joins(:submitters).where(arel).group(:id)
@@ -79,21 +78,9 @@ module Submissions
 
   def preload_with_pages(submission)
     ActiveRecord::Associations::Preloader.new(
-      records: [submission],
-      associations: [
-        submission.template_id? ? { template_schema_documents: :blob } : { documents_attachments: :blob }
-      ]
+      records: submission.schema_documents,
+      associations: [:blob, { preview_images_attachments: :blob }]
     ).call
-
-    total_pages =
-      submission.schema_documents.sum { |e| e.metadata.dig('pdf', 'number_of_pages').to_i }
-
-    if total_pages < PRELOAD_ALL_PAGES_AMOUNT
-      ActiveRecord::Associations::Preloader.new(
-        records: submission.schema_documents,
-        associations: [:blob, { preview_images_attachments: :blob }]
-      ).call
-    end
 
     submission
   end
@@ -116,6 +103,8 @@ module Submissions
                                 preferences:,
                                 sent_at: mark_as_sent ? Time.current : nil)
 
+      Submissions::CreateFromSubmitters.maybe_set_dynamic_documents(submission)
+
       submission.save!
 
       if submission.expire_at?
@@ -133,9 +122,9 @@ module Submissions
   end
 
   def create_from_submitters(template:, user:, submissions_attrs:, source:, with_template: true,
-                             submitters_order: DEFAULT_SUBMITTERS_ORDER, params: {})
+                             submitters_order: DEFAULT_SUBMITTERS_ORDER, params: {}, new_fields: nil)
     Submissions::CreateFromSubmitters.call(
-      template:, user:, submissions_attrs:, source:, submitters_order:, params:, with_template:
+      template:, user:, submissions_attrs:, source:, submitters_order:, params:, with_template:, new_fields:
     )
   end
 
@@ -173,7 +162,7 @@ module Submissions
     return email.downcase.sub(/@gmail?\z/i, '@gmail.com') if email.match?(/@gmail?\z/i)
 
     return email.downcase if email.include?(',') ||
-                             email.match?(/\.(?:gob|om|mm|cm|et|mo|nz|za|ie)\z/) ||
+                             email.match?(/\.(?:gob|om|mm|cm|et|mo|nz|za|ie|ed\.jp)\z/i) ||
                              email.exclude?('.')
 
     fixed_email = EmailTypo.call(email.delete_prefix('<'))

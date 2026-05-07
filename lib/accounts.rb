@@ -101,6 +101,10 @@ module Accounts
     new_template
   end
 
+  def load_recipient_form_fields(_account)
+    []
+  end
+
   def load_signing_pkcs(account)
     cert_data =
       if Docuseal.multitenant?
@@ -171,6 +175,7 @@ module Accounts
 
   def can_send_emails?(_account, **_params)
     return true if Docuseal.multitenant?
+    return true if Rails.env.development?
     return true if ENV['SMTP_ADDRESS'].present?
 
     EncryptedConfig.exists?(key: EncryptedConfig::EMAIL_SMTP_KEY)

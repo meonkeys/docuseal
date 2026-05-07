@@ -6,13 +6,13 @@ class TemplatesPreviewController < ApplicationController
   def show
     ActiveRecord::Associations::Preloader.new(
       records: [@template],
-      associations: [schema_documents: { preview_images_attachments: :blob }]
+      associations: [{ schema_documents: { preview_images_attachments: :blob } }]
     ).call
 
     @template_data =
       @template.as_json.merge(
         documents: @template.schema_documents.as_json(
-          methods: %i[metadata signed_uuid],
+          methods: %i[metadata signed_key],
           include: { preview_images: { methods: %i[url metadata filename] } }
         )
       ).to_json

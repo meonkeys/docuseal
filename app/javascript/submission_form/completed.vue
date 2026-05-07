@@ -3,10 +3,13 @@
     id="form_completed"
     class="mx-auto max-w-md flex flex-col completed-form"
     dir="auto"
+    role="status"
+    tabindex="-1"
   >
     <div class="font-medium text-2xl flex items-center space-x-1.5 mx-auto">
       <IconCircleCheck
         class="inline text-green-600"
+        aria-hidden="true"
         :width="30"
         :height="30"
       />
@@ -42,8 +45,12 @@
         <IconInnerShadowTop
           v-if="isSendingCopy"
           class="animate-spin"
+          aria-hidden="true"
         />
-        <IconMail v-else />
+        <IconMail
+          v-else
+          aria-hidden="true"
+        />
         <span>
           {{ t('send_copy_via_email') }}
         </span>
@@ -57,8 +64,12 @@
         <IconInnerShadowTop
           v-if="isDownloading"
           class="animate-spin"
+          aria-hidden="true"
         />
-        <IconDownload v-else />
+        <IconDownload
+          v-else
+          aria-hidden="true"
+        />
         <span>
           {{ t('download') }}
         </span>
@@ -161,6 +172,11 @@ export default {
       required: false,
       default: false
     },
+    fetchOptions: {
+      type: Object,
+      required: false,
+      default: () => ({})
+    },
     completedButton: {
       type: Object,
       required: false,
@@ -194,7 +210,7 @@ export default {
       })
     }
 
-    document.querySelectorAll('#decline_button').forEach((button) => {
+    document.querySelectorAll('#decline_button, #decline_button_mobile, #delegate_button, #delegate_button_mobile').forEach((button) => {
       button.setAttribute('disabled', 'true')
     })
   },
@@ -214,7 +230,10 @@ export default {
     download () {
       this.isDownloading = true
 
-      fetch(this.baseUrl + `/submitters/${this.submitterSlug}/download`).then(async (response) => {
+      fetch(this.baseUrl + `/submitters/${this.submitterSlug}/download`, {
+        method: 'GET',
+        ...this.fetchOptions
+      }).then(async (response) => {
         if (response.ok) {
           const urls = await response.json()
           const isMobileSafariIos = 'ontouchstart' in window && navigator.maxTouchPoints > 0 && /AppleWebKit/i.test(navigator.userAgent)

@@ -25,17 +25,21 @@
           class="md:tooltip"
           :data-tip="t('draw_signature')"
         >
-          <a
+          <button
             id="type_text_button"
-            href="#"
+            type="button"
+            :aria-label="t('draw_signature')"
             class="btn btn-outline btn-sm font-medium type-text-button"
-            @click.prevent="[toggleTextInput(), hideQr()]"
+            @click="[toggleTextInput(), hideQr()]"
           >
-            <IconSignature :width="16" />
+            <IconSignature
+              :width="16"
+              aria-hidden="true"
+            />
             <span class="hidden sm:inline">
               {{ t('draw') }}
             </span>
-          </a>
+          </button>
         </span>
         <span
           v-else-if="withTypedSignature && format !== 'drawn_or_upload' && format !== 'typed_or_upload' && format !== 'typed' && format !== 'drawn' && format !== 'upload'"
@@ -43,17 +47,21 @@
           :class="{ 'hidden sm:inline': modelValue || computedPreviousValue }"
           :data-tip="t('type_text')"
         >
-          <a
+          <button
             id="type_text_button"
-            href="#"
+            type="button"
+            :aria-label="t('type_text')"
             class="btn btn-outline btn-sm font-medium inline-flex flex-nowrap type-text-button"
-            @click.prevent="[toggleTextInput(), hideQr()]"
+            @click="[toggleTextInput(), hideQr()]"
           >
-            <IconTextSize :width="16" />
+            <IconTextSize
+              :width="16"
+              aria-hidden="true"
+            />
             <span class="hidden sm:inline">
               {{ t('type') }}
             </span>
-          </a>
+          </button>
         </span>
         <span
           v-if="format !== 'typed' && format !== 'drawn' && format !== 'upload' && format !== 'drawn_or_typed'"
@@ -61,10 +69,19 @@
           :class="{ 'hidden sm:inline': modelValue || computedPreviousValue }"
           :data-tip="t('take_photo')"
         >
-          <label class="btn btn-outline btn-sm font-medium inline-flex flex-nowrap upload-image-button">
-            <IconCamera :width="16" />
+          <button
+            type="button"
+            :aria-label="t('take_photo')"
+            class="btn btn-outline btn-sm font-medium inline-flex flex-nowrap upload-image-button"
+            @click="$refs.takePhotoInput.click()"
+          >
+            <IconCamera
+              :width="16"
+              aria-hidden="true"
+            />
             <input
               :key="uploadImageInputKey"
+              ref="takePhotoInput"
               type="file"
               hidden
               accept="image/*"
@@ -73,49 +90,57 @@
             <span class="hidden sm:inline">
               {{ t('upload') }}
             </span>
-          </label>
+          </button>
         </span>
-        <a
+        <button
           v-if="modelValue || computedPreviousValue"
-          href="#"
+          type="button"
           class="btn btn-outline btn-sm font-medium reupload-button"
-          @click.prevent="remove"
+          @click="remove"
         >
-          <IconReload :width="16" />
+          <IconReload
+            :width="16"
+            aria-hidden="true"
+          />
           {{ t(format === 'upload' ? 'reupload' : 'redraw') }}
-        </a>
+        </button>
         <span
           v-if="withQrButton && !modelValue && !computedPreviousValue && format !== 'typed_or_upload' && format !== 'typed' && format !== 'upload'"
           class="md:tooltip before:translate-x-[-90%]"
           :data-tip="t('sign_on_the_touchscreen')"
         >
-          <a
-            href="#"
+          <button
+            type="button"
+            :aria-label="t('sign_on_the_touchscreen')"
             class="btn btn-sm btn-neutral font-medium hidden md:flex"
             :class="{ 'btn-outline': !isShowQr, 'text-white': isShowQr }"
-            @click.prevent="isShowQr ? hideQr() : [isTextSignature = false, showQr()]"
+            @click="isShowQr ? hideQr() : [isTextSignature = false, showQr()]"
           >
             <IconQrcode
               :width="19"
               :height="19"
+              aria-hidden="true"
             />
-          </a>
+          </button>
         </span>
-        <a
-          href="#"
+        <button
+          type="button"
           :title="t('minimize')"
+          :aria-label="t('minimize')"
           class="py-1.5 inline md:hidden"
-          @click.prevent="$emit('minimize')"
+          @click="$emit('minimize')"
         >
           <IconArrowsDiagonalMinimize2
             :width="20"
             :height="20"
+            aria-hidden="true"
           />
-        </a>
+        </button>
       </div>
     </div>
     <div
       v-if="field.description"
+      :id="field.uuid + '-desc'"
       dir="auto"
       class="mb-3 px-1 field-description-text"
     >
@@ -127,9 +152,16 @@
       type="hidden"
       :name="`values[${field.uuid}]`"
     >
+    <input
+      v-if="isTouchAttachment"
+      :value="touchAttachmentUuid"
+      type="hidden"
+      name="touch_attachment_uuid"
+    >
     <img
       v-if="modelValue || computedPreviousValue"
       :src="attachmentsIndex[modelValue || computedPreviousValue].url"
+      :alt="field.name || t('signature')"
       class="mx-auto bg-white border border-base-300 rounded max-h-44"
     >
     <FileDropzone
@@ -148,14 +180,17 @@
         v-if="!modelValue && !computedPreviousValue && !isShowQr && !isTextSignature && isSignatureStarted"
         class="absolute top-0.5 right-0.5"
       >
-        <a
-          href="#"
+        <button
+          type="button"
           class="btn btn-ghost font-medium btn-xs md:btn-sm"
-          @click.prevent="[clear(), hideQr()]"
+          @click="[clear(), hideQr()]"
         >
-          <IconReload :width="16" />
+          <IconReload
+            :width="16"
+            aria-hidden="true"
+          />
           {{ t('clear') }}
-        </a>
+        </button>
       </div>
       <div
         v-if="isTextSignature"
@@ -164,6 +199,8 @@
       <canvas
         v-show="!modelValue && !computedPreviousValue"
         ref="canvas"
+        role="application"
+        :aria-label="t('signature_drawing_area')"
         style="padding: 1px; 0"
         class="bg-white border border-base-300 rounded-2xl w-full draw-canvas"
       />
@@ -175,16 +212,15 @@
         v-if="isShowQr"
         class="top-0 bottom-0 right-0 left-0 absolute bg-base-content/10 rounded-2xl"
       >
-        <div
-          class="absolute top-1.5 right-1.5 md:tooltip"
-        >
-          <a
-            href="#"
+        <div class="absolute top-1.5 right-1.5">
+          <button
+            type="button"
             class="btn btn-sm btn-circle btn-normal btn-outline"
-            @click.prevent="hideQr"
+            :aria-label="t('close')"
+            @click="hideQr"
           >
-            <IconX />
-          </a>
+            <IconX aria-hidden="true" />
+          </button>
         </div>
         <div class="flex items-center justify-center w-full h-full p-4">
           <div
@@ -305,14 +341,14 @@
 <script>
 import { IconReload, IconCamera, IconSignature, IconTextSize, IconArrowsDiagonalMinimize2, IconQrcode, IconX } from '@tabler/icons-vue'
 import { cropCanvasAndExportToPNG } from './crop_canvas'
-import { isValidSignatureCanvas } from './validate_signature'
+import { isValidSignatureCanvas, isCanvasBlocked } from './validate_signature'
 import SignaturePad from 'signature_pad'
 import AppearsOn from './appears_on'
 import FileDropzone from './dropzone'
 import MarkdownContent from './markdown_content'
 import { v4 } from 'uuid'
 
-let isFontLoaded = false
+let fontLoadPromise = null
 
 const scale = 3
 
@@ -333,6 +369,10 @@ export default {
   inject: ['baseUrl', 't'],
   props: {
     field: {
+      type: Object,
+      required: true
+    },
+    values: {
       type: Object,
       required: true
     },
@@ -390,7 +430,22 @@ export default {
       required: false,
       default: ''
     },
+    touchAttachmentUuid: {
+      type: String,
+      required: false,
+      default: ''
+    },
     reason: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    signatureText: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    signatureSrc: {
       type: String,
       required: false,
       default: ''
@@ -401,14 +456,15 @@ export default {
       default: ''
     }
   },
-  emits: ['attached', 'update:model-value', 'start', 'minimize', 'update:reason'],
+  emits: ['attached', 'update:model-value', 'start', 'minimize', 'update:reason', 'touch-attachment'],
   data () {
     return {
       isSignatureStarted: false,
       isShowQr: false,
       isOtherReason: false,
       isUsePreviousValue: true,
-      isTextSignature: this.field.preferences?.format === 'typed' || this.field.preferences?.format === 'typed_or_upload',
+      isTouchAttachment: false,
+      isTextSignature: !this.signatureSrc && (!!this.signatureText || this.field.preferences?.format === 'typed' || this.field.preferences?.format === 'typed_or_upload'),
       uploadImageInputKey: Math.random().toString()
     }
   },
@@ -448,14 +504,7 @@ export default {
     }
   },
   async mounted () {
-    this.$nextTick(() => {
-      if (this.$refs.canvas) {
-        this.$refs.canvas.width = this.$refs.canvas.parentNode.clientWidth * scale
-        this.$refs.canvas.height = this.$refs.canvas.parentNode.clientWidth * scale / 3
-
-        this.$refs.canvas.getContext('2d').scale(scale, scale)
-      }
-    })
+    this.$nextTick(() => this.setCanvasSize())
 
     if (this.$refs.canvas) {
       this.pad = new SignaturePad(this.$refs.canvas)
@@ -470,13 +519,20 @@ export default {
         this.$emit('start')
       })
 
-      this.intersectionObserver = new IntersectionObserver((entries, observer) => {
+      this.intersectionObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            this.$refs.canvas.width = this.$refs.canvas.parentNode.clientWidth * scale
-            this.$refs.canvas.height = this.$refs.canvas.parentNode.clientWidth * scale / 3
+            this.setCanvasSize()
 
-            this.$refs.canvas.getContext('2d').scale(scale, scale)
+            if (this.signatureSrc) {
+              this.$nextTick(() => this.drawSignatureSrc())
+            } else if (this.isTextSignature) {
+              this.$nextTick(() => {
+                if (this.$refs.textInput) {
+                  this.initTypedSignature()
+                }
+              })
+            }
 
             this.intersectionObserver?.disconnect()
           }
@@ -484,13 +540,67 @@ export default {
       })
 
       this.intersectionObserver.observe(this.$refs.canvas)
+
+      this.resizeObserver = new ResizeObserver(() => {
+        requestAnimationFrame(() => {
+          if (!this.$refs.canvas) return
+          if (!this.$refs.canvas.parentNode?.clientWidth) return
+
+          const { width, height } = this.$refs.canvas
+
+          this.setCanvasSize()
+
+          if (this.$refs.canvas.width !== width || this.$refs.canvas.height !== height) {
+            this.redrawCanvas(width, height)
+          }
+        })
+      })
+
+      this.resizeObserver.observe(this.$refs.canvas.parentNode)
+
+      if (this.isTextSignature) {
+        this.loadFont()
+      }
     }
   },
   beforeUnmount () {
     this.intersectionObserver?.disconnect()
+    this.resizeObserver?.disconnect()
     this.stopCheckSignature()
   },
   methods: {
+    setCanvasSize () {
+      const canvas = this.$refs.canvas
+
+      if (canvas) {
+        const width = canvas.parentNode.clientWidth
+        const height = width / 3
+
+        if (canvas.width !== width * scale || canvas.height !== height * scale) {
+          canvas.width = width * scale
+          canvas.height = height * scale
+
+          canvas.getContext('2d').scale(scale, scale)
+        }
+      }
+    },
+    redrawCanvas (oldWidth, oldHeight) {
+      const canvas = this.$refs.canvas
+
+      if (this.pad && !this.isTextSignature && !this.pad.isEmpty() && oldWidth > 0 && oldHeight > 0 && canvas.width > 0 && canvas.height > 0) {
+        const sx = canvas.width / oldWidth
+        const sy = canvas.height / oldHeight
+
+        const scaledData = this.pad.toData().map((stroke) => ({
+          ...stroke,
+          points: stroke.points.map((p) => ({ ...p, x: p.x * sx, y: p.y * sy }))
+        }))
+
+        this.pad.fromData(scaledData)
+      } else if (this.isTextSignature && this.$refs.textInput) {
+        this.updateWrittenSignature({ target: this.$refs.textInput })
+      }
+    },
     remove () {
       this.$emit('update:model-value', '')
 
@@ -498,17 +608,17 @@ export default {
       this.isSignatureStarted = false
     },
     loadFont () {
-      if (!isFontLoaded) {
+      if (!fontLoadPromise) {
         const font = new FontFace('Dancing Script', `url(${this.baseUrl}/fonts/DancingScript-Regular.otf) format("opentype")`)
 
-        font.load().then((loadedFont) => {
+        fontLoadPromise = font.load().then((loadedFont) => {
           document.fonts.add(loadedFont)
-
-          isFontLoaded = true
         }).catch((error) => {
           console.error('Font loading failed:', error)
         })
       }
+
+      return fontLoadPromise
     },
     showQr () {
       this.isShowQr = true
@@ -608,13 +718,72 @@ export default {
 
       if (this.isTextSignature) {
         this.$nextTick(() => {
-          this.$refs.textInput.focus()
+          if (this.$refs.textInput) {
+            if (!this.submitter.name) {
+              this.$refs.textInput.focus()
+            }
 
-          this.loadFont()
+            this.initTypedSignature()
 
-          this.$emit('start')
+            this.$emit('start')
+          }
         })
       }
+    },
+    async initTypedSignature () {
+      if (this.signatureText) {
+        this.$refs.textInput.value = this.signatureText
+      } else if (this.submitter.name) {
+        this.$refs.textInput.value = this.submitter.name
+      }
+
+      await this.loadFont()
+
+      if (this.$refs.textInput.value) {
+        this.updateWrittenSignature({ target: this.$refs.textInput })
+      }
+    },
+    drawSignatureSrc () {
+      const canvas = this.$refs.canvas
+
+      if (!canvas) return
+
+      const img = new Image()
+
+      img.crossOrigin = 'anonymous'
+
+      img.onload = () => {
+        const context = canvas.getContext('2d')
+
+        const aspectRatio = img.width / img.height
+        const canvasWidth = canvas.width / scale
+        const canvasHeight = canvas.height / scale
+
+        let targetWidth = canvasWidth
+        let targetHeight = canvasHeight
+
+        if (canvasWidth / canvasHeight > aspectRatio) {
+          targetWidth = canvasHeight * aspectRatio
+        } else {
+          targetHeight = canvasWidth / aspectRatio
+        }
+
+        const x = (canvasWidth - targetWidth) / 2
+        const y = (canvasHeight - targetHeight) / 2
+
+        context.clearRect(0, 0, canvasWidth, canvasHeight)
+        context.drawImage(img, x, y, targetWidth, targetHeight)
+
+        this.isSignatureStarted = true
+
+        this.$emit('start')
+      }
+
+      img.onerror = () => {
+        console.error(`Failed to load signature image from ${this.signatureSrc}. The remote server must send an Access-Control-Allow-Origin header to allow CORS access.`)
+      }
+
+      img.src = this.signatureSrc
     },
     drawImage (event) {
       this.remove()
@@ -694,6 +863,13 @@ export default {
     },
     async submit () {
       if (this.modelValue || this.computedPreviousValue) {
+        if (this.touchAttachmentUuid && this.computedPreviousValue === this.touchAttachmentUuid && !Object.values(this.values).includes(this.touchAttachmentUuid)) {
+          this.isTouchAttachment = true
+          this.$emit('touch-attachment', this.touchAttachmentUuid)
+        } else {
+          this.isTouchAttachment = false
+        }
+
         if (this.computedPreviousValue) {
           this.$emit('update:model-value', this.computedPreviousValue)
         }
@@ -703,7 +879,15 @@ export default {
 
       if (this.isSignatureStarted && this.pad.toData().length > 0 && !isValidSignatureCanvas(this.pad.toData())) {
         if (this.field.required === true || this.pad.toData().length > 0) {
-          alert(this.t('signature_is_too_small_or_simple_please_redraw'))
+          if (isCanvasBlocked()) {
+            alert(this.t('browser_privacy_settings_block_canvas'))
+
+            if (window.Rollbar) {
+              window.Rollbar.info('Canvas blocked')
+            }
+          } else {
+            alert(this.t('signature_is_too_small_or_simple_please_redraw'))
+          }
 
           return Promise.reject(new Error('Image too small or simple'))
         } else {
@@ -759,7 +943,15 @@ export default {
           }
         }).catch((error) => {
           if (this.field.required === true) {
-            alert(this.t('signature_is_too_small_or_simple_please_redraw'))
+            if (isCanvasBlocked()) {
+              alert(this.t('browser_privacy_settings_block_canvas'))
+
+              if (window.Rollbar) {
+                window.Rollbar.info('Canvas blocked')
+              }
+            } else {
+              alert(this.t('signature_is_too_small_or_simple_please_redraw'))
+            }
 
             return reject(error)
           } else {

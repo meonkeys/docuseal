@@ -4,7 +4,7 @@ module Templates
   module DetectFields
     module_function
 
-    TextFieldBox = Struct.new(:x, :y, :w, :h, keyword_init: true) do
+    TextFieldBox = Struct.new(:x, :y, :w, :h) do
       def endy
         @endy ||= y + h
       end
@@ -14,7 +14,7 @@ module Templates
       end
     end
 
-    PageNode = Struct.new(:prev, :next, :elem, :page, :attachment_uuid, keyword_init: true)
+    PageNode = Struct.new(:prev, :next, :elem, :page, :attachment_uuid)
 
     DATE_REGEXP = /
       (?:
@@ -59,25 +59,27 @@ module Templates
     CHECKBOXES = ['☐', '□'].freeze
 
     # rubocop:disable Metrics, Style
-    def call(io, attachment: nil, confidence: 0.3, temperature: 1, inference: Templates::ImageToFields,
-             nms: 0.1, split_page: false, aspect_ratio: true, padding: 20, regexp_type: true, &)
+    def call(io, attachment: nil, confidence: 0.3, temperature: 1, inference: Templates::ImageToFields, nms: 0.1,
+             nmm: 0.5, split_page: false, aspect_ratio: true, padding: 20, regexp_type: true, page_number: nil, &)
       fields, head_node =
         if attachment&.image?
-          process_image_attachment(io, attachment:, confidence:, nms:, split_page:, inference:,
-                                       temperature:, aspect_ratio:, padding:, &)
+          process_image_attachment(io, attachment:, confidence:, nms:, nmm:, split_page:, inference:,
+                                       temperature:, aspect_ratio:, padding:, page_number:, &)
         else
-          process_pdf_attachment(io, attachment:, confidence:, nms:, split_page:, inference:,
-                                     temperature:, aspect_ratio:, regexp_type:, padding:, &)
+          process_pdf_attachment(io, attachment:, confidence:, nms:, nmm:, split_page:, inference:,
+                                     temperature:, aspect_ratio:, regexp_type:, padding:, page_number:, &)
         end
 
       [fields, head_node]
     end
 
-    def process_image_attachment(io, attachment:, confidence:, nms:, temperature:, inference:,
-                                 split_page: false, aspect_ratio: false, padding: nil)
+    def process_image_attachment(io, attachment:, confidence:, nms:, nmm:, temperature:, inference:,
+                                 split_page: false, aspect_ratio: false, padding: nil, page_number: nil)
+      return [[], nil] if page_number && page_number != 0
+
       image = Vips::Image.new_from_buffer(io.read, '')
 
-      fields = inference.call(image, confidence:, nms:, split_page:,
+      fields = inference.call(image, confidence:, nms:, nmm:, split_page:,
                                      temperature:, aspect_ratio:, padding:)
 
       fields = sort_fields(fields, y_threshold: 10.0 / image.height)
@@ -104,36 +106,52 @@ module Templates
       [fields, nil]
     end
 
-    def process_pdf_attachment(io, attachment:, confidence:, nms:, temperature:, inference:,
-                               split_page: false, aspect_ratio: false, padding: nil, regexp_type: false)
+    def process_pdf_attachment(io, attachment:, confidence:, nms:, nmm:, temperature:, inference:,
+                               split_page: false, aspect_ratio: false, padding: nil, regexp_type: false,
+                               page_number: nil)
       doc = Pdfium::Document.open_bytes(io.read)
 
       head_node = PageNode.new(elem: ''.b, page: 0, attachment_uuid: attachment&.uuid)
       tail_node = head_node
 
-      fields = doc.page_count.times.flat_map do |page_number|
-        page = doc.get_page(page_number)
+      page_indexes = page_number ? [page_number] : (0...doc.page_count).to_a
 
-        data, width, height = page.render_to_bitmap(width: inference::RESOLUTION * 1.5)
+      prep_opts  = { aspect_ratio:, padding:, split_page: }
+      infer_opts = { confidence: confidence / 3.0, nms:, nmm:, temperature: }
 
-        image = Vips::Image.new_from_memory(data, width, height, 4, :uchar)
+      image = prepare_page_image(doc.get_page(page_indexes.first), inference:, padding:)
+      current_args = inference.prepare_input(image, **prep_opts)
+      current_wait = inference.enqueue(**current_args, **infer_opts)
 
-        fields = inference.call(image, confidence: confidence / 4.0, nms:, split_page:,
-                                       temperature:, aspect_ratio:, padding:)
+      all_fields = []
 
-        text_fields = extract_text_fields_from_page(page)
-        line_fields = extract_line_fields_from_page(page)
+      page_indexes.each_with_index do |current_page_number, i|
+        next_n = page_indexes[i + 1]
 
-        fields = sort_fields(fields, y_threshold: 10.0 / image.height)
+        next_image = next_n ? prepare_page_image(doc.get_page(next_n), inference:, padding:) : nil
+        next_args  = next_image ? inference.prepare_input(next_image, **prep_opts) : nil
 
-        fields = increase_confidence_for_overlapping_fields(fields, text_fields)
-        fields = increase_confidence_for_overlapping_fields(fields, line_fields)
+        outputs = current_wait.call
+
+        next_wait = next_args ? inference.enqueue(**next_args, **infer_opts) : nil
+
+        fields = inference.process_outputs(outputs, **current_args, **infer_opts)
+
+        current_page = doc.get_page(current_page_number)
+
+        fields = sort_fields(fields, y_threshold: 10.0 / current_args[:image].height)
+
+        text_fields = extract_text_fields_from_page(current_page)
+        line_fields = extract_line_fields_from_page(current_page)
+
+        fields = increase_confidence_for_overlapping_fields(fields, text_fields, confidence:)
+        fields = increase_confidence_for_overlapping_fields(fields, line_fields, confidence:)
 
         fields = fields.reject { |f| f.confidence < confidence }
 
-        field_nodes, tail_node = build_page_nodes(page, fields, tail_node, attachment_uuid: attachment&.uuid)
+        field_nodes, tail_node = build_page_nodes(current_page, fields, tail_node, attachment_uuid: attachment&.uuid)
 
-        fields = field_nodes.map do |node|
+        page_fields = field_nodes.map do |node|
           field = node.elem
 
           type = regexp_type ? type_from_page_node(node) : field.type
@@ -146,24 +164,36 @@ module Templates
             areas: [{
               x: field.x, y: field.y,
               w: field.w, h: field.h,
-              page: page_number,
+              page: current_page_number,
               attachment_uuid: attachment&.uuid
             }]
           }
         end
 
-        yield [attachment&.uuid, page_number, fields] if block_given?
+        yield [attachment&.uuid, current_page_number, page_fields] if block_given?
 
-        fields
+        all_fields.concat(page_fields)
+
+        current_args = next_args
+        current_wait = next_wait
       ensure
-        page.close
+        current_page&.close
       end
 
       print_debug(head_node) if Rails.env.development?
 
-      [fields, head_node]
+      [all_fields, head_node]
     ensure
       doc.close
+    end
+
+    def prepare_page_image(page, inference:, padding:)
+      size_key = page.width > page.height ? :width : :height
+      size = padding ? inference.resolution * 1.5 : inference.resolution
+
+      data, width, height = page.render_to_bitmap(size_key => size)
+
+      Vips::Image.new_from_memory(data, width, height, 4, :uchar)
     end
 
     def sort_fields(fields, y_threshold: 0.01)
@@ -240,7 +270,7 @@ module Templates
 
           if ((current_field.endy - node.endy).abs < y_threshold &&
               (current_field.x <= node.x || node.content.in?(LINEBREAK))) ||
-             current_field.endy < node.y
+             current_field.endy < node.endy
             if tail_node.elem.is_a?(Templates::ImageToFields::Field)
               divider =
                 if (tail_node.elem.endy - current_field.endy).abs > y_threshold
@@ -477,10 +507,11 @@ module Templates
       !(box1.endx < box2.x || box2.endx < box1.x || box1.endy < box2.y || box2.endy < box1.y)
     end
 
-    def increase_confidence_for_overlapping_fields(image_fields, text_fields, by: 1.0)
+    def increase_confidence_for_overlapping_fields(image_fields, text_fields, confidence: 1, by: 1.0)
       return image_fields if text_fields.blank?
 
       image_fields.map do |image_field|
+        next if image_field.confidence >= confidence
         next if image_field.type != 'text'
 
         text_fields.each do |text_field|

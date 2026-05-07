@@ -613,8 +613,36 @@ RSpec.describe 'Signing Form' do
       visit submit_form_path(slug: submitter.slug)
 
       find('#expand_form_button').click
-      click_link 'Type'
+      click_button 'Type'
       fill_in 'signature_text_input', with: 'John Doe'
+      click_button 'Sign and Complete'
+
+      expect(page).to have_content('Document has been signed!')
+
+      submitter.reload
+
+      expect(submitter.completed_at).to be_present
+      expect(field_value(submitter, 'Signature')).to be_present
+    end
+  end
+
+  context 'when the signature step with signing reason' do
+    let(:template) { create(:template, account:, author:, only_field_types: %w[signature]) }
+    let(:submission) { create(:submission, template:) }
+    let(:submitter) do
+      create(:submitter, submission:, uuid: template.submitters.first['uuid'], account:)
+    end
+
+    before do
+      create(:account_config, account:, key: AccountConfig::REQUIRE_SIGNING_REASON_KEY, value: true)
+    end
+
+    it 'completes the form with signing reason selected' do
+      visit submit_form_path(slug: submitter.slug)
+
+      find('#expand_form_button').click
+      draw_canvas
+      select 'Approved'
       click_button 'Sign and Complete'
 
       expect(page).to have_content('Document has been signed!')
@@ -724,7 +752,7 @@ RSpec.describe 'Signing Form' do
       visit submit_form_path(slug: submitter.slug)
 
       find('#expand_form_button').click
-      click_link 'Draw'
+      click_button 'Draw'
       draw_canvas
       click_button 'Complete'
 
@@ -1128,6 +1156,50 @@ RSpec.describe 'Signing Form' do
       expect do
         click_on 'Sign and Complete'
       end.to change(ProcessSubmitterCompletionJob.jobs, :size).by(1)
+    end
+  end
+
+  context 'when decline is enabled' do
+    let(:template) { create(:template, account:, author:, only_field_types: %w[text]) }
+    let(:submission) { create(:submission, template:) }
+    let(:submitter) { create(:submitter, submission:, uuid: template.submitters.first['uuid'], account:) }
+
+    it 'declines the form and shows the declined page' do
+      visit submit_form_path(slug: submitter.slug)
+
+      find('#decline_button').click
+      fill_in 'reason', with: 'I do not agree with the terms'
+      within('dialog[open]') { click_button 'Decline' }
+
+      expect(page).to have_content('Form has been declined')
+
+      submitter.reload
+
+      expect(submitter.declined_at).to be_present
+    end
+  end
+
+  context 'when delegate is enabled' do
+    let(:template) { create(:template, account:, author:, only_field_types: %w[text]) }
+    let(:submission) { create(:submission, template:) }
+    let(:submitter) { create(:submitter, submission:, uuid: template.submitters.first['uuid'], account:) }
+
+    before do
+      create(:account_config, account:, key: AccountConfig::ALLOW_TO_DELEGATE_KEY, value: true)
+    end
+
+    it 'delegates the form to another email and shows the delegated page' do
+      visit submit_form_path(slug: submitter.slug)
+
+      find('#delegate_button').click
+      fill_in 'email', with: 'delegate@example.com'
+      within('dialog[open]') { click_button 'Delegate' }
+
+      expect(page).to have_content('Document has been delegated')
+
+      submitter.reload
+
+      expect(submitter.email).to eq('delegate@example.com')
     end
   end
 

@@ -22,43 +22,60 @@
           class="md:tooltip"
           :data-tip="t('type_initial')"
         >
-          <a
+          <button
             id="type_text_button"
-            href="#"
+            type="button"
+            :aria-label="t('type_initial')"
             class="btn btn-outline font-medium btn-sm type-text-button"
-            @click.prevent="toggleTextInput"
+            @click="toggleTextInput"
           >
-            <IconTextSize :width="16" />
+            <IconTextSize
+              :width="16"
+              aria-hidden="true"
+            />
             <span class="hidden sm:inline">
               {{ t('type') }}
             </span>
-          </a>
+          </button>
         </span>
         <span
           v-else
           class="md:tooltip ml-2"
           :data-tip="t('draw_initials')"
         >
-          <a
+          <button
             id="type_text_button"
-            href="#"
+            type="button"
+            :aria-label="t('draw_initials')"
             class="btn btn-outline font-medium btn-sm type-text-button"
-            @click.prevent="toggleTextInput"
+            @click="toggleTextInput"
           >
-            <IconSignature :width="16" />
+            <IconSignature
+              :width="16"
+              aria-hidden="true"
+            />
             <span class="hidden sm:inline">
               {{ t('draw') }}
             </span>
-          </a>
+          </button>
         </span>
         <span
           class="md:tooltip"
           :data-tip="t('click_to_upload')"
         >
-          <label class="btn btn-outline btn-sm font-medium inline-flex flex-nowrap upload-image-button">
-            <IconUpload :width="16" />
+          <button
+            type="button"
+            :aria-label="t('click_to_upload')"
+            class="btn btn-outline btn-sm font-medium inline-flex flex-nowrap upload-image-button"
+            @click="$refs.uploadInput.click()"
+          >
+            <IconUpload
+              :width="16"
+              aria-hidden="true"
+            />
             <input
               :key="uploadImageInputKey"
+              ref="uploadInput"
               type="file"
               hidden
               accept="image/*"
@@ -67,37 +84,45 @@
             <span class="hidden sm:inline">
               {{ t('upload') }}
             </span>
-          </label>
+          </button>
         </span>
-        <a
+        <button
           v-if="modelValue || computedPreviousValue"
-          href="#"
+          type="button"
           class="btn font-medium btn-outline btn-sm clear-canvas-button"
-          @click.prevent="remove"
+          @click="remove"
         >
-          <IconReload :width="16" />
+          <IconReload
+            :width="16"
+            aria-hidden="true"
+          />
           {{ t('clear') }}
-        </a>
-        <a
+        </button>
+        <button
           v-else
-          href="#"
+          type="button"
           class="btn font-medium btn-outline btn-sm clear-canvas-button"
-          @click.prevent="clear"
+          @click="clear"
         >
-          <IconReload :width="16" />
+          <IconReload
+            :width="16"
+            aria-hidden="true"
+          />
           {{ t('clear') }}
-        </a>
-        <a
+        </button>
+        <button
+          type="button"
           :title="t('minimize')"
-          href="#"
+          :aria-label="t('minimize')"
           class="py-1.5 inline md:hidden"
-          @click.prevent="$emit('minimize')"
+          @click="$emit('minimize')"
         >
           <IconArrowsDiagonalMinimize2
             :width="20"
             :height="20"
+            aria-hidden="true"
           />
-        </a>
+        </button>
       </div>
     </div>
     <div
@@ -150,6 +175,7 @@
 
 <script>
 import { cropCanvasAndExportToPNG } from './crop_canvas'
+import { isCanvasBlocked } from './validate_signature'
 import { IconReload, IconTextSize, IconUpload, IconSignature, IconArrowsDiagonalMinimize2 } from '@tabler/icons-vue'
 import SignaturePad from 'signature_pad'
 import AppearsOn from './appears_on'
@@ -172,6 +198,10 @@ export default {
   inject: ['baseUrl', 't'],
   props: {
     field: {
+      type: Object,
+      required: true
+    },
+    submitter: {
       type: Object,
       required: true
     },
@@ -257,6 +287,14 @@ export default {
 
             this.$refs.canvas.getContext('2d').scale(scale, scale)
 
+            if (!this.isDrawInitials) {
+              this.$nextTick(() => {
+                if (this.$refs.textInput) {
+                  this.initTextInitial()
+                }
+              })
+            }
+
             this.intersectionObserver?.disconnect()
           }
         })
@@ -332,10 +370,27 @@ export default {
 
       if (!this.isDrawInitials) {
         this.$nextTick(() => {
-          this.$refs.textInput.focus()
+          if (this.$refs.textInput) {
+            if (!this.submitter.name) {
+              this.$refs.textInput.focus()
+            }
 
-          this.$emit('start')
+            this.initTextInitial()
+
+            this.$emit('start')
+          }
         })
+      }
+    },
+    initTextInitial () {
+      if (this.submitter.name) {
+        const parts = this.submitter.name.trim().split(/\s+/)
+
+        this.$refs.textInput.value = (parts.length > 1 ? [parts[0], parts[parts.length - 1]] : parts).map((part) => part[0]?.toUpperCase() || '').join('')
+      }
+
+      if (this.$refs.textInput.value) {
+        this.updateWrittenInitials({ target: this.$refs.textInput })
       }
     },
     async submit () {
@@ -392,7 +447,15 @@ export default {
           }
         }).catch((error) => {
           if (this.field.required === true) {
-            alert(this.t('signature_is_too_small_or_simple_please_redraw'))
+            if (isCanvasBlocked()) {
+              alert(this.t('browser_privacy_settings_block_canvas'))
+
+              if (window.Rollbar) {
+                window.Rollbar.info('Canvas blocked')
+              }
+            } else {
+              alert(this.t('signature_is_too_small_or_simple_please_redraw'))
+            }
 
             return reject(error)
           } else {
