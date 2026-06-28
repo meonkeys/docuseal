@@ -95,7 +95,7 @@
       v-else
       id="complete_form_button"
       class="btn btn-sm btn-neutral text-white px-4 w-full flex justify-center"
-      form="steps_form"
+      form="complete_form"
       type="submit"
       name="completed"
       value="true"
@@ -113,6 +113,39 @@
       </span>
     </button>
   </Teleport>
+  <Teleport
+    v-for="ref in (showCompleteButton ? [completeButtonContainer, completeButtonScrollContainer].filter(Boolean) : [])"
+    :key="ref"
+    :to="ref"
+  >
+    <button
+      class="complete-button btn btn-sm btn-neutral text-white px-4"
+      form="complete_form"
+      type="submit"
+      name="completed"
+      value="true"
+      :disabled="isSubmittingComplete"
+    >
+      <span class="flex items-center">
+        <IconInnerShadowTop
+          v-if="isSubmittingComplete"
+          class="mr-1 animate-spin w-5 h-5"
+          aria-hidden="true"
+        />
+        <span>
+          {{ t('complete') }}
+        </span>
+      </span>
+    </button>
+  </Teleport>
+  <form
+    v-if="!isCompleted && !isInvite"
+    id="complete_form"
+    class="hidden"
+    :action="submitPath"
+    method="post"
+    @submit.prevent="submitStep"
+  />
   <button
     v-if="!isFormVisible"
     id="expand_form_button"
@@ -791,6 +824,16 @@ export default {
       required: false,
       default: null
     },
+    completeButtonContainer: {
+      type: Object,
+      required: false,
+      default: null
+    },
+    completeButtonScrollContainer: {
+      type: Object,
+      required: false,
+      default: null
+    },
     schema: {
       type: Array,
       required: false,
@@ -1008,6 +1051,7 @@ export default {
       isSubmitting: false,
       isSubmittingComplete: false,
       submittedValues: {},
+      isFormStarted: false,
       recalculateButtonDisabledKey: '',
       isAccessibilityMode: false
     }
@@ -1055,6 +1099,10 @@ export default {
           return f.required && isEmpty(this.values[f.uuid])
         })
       })
+    },
+    showCompleteButton () {
+      return this.completeButtonContainer && !this.isCompleted && !this.isInvite && this.isFormStarted &&
+        !this.stepFields.find((fields) => fields.some((f) => f.required && isEmpty(this.submittedValues[f.uuid])))
     },
     submitButtonText () {
       if (this.alwaysMinimize) {
@@ -1657,6 +1705,8 @@ export default {
             return Promise.reject(new Error(data.error))
           }
 
+          this.isFormStarted = true
+
           const nextStep = (isLastStep && emptyRequiredField) || (forceComplete ? null : this.findNextStep(submitStepIndex))
 
           if (nextStep) {
@@ -1693,6 +1743,7 @@ export default {
     },
     async performComplete (resp) {
       this.isCompleted = true
+      this.isFormVisible = true
 
       if (resp?.text) {
         const respData = await resp.text()

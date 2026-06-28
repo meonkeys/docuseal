@@ -72,6 +72,7 @@ Rails.application.routes.draw do
     resources :unarchive, only: %i[create], controller: 'submissions_unarchive'
     resources :events, only: %i[index], controller: 'submission_events'
     resources :download, only: %i[index], controller: 'submissions_download'
+    resources :resend_email, only: %i[create], controller: 'submissions_resend_email'
   end
   resources :submitters, only: %i[edit update]
   resources :console_redirect, only: %i[index]
@@ -83,6 +84,7 @@ Rails.application.routes.draw do
   resources :submitters_resubmit, only: %i[update]
   resources :template_folders_autocomplete, only: %i[index]
   resources :webhook_secret, only: %i[show update]
+  resources :webhook_hmac, only: %i[show]
   resources :webhook_preferences, only: %i[update]
   resource :templates_upload, only: %i[create]
   authenticated do
@@ -97,6 +99,9 @@ Rails.application.routes.draw do
     resources :clone, only: %i[new create], controller: 'templates_clone'
     resource :debug, only: %i[show], controller: 'templates_debug' if Rails.env.development?
     resources :documents, only: %i[index create], controller: 'template_documents'
+    resources :documents_modify, only: %i[create], controller: 'template_documents_modify'
+    resources :documents_page_objects, only: %i[index], controller: 'template_documents_page_objects'
+    resources :documents_crop, only: %i[index create], controller: 'template_documents_crop'
     resources :clone_and_replace, only: %i[create], controller: 'templates_clone_and_replace'
     resources :detect_fields, only: %i[create], controller: 'templates_detect_fields' unless Docuseal.multitenant?
     resources :restore, only: %i[create], controller: 'templates_restore'
@@ -107,6 +112,7 @@ Rails.application.routes.draw do
     resource :form, only: %i[show], controller: 'templates_form_preview'
     resource :code_modal, only: %i[show], controller: 'templates_code_modal'
     resource :preferences, only: %i[show create destroy], controller: 'templates_preferences'
+    resources :versions, only: %i[index show create], controller: 'templates_versions'
     resource :share_link, only: %i[show create], controller: 'templates_share_link'
     resource :share_link_qr, only: %i[show], controller: 'templates_share_link_qr'
     resources :recipients, only: %i[create], controller: 'templates_recipients'

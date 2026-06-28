@@ -52,6 +52,30 @@
       </div>
     </div>
     <div
+      v-if="beforeRevisionSnapshot"
+      class="top-1.5 sticky h-0 z-20 max-w-2xl mx-auto"
+    >
+      <div class="alert border-base-content/30 py-2 px-2.5">
+        <IconInfoCircle class="stroke-info shrink-0 w-6 h-6" />
+        <span>{{ t('viewing_revision_from').replace('{date}', formatRevisionTime(beforeRevisionSnapshot.revision.created_at)) }}</span>
+        <div>
+          <button
+            class="btn btn-sm"
+            @click.prevent="cancelRevision"
+          >
+            {{ t('cancel') }}
+          </button>
+          <button
+            v-if="editable"
+            class="btn btn-sm btn-neutral text-white"
+            @click.prevent="applyRevision"
+          >
+            {{ t('apply') }}
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
       v-if="$slots.buttons || withTitle"
       id="title_container"
       class="flex justify-between py-1.5 items-center pr-4 top-0 z-10 title-container"
@@ -213,6 +237,18 @@
                     <span class="whitespace-nowrap">{{ t('preferences') }}</span>
                   </a>
                 </li>
+                <li v-if="withRevisionsMenu">
+                  <button
+                    class="flex space-x-2"
+                    @click.prevent="openRevisionsModal"
+                    @mouseenter="preloadRevisions"
+                  >
+                    <span class="w-6 h-6 flex-shrink-0 flex items-center justify-center">
+                      <IconHistory class="w-5 h-5" />
+                    </span>
+                    <span class="whitespace-nowrap">{{ t('revisions') }}</span>
+                  </button>
+                </li>
                 <li v-if="withDownload">
                   <button
                     class="flex space-x-2"
@@ -273,6 +309,8 @@
           :data-document-uuid="item.attachment_uuid"
           :accept-file-types="acceptFileTypes"
           :with-replace-button="withUploadButton"
+          :with-google-drive="withGoogleDrive"
+          :authenticity-token="authenticityToken"
           :editable="editable"
           :dynamic-documents="dynamicDocuments"
           :with-dynamic-documents="withDynamicDocuments"
@@ -282,6 +320,7 @@
           @replace="onDocumentReplace"
           @up="moveDocument(item, -1)"
           @reorder="reorderFields"
+          @edit="editModalDocumentUuid = item.attachment_uuid"
           @down="moveDocument(item, 1)"
           @change="save"
         />
@@ -319,12 +358,18 @@
       </div>
       <div
         id="pages_container"
-        class="w-full overflow-x-hidden mt-0.5 pt-0.5"
-        :class="isMobile ? 'overflow-y-auto' : 'overflow-y-hidden md:overflow-y-auto'"
+        ref="pagesContainer"
+        class="w-full mt-0.5 pt-0.5"
+        :class="[
+          isMobile ? 'overflow-y-auto' : 'overflow-y-hidden md:overflow-y-auto',
+          zoomLevel > 1 ? 'overflow-x-auto' : 'overflow-x-hidden'
+        ]"
+        @wheel="onPagesWheel"
       >
         <div
           ref="documents"
           class="pr-3.5 pl-0.5"
+          :style="zoomLevel > 1 ? { width: `${zoomLevel * 100}%` } : null"
         >
           <template v-if="!sortedDocuments.length && (withUploadButton || withAddPageButton)">
             <Dropzone
@@ -415,6 +460,8 @@
                 :with-arrows="template.schema.length > 1"
                 :item="template.schema.find((item) => item.attachment_uuid === document.uuid)"
                 :with-replace-button="withUploadButton"
+                :with-google-drive="withGoogleDrive"
+                :authenticity-token="authenticityToken"
                 :accept-file-types="acceptFileTypes"
                 :document="document"
                 :template="template"
@@ -597,10 +644,60 @@
         </div>
       </div>
     </Transition>
+    <Transition
+      enter-active-class="transition-all duration-200 ease-out"
+      enter-from-class="translate-y-4 opacity-0"
+      enter-to-class="translate-y-0 opacity-100"
+      leave-active-class="transition-all duration-200 ease-in"
+      leave-from-class="translate-y-0 opacity-100"
+      leave-to-class="translate-y-4 opacity-0"
+    >
+      <div
+        v-if="zoomLevel > 1"
+        class="sticky bottom-0 z-40 pointer-events-none"
+      >
+        <div class="absolute left-0 right-0 bottom-4 flex justify-center">
+          <div class="join shadow pointer-events-auto">
+            <span class="join-item bg-base-content text-white pl-2 pr-2.5 h-9 items-center text-sm font-medium cursor-default w-16 flex justify-end">
+              <span>
+                {{ Math.round(zoomLevel * 100) }}%
+              </span>
+            </span>
+            <button
+              type="button"
+              class="join-item bg-base-content text-white h-9 pl-2 pr-3 inline-flex items-center justify-center cursor-pointer hover:opacity-90 border-l border-white/20"
+              @click="zoomLevel = 1"
+            >
+              <IconX class="w-4 h-4 stroke-2" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
     <div
       id="docuseal_modal_container"
       class="modal-container"
-    />
+    >
+      <RevisionsModal
+        v-if="isRevisionsModalOpen"
+        :template="template"
+        :revisions="revisions"
+        :locale="locale"
+        @close="isRevisionsModalOpen = false"
+        @apply="onRevisionApply"
+      />
+      <DocumentsEditorModal
+        v-if="editModalDocumentUuid"
+        :template="template"
+        :authenticity-token="authenticityToken"
+        :accept-file-types="acceptFileTypes"
+        :base-url="baseUrl"
+        :page-preview-format="pagePreviewFormat"
+        :scroll-to-attachment-uuid="editModalDocumentUuid"
+        @saved="onDocumentsModified"
+        @close="editModalDocumentUuid = null"
+      />
+    </div>
   </div>
 </template>
 
@@ -618,7 +715,9 @@ import DocumentPreview from './preview'
 import DocumentControls from './controls'
 import MobileFields from './mobile_fields'
 import FieldSubmitter from './field_submitter'
-import { IconPlus, IconUsersPlus, IconDeviceFloppy, IconChevronDown, IconEye, IconWritingSign, IconInnerShadowTop, IconInfoCircle, IconAdjustments, IconDownload } from '@tabler/icons-vue'
+import RevisionsModal from './revisions_modal'
+import DocumentsEditorModal from './documents_editor_modal'
+import { IconPlus, IconUsersPlus, IconDeviceFloppy, IconChevronDown, IconEye, IconWritingSign, IconInnerShadowTop, IconInfoCircle, IconAdjustments, IconDownload, IconHistory, IconX } from '@tabler/icons-vue'
 import { v4 } from 'uuid'
 import { ref, computed, toRaw, defineAsyncComponent } from 'vue'
 import * as i18n from './i18n'
@@ -658,7 +757,11 @@ export default {
     IconDownload,
     IconAdjustments,
     IconEye,
-    IconDeviceFloppy
+    IconHistory,
+    IconDeviceFloppy,
+    IconX,
+    RevisionsModal,
+    DocumentsEditorModal
   },
   provide () {
     return {
@@ -980,6 +1083,16 @@ export default {
       type: Boolean,
       required: false,
       default: false
+    },
+    withRevisions: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
+    withRevisionsMenu: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   },
   data () {
@@ -1002,7 +1115,12 @@ export default {
       drawOption: null,
       dragField: null,
       isDragFile: false,
-      isMathLoaded: false
+      isMathLoaded: false,
+      isRevisionsModalOpen: false,
+      editModalDocumentUuid: null,
+      revisions: [],
+      beforeRevisionSnapshot: null,
+      zoomLevel: 1
     }
   },
   computed: {
@@ -1575,7 +1693,7 @@ export default {
 
         ref.x = e.clientX - ref.offsetX
         ref.y = e.clientY - ref.offsetY
-      } else if (e.dataTransfer?.types?.includes('Files')) {
+      } else if (e.dataTransfer?.types?.includes('Files') && !this.editModalDocumentUuid) {
         this.isDragFile = true
       }
     },
@@ -1767,6 +1885,73 @@ export default {
     closeDropdown () {
       document.activeElement.blur()
     },
+    preloadRevisions () {
+      this.loadRevisionsPromise ||= this.baseFetch(`/templates/${this.template.id}/versions`)
+    },
+    openRevisionsModal () {
+      this.closeDropdown()
+
+      this.loadRevisionsPromise ||= this.baseFetch(`/templates/${this.template.id}/versions`)
+
+      this.loadRevisionsPromise.then(async (resp) => {
+        this.revisions = await resp.json()
+
+        this.isRevisionsModalOpen = true
+      }).finally(() => {
+        this.loadRevisionsPromise = null
+      })
+    },
+    onRevisionApply (revision) {
+      this.beforeRevisionSnapshot = {
+        template: JSON.parse(JSON.stringify(this.template)),
+        dynamicDocuments: JSON.parse(JSON.stringify(this.dynamicDocuments)),
+        revision
+      }
+
+      const { dynamic_documents: nextDynamicDocs = [], ...nextTemplate } = revision.data
+
+      Object.assign(this.template, nextTemplate)
+
+      this.dynamicDocuments.splice(0, this.dynamicDocuments.length, ...nextDynamicDocs)
+
+      this.$nextTick(() => this.reloadDynamicDocumentContent())
+
+      this.isRevisionsModalOpen = false
+    },
+    cancelRevision () {
+      Object.assign(this.template, this.beforeRevisionSnapshot.template)
+
+      this.dynamicDocuments.splice(0, this.dynamicDocuments.length, ...this.beforeRevisionSnapshot.dynamicDocuments)
+
+      this.beforeRevisionSnapshot = null
+
+      this.$nextTick(() => this.reloadDynamicDocumentContent())
+    },
+    applyRevision () {
+      this.beforeRevisionSnapshot = null
+
+      const dynamicDocumentRefs = this.documentRefs.filter((ref) => ref.isDynamic)
+
+      dynamicDocumentRefs.forEach((ref) => ref.update())
+
+      this.rebuildVariablesSchema({ disable: false })
+
+      return Promise.all([this.save({ force: true }), ...dynamicDocumentRefs.map((ref) => ref.saveBody())])
+    },
+    reloadDynamicDocumentContent () {
+      this.documentRefs.forEach((ref) => {
+        if (ref.isDynamic) ref.reloadContent()
+      })
+    },
+    formatRevisionTime (string) {
+      return new Date(string).toLocaleString(this.locale || undefined, {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      })
+    },
     t (key) {
       return this.i18n[key] || i18n[this.language]?.[key] || i18n.en[key] || key
     },
@@ -1890,6 +2075,30 @@ export default {
 
       this.isBreakpointLg = this.$el.getRootNode().querySelector('div[data-v-app]').offsetWidth < breakpointLg
     },
+    onPagesWheel (event) {
+      if (!event.ctrlKey && !event.metaKey) return
+
+      event.preventDefault()
+
+      const oldZoom = this.zoomLevel
+      const nextZoom = Math.max(1, Math.min(3, oldZoom - event.deltaY * 0.006))
+
+      if (nextZoom === oldZoom) return
+
+      const rect = this.$refs.pagesContainer.getBoundingClientRect()
+      const cursorX = event.clientX - rect.left
+      const cursorY = event.clientY - rect.top
+      const ratio = nextZoom / oldZoom
+      const nextScrollLeft = (this.$refs.pagesContainer.scrollLeft + cursorX) * ratio - cursorX
+      const nextScrollTop = (this.$refs.pagesContainer.scrollTop + cursorY) * ratio - cursorY
+
+      this.zoomLevel = nextZoom
+
+      this.$nextTick(() => {
+        this.$refs.pagesContainer.scrollLeft = nextScrollLeft
+        this.$refs.pagesContainer.scrollTop = nextScrollTop
+      })
+    },
     setDocumentRefs (el) {
       if (el) {
         this.documentRefs.push(el)
@@ -1927,6 +2136,10 @@ export default {
       }
     },
     onKeyDown (event) {
+      if (this.editModalDocumentUuid) {
+        return
+      }
+
       if (event.key === 'Tab' && document.activeElement === document.body) {
         event.stopImmediatePropagation()
         event.preventDefault()
@@ -2383,6 +2596,11 @@ export default {
         this.drawOption = null
 
         this.selectedAreasRef.value = [area]
+
+        area.x = Math.min(Math.max(area.x, 0), 1)
+        area.y = Math.min(Math.max(area.y, 0), 1)
+        area.w = Math.min(Math.max(area.w, 0), 1)
+        area.h = Math.min(Math.max(area.h, 0), 1)
 
         this.save()
       } else {
@@ -2940,6 +3158,22 @@ export default {
     onDocumentsReplaceAndTemplateClone (template) {
       window.Turbo.visit(`/templates/${template.id}/edit`)
     },
+    onDocumentsModified (data) {
+      this.template.schema = data.schema
+      this.template.fields = data.fields
+      this.template.submitters = data.submitters
+      this.template.documents = data.documents
+
+      this.selectedAreasRef.value = []
+
+      if (!this.template.submitters.find((s) => s.uuid === this.selectedSubmitter?.uuid)) {
+        this.selectedSubmitter = this.template.submitters[0]
+      }
+
+      this.editModalDocumentUuid = null
+
+      this.save()
+    },
     moveDocument (item, direction) {
       const currentIndex = this.template.schema.indexOf(item)
 
@@ -3013,7 +3247,11 @@ export default {
 
           const dynamicDocumentSaves = dynamicDocumentRefs.map((ref) => ref.saveBody())
 
-          Promise.all([this.save(), ...dynamicDocumentSaves]).then(() => {
+          Promise.all([this.save({ force: true }), ...dynamicDocumentSaves]).then(() => {
+            if (this.withRevisions) {
+              this.captureRevision()
+            }
+
             window.Turbo.visit(`/templates/${this.template.id}`)
           }).finally(() => {
             this.isSaving = false
@@ -3244,8 +3482,12 @@ export default {
         }
       })
     },
-    save ({ force } = { force: false }) {
+    save ({ force = false } = {}) {
       this.pendingFieldAttachmentUuids = []
+
+      if (this.beforeRevisionSnapshot) {
+        this.beforeRevisionSnapshot = null
+      }
 
       if (this.onChange) {
         this.onChange(this.template)
@@ -3279,6 +3521,12 @@ export default {
         if (this.onSave) {
           this.onSave(this.template)
         }
+      })
+    },
+    captureRevision () {
+      return this.baseFetch(`/templates/${this.template.id}/versions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
       })
     },
     onDynamicDocumentUpdate () {

@@ -11,7 +11,7 @@
       :src="image.url"
       :width="width"
       :height="height"
-      class="rounded"
+      class="w-full h-full rounded"
       @load="onImageLoad"
     >
     <div
@@ -57,6 +57,7 @@
         @scroll-to="$emit('scroll-to', $event)"
         @add-custom-field="$emit('add-custom-field', $event)"
         @contextmenu="openAreaContextMenu($event, item.area, item.field)"
+        @click-title="closeContextMenu"
       />
       <FieldArea
         v-for="(area, index) in newAreas"
