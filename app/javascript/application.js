@@ -42,6 +42,7 @@ import RequiredCheckboxGroup from './elements/required_checkbox_group'
 import PageContainer from './elements/page_container'
 import EmailEditor from './elements/email_editor'
 import MarkdownEditor from './elements/markdown_editor'
+import HtmlEditor from './elements/html_editor'
 import MountOnClick from './elements/mount_on_click'
 import RemoveOnEvent from './elements/remove_on_event'
 import ScrollTo from './elements/scroll_to'
@@ -55,6 +56,9 @@ import OpenModal from './elements/open_modal'
 import BarChart from './elements/bar_chart'
 import FieldCondition from './elements/field_condition'
 import ConfirmUpload from './elements/confirm_upload'
+import ScrollFade from './elements/scroll_fade'
+import OpenModalMobile from './elements/open_modal_mobile'
+import HistoryBack from './elements/history_back'
 
 import * as TurboInstantClick from './lib/turbo_instant_click'
 
@@ -135,6 +139,7 @@ safeRegisterElement('required-checkbox-group', RequiredCheckboxGroup)
 safeRegisterElement('page-container', PageContainer)
 safeRegisterElement('email-editor', EmailEditor)
 safeRegisterElement('markdown-editor', MarkdownEditor)
+safeRegisterElement('html-editor', HtmlEditor)
 safeRegisterElement('mount-on-click', MountOnClick)
 safeRegisterElement('remove-on-event', RemoveOnEvent)
 safeRegisterElement('scroll-to', ScrollTo)
@@ -148,10 +153,14 @@ safeRegisterElement('open-modal', OpenModal)
 safeRegisterElement('bar-chart', BarChart)
 safeRegisterElement('field-condition', FieldCondition)
 safeRegisterElement('confirm-upload', ConfirmUpload)
+safeRegisterElement('scroll-fade', ScrollFade)
+safeRegisterElement('open-modal-mobile', OpenModalMobile)
+safeRegisterElement('history-back', HistoryBack)
 
 safeRegisterElement('template-builder', class extends HTMLElement {
   connectedCallback () {
     document.addEventListener('turbo:submit-end', this.onSubmit)
+    document.addEventListener('turbo:before-cache', this.onBeforeCache)
 
     this.appElem = document.createElement('div')
 
@@ -162,6 +171,7 @@ safeRegisterElement('template-builder', class extends HTMLElement {
     this.app = createApp(TemplateBuilder, {
       template,
       customFields: reactive(JSON.parse(this.dataset.customFields || '[]')),
+      dateFormats: JSON.parse(this.dataset.dateFormats || '[]'),
       dynamicDocuments: reactive(JSON.parse(this.dataset.dynamicDocuments || '[]')),
       backgroundColor: '#faf7f5',
       locale: this.dataset.locale,
@@ -178,7 +188,10 @@ safeRegisterElement('template-builder', class extends HTMLElement {
       authenticityToken: document.querySelector('meta[name="csrf-token"]')?.content,
       withCustomFields: true,
       withPayment: this.dataset.withPayment === 'true',
-      isPaymentConnected: this.dataset.isPaymentConnected === 'true',
+      isStripeConnected: this.dataset.isPaymentConnected === 'true' || this.dataset.isStripeConnected === 'true',
+      withStripe: this.dataset.withStripe !== 'false',
+      withPaypal: this.dataset.withPaypal === 'true',
+      isPaypalConnected: this.dataset.isPaypalConnected === 'true',
       withFormula: this.dataset.withFormula === 'true',
       withSendButton: this.dataset.withSendButton !== 'false',
       withSignYourselfButton: this.dataset.withSignYourselfButton !== 'false',
@@ -231,8 +244,14 @@ safeRegisterElement('template-builder', class extends HTMLElement {
     }
   }
 
+  onBeforeCache = () => {
+    this.app?.unmount()
+    this.appElem?.remove()
+  }
+
   disconnectedCallback () {
     document.removeEventListener('turbo:submit-end', this.onSubmit)
+    document.removeEventListener('turbo:before-cache', this.onBeforeCache)
 
     this.app?.unmount()
     this.appElem?.remove()
@@ -241,6 +260,8 @@ safeRegisterElement('template-builder', class extends HTMLElement {
 
 safeRegisterElement('import-list', class extends HTMLElement {
   connectedCallback () {
+    document.addEventListener('turbo:before-cache', this.onBeforeCache)
+
     this.appElem = document.createElement('div')
 
     this.app = createApp(ImportList, {
@@ -255,7 +276,14 @@ safeRegisterElement('import-list', class extends HTMLElement {
     this.appendChild(this.appElem)
   }
 
+  onBeforeCache = () => {
+    this.app?.unmount()
+    this.appElem?.remove()
+  }
+
   disconnectedCallback () {
+    document.removeEventListener('turbo:before-cache', this.onBeforeCache)
+
     this.app?.unmount()
     this.appElem?.remove()
   }

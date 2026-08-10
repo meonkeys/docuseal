@@ -61,7 +61,7 @@ module Submissions
         ActiveStorage::Attachment.create!(
           blob: ActiveStorage::Blob.create_and_upload!(
             io: io.tap(&:rewind), filename: "#{I18n.t('audit_log')} - " \
-                                            "#{submission.name || submission.template.name}.pdf"
+                                            "#{submission.name || submission.template&.name}.pdf"
           ),
           name: 'audit_trail',
           record: submission
@@ -282,6 +282,9 @@ module Submissions
           [
             composer.document.layout.formatted_text_box(
               [
+                submitter.viewer? && {
+                  text: "#{I18n.t('view_only')}\n"
+                },
                 submitter.email && (click_email_event || verify_email_event) && {
                   text: "#{I18n.t('email_verification')}: #{I18n.t('verified')}\n"
                 },

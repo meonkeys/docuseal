@@ -452,7 +452,7 @@
     class="pb-0.5 mt-0.5"
   >
   <li
-    v-if="['text', 'number', 'date', 'select', 'heading', 'cells'].includes(field.type)"
+    v-if="['text', 'number', 'date', 'select', 'heading', 'cells'].includes(field.type) || (['radio', 'multiple'].includes(field.type) && field.areas?.every((a) => !a.option_uuid))"
     class="field-settings-font"
   >
     <label
@@ -500,7 +500,7 @@
     </label>
   </li>
   <li
-    v-if="field.type == 'number'"
+    v-if="field.type == 'number' || field.preferences?.formula"
     class="field-settings-formula"
   >
     <label
@@ -830,6 +830,7 @@ export default {
       } else if (format === 'percent') {
         return `${number}%`
       } else if (format === 'percent_space') {
+        // eslint-disable-next-line no-irregular-whitespace
         return `${String(number).replace('.', ',')} %`
       } else {
         return number

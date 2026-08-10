@@ -14,17 +14,20 @@ class TemplatesController < ApplicationController
     submissions = Submissions::Filter.filter_by_status(submissions, params)
 
     submissions = if params[:completed_at_from].present? || params[:completed_at_to].present?
-                    submissions.order(Submitter.arel_table[:completed_at].maximum.desc)
+                    submissions.order(completed_at: :desc)
                   else
                     submissions.order(id: :desc)
                   end
 
-    @pagy, @submissions = pagy_auto(submissions.preload(:template_accesses, submitters: :start_form_submission_events))
+    @pagy, @submissions =
+      pagy_auto(submissions.select_for_list.preload(:template_accesses, submitters: :start_form_submission_events))
   rescue ActiveRecord::RecordNotFound
     redirect_to root_path
   end
 
-  def new; end
+  def new
+    render :new, layout: 'plain'
+  end
 
   def edit
     @template_data = Templates.serialize_for_builder(@template)

@@ -1,4 +1,4 @@
-<% content_for(:html_title, "#{@submitter.submission.name || @submitter.submission.template.name} | DocuSeal") %>
+<% content_for(:html_title, "#{@submitter.submission.name || @submitter.submission.template&.name} | DocuSeal") %>
 <% I18n.with_locale(@submitter.account.locale) do %>
   <% content_for(:html_description, t('account_name_has_invited_you_to_fill_and_sign_documents_online_effortlessly_with_a_secure_fast_and_user_friendly_digital_document_signing_solution', account_name: @submitter.account.name)) %>
 <% end %>
@@ -20,10 +20,10 @@
         <%= render('submit_form/banner') %>
         <header id="signing_form_header" class="sticky min-[1230px]:static top-0 z-50 bg-base-100 py-2 px-2 flex items-center md:-mx-[8px]" style="margin-bottom: -16px">
           <h1 class="text-xl md:text-2xl font-medium focus:text-clip" style="width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-            <%= @submitter.submission.name || @submitter.submission.template.name %>
+            <%= @submitter.submission.name || @submitter.submission.template&.name %>
           </h1>
           <div class="flex items-center gap-2 group" style="margin-left: 20px; flex-shrink: 0">
-            <% if @form_configs[:with_decline] %>
+            <% if @form_configs[:with_decline] && !@submitter.viewer? %>
               <modal-button data-target="<%= decline_modal_id = SecureRandom.uuid %>" class="hidden group-has-[.complete-button]:flex">
                 <button type="button" class="btn btn-sm md:!px-5 px-2" aria-label="<%= t(:decline) %>">
                   <span class="hidden md:inline"><%= t(:decline) %></span>
@@ -34,11 +34,11 @@
               </modal-button>
             <% end %>
             <span id="complete_button_container" class="peer contents"></span>
-            <% if @form_configs[:with_delegate] %>
+            <% if @form_configs[:with_delegate] && !@submitter.viewer? %>
               <modal-button data-target="<%= delegate_modal_id = SecureRandom.uuid %>" class="hidden peer-empty:flex">
                 <button id="delegate_button" type="button" class="btn btn-sm !px-5"><%= t(:delegate) %></button>
               </modal-button>
-              <% if @form_configs[:with_decline] %>
+              <% if @form_configs[:with_decline] && !@submitter.viewer? %>
                 <modal-button data-target="<%= decline_modal_id %>" class="hidden peer-empty:flex">
                   <button id="decline_button" type="button" class="btn btn-sm px-2" aria-label="<%= t(:decline) %>">
                     <%= svg_icon('x', class: 'w-5 h-5') %>
@@ -56,7 +56,7 @@
                 </download-button>
               <% end %>
             <% else %>
-              <% if @form_configs[:with_decline] %>
+              <% if @form_configs[:with_decline] && !@submitter.viewer? %>
                 <modal-button data-target="<%= decline_modal_id %>" class="hidden peer-empty:flex">
                   <button id="decline_button" type="button" class="btn btn-sm !px-5"><%= t(:decline) %></button>
                 </modal-button>
@@ -77,7 +77,7 @@
           </div>
         </header>
         <scroll-buttons inert class="fixed right-5 top-2 hidden md:flex gap-1 z-50 ease-in-out opacity-0 -translate-y-10 group">
-          <% if @form_configs[:with_decline] %>
+          <% if @form_configs[:with_decline] && !@submitter.viewer? %>
             <modal-button data-target="<%= decline_modal_id %>" class="hidden group-has-[.complete-button]:flex">
               <button type="button" class="btn btn-sm px-2" aria-label="<%= t(:decline) %>">
                 <%= svg_icon('x', class: 'w-5 h-5') %>
@@ -85,7 +85,7 @@
             </modal-button>
           <% end %>
           <span id="complete_button_container_scroll" class="peer contents"></span>
-          <% if @form_configs[:with_delegate] %>
+          <% if @form_configs[:with_delegate] && !@submitter.viewer? %>
             <modal-button data-target="<%= delegate_modal_id %>" class="hidden peer-empty:flex">
               <button id="delegate_button_mobile" type="button" class="btn btn-sm px-0" aria-label="<%= t(:delegate) %>">
                 <span class="min-[1366px]:inline hidden px-3">
@@ -96,7 +96,7 @@
                 </span>
               </button>
             </modal-button>
-            <% if @form_configs[:with_decline] %>
+            <% if @form_configs[:with_decline] && !@submitter.viewer? %>
               <modal-button data-target="<%= decline_modal_id %>" class="hidden peer-empty:flex">
                 <button id="decline_button_mobile" type="button" class="btn btn-sm px-2" aria-label="<%= t(:decline) %>">
                   <%= svg_icon('x', class: 'w-5 h-5') %>
@@ -104,7 +104,7 @@
               </modal-button>
             <% end %>
           <% else %>
-            <% if @form_configs[:with_decline] %>
+            <% if @form_configs[:with_decline] && !@submitter.viewer? %>
               <modal-button data-target="<%= decline_modal_id %>" class="hidden peer-empty:flex">
                 <button id="decline_button_mobile" type="button" class="btn btn-sm px-0" aria-label="<%= t(:decline) %>">
                   <span class="min-[1366px]:inline hidden px-3">
@@ -152,7 +152,7 @@
                   <% next if field['conditions'].present? && values[field['uuid']].blank? && field['submitter_uuid'] != @submitter.uuid %>
                   <% next if field['conditions'].present? && field['submitter_uuid'] == @submitter.uuid %>
                   <% next if field.dig('preferences', 'formula').present? && field['submitter_uuid'] == @submitter.uuid %>
-                  <%= render 'submissions/value', page_width: width, page_height: height, font_scale:, area:, field:, attachments_index: @attachments_index, value: field.dig('preferences', 'mask').present? ? TextUtils.mask_value(value, field.dig('preferences', 'mask')) : value, locale: @submitter.account.locale, timezone: @submitter.account.timezone, submitter: submitters_index[field['submitter_uuid']], with_signature_id: @form_configs[:with_signature_id], with_submitter_timezone: @form_configs[:with_submitter_timezone], with_timestamp_seconds: @form_configs[:with_timestamp_seconds], with_signature_id_reason: @form_configs[:with_signature_id_reason] %>
+                  <%= render 'submissions/value', page_width: width, page_height: height, font_scale:, area:, field:, attachments_index: @attachments_index, value: field.dig('preferences', 'mask').present? ? TextUtils.mask_value(value, field.dig('preferences', 'mask')) : value, locale: @submitter.account.locale, timezone: @submitter.account.timezone, submitter: submitters_index[field['submitter_uuid']], with_signature_id: @form_configs[:with_signature_id], with_submitter_timezone: @form_configs[:with_submitter_timezone], with_timestamp_seconds: @form_configs[:with_timestamp_seconds], with_signature_id_reason: @form_configs[:with_signature_id_reason], with_signature_id_completed_at: @form_configs[:with_signature_id_completed_at] %>
                 <% end %>
               </div>
             </page-container>
@@ -177,12 +177,12 @@
     </div>
   </div>
 </div>
-<% if @form_configs[:with_decline] %>
+<% if @form_configs[:with_decline] && !@submitter.viewer? %>
   <%= render 'shared/html_modal', title: t(:decline), uuid: decline_modal_id do %>
     <%= render 'submit_form/decline_form', submitter: @submitter %>
   <% end %>
 <% end %>
-<% if @form_configs[:with_delegate] %>
+<% if @form_configs[:with_delegate] && !@submitter.viewer? %>
   <%= render 'shared/html_modal', title: t(:delegate), uuid: delegate_modal_id do %>
     <%= render 'submit_form/delegate_form', submitter: @submitter %>
   <% end %>

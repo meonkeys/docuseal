@@ -2,21 +2,21 @@
   <%= render 'submissions/preview_tags' %>
 <% end %>
 <% font_scale = 1040.0 / PdfUtils::US_LETTER_W %>
-<% configs = AccountConfig.where(account_id: @submission.account_id, key: [AccountConfig::COMBINE_PDF_RESULT_KEY, AccountConfig::WITH_SIGNATURE_ID, AccountConfig::WITH_SUBMITTER_TIMEZONE_KEY, AccountConfig::WITH_SIGNATURE_ID_REASON_KEY, AccountConfig::WITH_TIMESTAMP_SECONDS_KEY]) %>
+<% configs = AccountConfig.where(account_id: @submission.account_id, key: [AccountConfig::COMBINE_PDF_RESULT_KEY, AccountConfig::WITH_SIGNATURE_ID, AccountConfig::WITH_SUBMITTER_TIMEZONE_KEY, AccountConfig::WITH_SIGNATURE_ID_REASON_KEY, AccountConfig::WITH_TIMESTAMP_SECONDS_KEY, AccountConfig::WITH_SIGNATURE_ID_COMPLETED_AT_KEY]) %>
 <% with_signature_id = configs.find { |e| e.key == AccountConfig::WITH_SIGNATURE_ID }&.value == true %>
 <% is_combined_enabled = configs.find { |e| e.key == AccountConfig::COMBINE_PDF_RESULT_KEY }&.value == true && !@submission.template_fields&.any? { |f| f['type'] == 'verification' } %>
 <% with_submitter_timezone = configs.find { |e| e.key == AccountConfig::WITH_SUBMITTER_TIMEZONE_KEY }&.value == true %>
 <% with_timestamp_seconds = configs.find { |e| e.key == AccountConfig::WITH_TIMESTAMP_SECONDS_KEY }&.value == true %>
 <% with_signature_id_reason = configs.find { |e| e.key == AccountConfig::WITH_SIGNATURE_ID_REASON_KEY }&.value != false %>
+<% with_signature_id_completed_at = configs.find { |e| e.key == AccountConfig::WITH_SIGNATURE_ID_COMPLETED_AT_KEY }&.value == true %>
 <main style="max-width: 1600px" class="mx-auto pl-4">
   <div class="flex justify-between py-1.5 items-center pr-4 sticky top-0 md:relative z-10 bg-base-100">
     <a href="<%= signed_in? && @submission.account_id == current_account&.id && @submission.template ? template_path(@submission.template) : '/' %>" class="flex items-center space-x-3 py-1">
       <span><%= render 'submissions/logo' %></span>
-      <h1 class="text-xl md:text-3xl font-semibold focus:text-clip" style="overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;"><% (@submission.name || @submission.template.name).split(/(_)/).each do |item| %><%= item %><wbr><% end %></h1>
+      <h1 class="text-xl md:text-3xl font-semibold focus:text-clip" style="overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;"><% (@submission.name || @submission.template&.name).to_s.split(/(_)/).each do |item| %><%= item %><wbr><% end %></h1>
     </a>
     <div class="space-x-3 flex items-center">
-      <% is_all_completed = @submission.submitters.to_a.all?(&:completed_at?) %>
-      <% if signed_in? && can?(:create, @submission) && @submission.archived_at? && !is_all_completed %>
+      <% if signed_in? && can?(:destroy, @submission) && @submission.archived_at? && !@submission.completed_at? %>
         <%= button_to button_title(title: t('unarchive'), disabled_with: t('unarchive')[0..-2], icon: svg_icon('rotate', class: 'w-6 h-6')), submission_unarchive_index_path(@submission), class: 'btn btn-primary btn-ghost text-base hidden md:flex' %>
       <% end %>
       <% if @submission.audit_trail.present? %>
@@ -25,21 +25,26 @@
           <span class="hidden md:inline"><%= t('audit_log') %></span>
         </a>
       <% elsif signed_in? %>
-        <%= link_to submission_events_path(@submission), class: 'white-button', data: { turbo_frame: :modal } do %>
-          <%= svg_icon('logs', class: 'w-6 h-6') %>
-          <span class="hidden md:block"><%= t('event_log') %></span>
-        <% end %>
+        <open-modal-mobile class="flex">
+          <%= link_to submission_events_path(@submission), class: 'white-button', data: { turbo_frame: :modal } do %>
+            <%= svg_icon('logs', class: 'w-6 h-6') %>
+            <span class="hidden md:block"><%= t('event_log') %></span>
+          <% end %>
+        </open-modal-mobile>
       <% end %>
-      <% if signed_in? && !is_all_completed && can?(:manage, :resend_all) && @submission.submitters.to_a.size > 3 && !@submission.archived_at? && !@submission.template&.archived_at? && !@submission.expired? && can?(:update, @submission) %>
+      <% if signed_in? && !@submission.completed_at? && can?(:manage, :resend_all) && @submission.submitters.to_a.size > 3 && !@submission.archived_at? && !@submission.template&.archived_at? && !@submission.expired? && can?(:update, @submission) %>
         <% pending_submitters_count = @submission.submitters.to_a.count { |s| !s.completed_at? && s.email.present? && !s.declined_at? } %>
         <% if pending_submitters_count.positive? %>
           <%= button_to button_title(title: t('re_send_emails'), title_class: 'hidden md:inline', disabled_with: t('sending'), icon: svg_icon('mail_forward', class: 'w-6 h-6')), submission_resend_email_index_path(@submission), class: 'white-button', data: { turbo_confirm: t('are_you_sure_you_want_to_re_send_email_to_n_recipients', count: pending_submitters_count) } %>
         <% end %>
       <% end %>
       <% if @submission.submitters.to_a.any?(&:completed_at?) %>
-        <% if is_all_completed || !is_combined_enabled %>
+        <% show_combined_download = @submission.completed_at? && !is_combined_enabled %>
+        <% show_unarchive = signed_in? && can?(:destroy, @submission) && @submission.archived_at? && @submission.completed_at? %>
+        <% show_download_dropdown = show_combined_download || show_unarchive %>
+        <% if @submission.completed_at? || !is_combined_enabled %>
           <div class="join relative">
-            <download-button role="button" tabindex="0" aria-label="<%= t('download') %>" data-src="<%= local_assigns[:is_preview] ? (@sig_submitter ? submit_form_documents_path(@sig_submitter.slug, { sig: params[:sig], combined: is_combined_enabled }.compact_blank) : submissions_preview_download_index_path(@submission.slug, combined: is_combined_enabled.presence)) : submission_download_index_path(@submission, combined: is_combined_enabled.presence) %>" class="base-button <%= '!rounded-r-none !pr-2' if is_all_completed && !is_combined_enabled %>">
+            <download-button role="button" tabindex="0" aria-label="<%= t('download') %>" data-src="<%= local_assigns[:is_preview] ? (@sig_submitter ? submit_form_documents_path(@sig_submitter.slug, { sig: params[:sig], combined: is_combined_enabled }.compact_blank) : submissions_preview_download_index_path(@submission.slug, combined: is_combined_enabled.presence)) : submission_download_index_path(@submission, combined: is_combined_enabled.presence) %>" class="base-button <%= '!rounded-r-none !pr-2' if show_download_dropdown %>">
               <span class="flex items-center justify-center space-x-2" data-target="download-button.defaultButton">
                 <%= svg_icon('download', class: 'w-6 h-6') %>
                 <span class="hidden md:inline"><%= t('download') %></span>
@@ -49,26 +54,36 @@
                 <span class="hidden md:inline"><%= t('downloading') %></span>
               </span>
             </download-button>
-            <% if is_all_completed && !is_combined_enabled %>
-              <div class="dropdown dropdown-end">
+            <% if show_download_dropdown %>
+              <div class="dropdown dropdown-end has-[button:disabled]:dropdown-open">
                 <label tabindex="0" aria-label="<%= t('download') %>" class="base-button !rounded-l-none !pl-1 !pr-2 !border-l-neutral-500">
                   <span class="text-sm align-text-top">
                     <%= svg_icon('chevron_down', class: 'w-6 h-6 flex-shrink-0 stroke-2') %>
                   </span>
                 </label>
                 <ul class="z-10 dropdown-content p-2 mt-2 shadow menu text-base bg-base-100 rounded-box text-right">
-                  <li>
-                    <download-button role="button" tabindex="0" data-src="<%= local_assigns[:is_preview] ? (@sig_submitter ? submit_form_documents_path(@sig_submitter.slug, { sig: params[:sig], combined: true }.compact) : submissions_preview_download_index_path(@submission.slug, combined: true)) : submission_download_index_path(@submission, combined: true) %>" class="flex items-center">
-                      <span class="flex items-center justify-center space-x-2" data-target="download-button.defaultButton">
-                        <%= svg_icon('download', class: 'w-6 h-6 flex-shrink-0') %>
-                        <span class="whitespace-nowrap"><%= t('download_combined_pdf') %></span>
-                      </span>
-                      <span class="flex items-center justify-center space-x-2 hidden" data-target="download-button.loadingButton">
-                        <%= svg_icon('loader', class: 'w-6 h-6 animate-spin') %>
-                        <span><%= t('downloading') %></span>
-                      </span>
-                    </download-button>
-                  </li>
+                  <% if show_combined_download %>
+                    <li>
+                      <download-button role="button" tabindex="0" data-src="<%= local_assigns[:is_preview] ? (@sig_submitter ? submit_form_documents_path(@sig_submitter.slug, { sig: params[:sig], combined: true }.compact) : submissions_preview_download_index_path(@submission.slug, combined: true)) : submission_download_index_path(@submission, combined: true) %>" class="flex items-center">
+                        <span class="flex items-center justify-center space-x-2" data-target="download-button.defaultButton">
+                          <%= svg_icon('download', class: 'w-6 h-6 flex-shrink-0') %>
+                          <span class="whitespace-nowrap"><%= t('download_combined_pdf') %></span>
+                        </span>
+                        <span class="flex items-center justify-center space-x-2 hidden" data-target="download-button.loadingButton">
+                          <%= svg_icon('loader', class: 'w-6 h-6 animate-spin') %>
+                          <span><%= t('downloading') %></span>
+                        </span>
+                      </download-button>
+                    </li>
+                  <% end %>
+                  <% if show_unarchive %>
+                    <li>
+                      <button form="submission_unarchive_form">
+                        <%= button_title(title: t('unarchive'), disabled_with: t('unarchive'), icon: svg_icon('rotate', class: 'w-6 h-6 flex-shrink-0')) %>
+                      </button>
+                      <%= button_to '', submission_unarchive_index_path(@submission), form: { id: 'submission_unarchive_form' }, form_class: 'hidden' %>
+                    </li>
+                  <% end %>
                 </ul>
               </div>
             <% end %>
@@ -132,7 +147,7 @@
                         </span>
                       </span>
                     <% else %>
-                      <%= render 'submissions/value', page_width: width, page_height: height, font_scale:, area:, field:, attachments_index:, value: mask.present? ? Array.wrap(value).map { |e| TextUtils.mask_value(e, mask) }.join(', ') : value, locale: @submission.account.locale, timezone: @submission.account.timezone, submitter:, with_signature_id:, with_submitter_timezone:, with_timestamp_seconds:, with_signature_id_reason: %>
+                      <%= render 'submissions/value', page_width: width, page_height: height, font_scale:, area:, field:, attachments_index:, value: mask.present? ? Array.wrap(value).map { |e| TextUtils.mask_value(e, mask) }.join(', ') : value, locale: @submission.account.locale, timezone: @submission.account.timezone, submitter:, with_signature_id:, with_submitter_timezone:, with_timestamp_seconds:, with_signature_id_reason:, with_signature_id_completed_at: %>
                     <% end %>
                   <% elsif field['readonly'] != true && submitter && !submitter.completed_at? %>
                     <% submitters_order_index ||= (@submission.template_submitters || @submission.template.submitters).each_with_index.to_h { |s, i| [s['uuid'], i] } %>
@@ -166,11 +181,13 @@
                   <%= (@submission.template_submitters || @submission.template.submitters).find { |e| e['uuid'] == submitter&.uuid }&.dig('name') || "#{(index + 1).ordinalize} Submitter" %>
                 </span>
               </div>
-              <% if signed_in? && can?(:update, @submission) && submitter && !submitter.completed_at? && !submitter.declined_at? && !@submission.archived_at? && !@submission.template&.archived_at? && !@submission.expired? && !submitter.start_form_submission_events.any? %>
-                <span class="tooltip tooltip-left" data-tip="<%= t('edit') %>">
-                  <%= link_to edit_submitter_path(submitter), class: 'shrink-0 inline md:hidden md:group-hover:inline', data: { turbo_frame: 'modal' } do %>
-                    <%= svg_icon('pencil', class: 'w-5 h-5') %>
-                  <% end %>
+              <% if signed_in? && can?(:update, @submission) && submitter && !submitter.completed_at? && !@submission.completed_at? && !submitter.declined_at? && !@submission.archived_at? && !@submission.template&.archived_at? && !@submission.expired? && !submitter.start_form_submission_events.any? %>
+                <span class="tooltip tooltip-left tooltip-no-touch" data-tip="<%= t('edit') %>">
+                  <open-modal-mobile>
+                    <%= link_to edit_submitter_path(submitter), class: 'shrink-0 inline md:hidden md:group-hover:inline', data: { turbo_frame: 'modal' } do %>
+                      <%= svg_icon('pencil', class: 'w-5 h-5') %>
+                    <% end %>
+                  </open-modal-mobile>
                 </span>
               <% end %>
             </div>
@@ -199,7 +216,11 @@
               </div>
             <% end %>
             <div class="flex items-center space-x-1 mt-1">
-              <% if @submission.expire_at? && submitter && !submitter.completed_at? %>
+              <% if submitter&.viewer? %>
+                <%= svg_icon(submitter.opened_at? ? 'file_check' : 'file_unknown', class: 'w-5 h-5') %>
+              <% elsif submitter && !submitter.completed_at? && @submission.completed_at? %>
+                <%= svg_icon('writing_off', class: 'w-5 h-5') %>
+              <% elsif @submission.expire_at? && submitter && !submitter.completed_at? %>
                 <%= svg_icon('clock_exclamation', class: 'w-5 h-5') %>
               <% else %>
                 <%= svg_icon('writing', class: 'w-5 h-5') %>
@@ -207,9 +228,19 @@
               <span>
                 <% if submitter&.declined_at? %>
                   <%= t('declined_on_time', time: l(submitter.declined_at.in_time_zone(@submission.account.timezone), format: :short, locale: @submission.account.locale)) %>
+                <% elsif submitter&.viewer? %>
+                  <% if submitter.opened_at? %>
+                    <%= t('viewed_on_time', time: l(submitter.opened_at.in_time_zone(@submission.account.timezone), format: :short, locale: @submission.account.locale)) %>
+                  <% elsif @submission.completed_at? %>
+                    <%= t('not_viewed') %>
+                  <% else %>
+                    <%= t('not_viewed_yet') %>
+                  <% end %>
                 <% elsif submitter %>
                   <% if submitter.completed_at? %>
                     <%= l(submitter.completed_at.in_time_zone(@submission.account.timezone), format: :long, locale: @submission.account.locale) %>
+                  <% elsif @submission.completed_at? %>
+                    <%= t('not_completed') %>
                   <% elsif @submission.expire_at? %>
                     <% if @submission.expired? %>
                       <%= t(:expired) %>
@@ -232,15 +263,15 @@
                 </span>
               </div>
             <% end %>
-            <% if signed_in? && submitter && submitter.email && !submitter.completed_at && !@submission.archived_at? && !@submission.template&.archived_at? && can?(:update, @submission) && Accounts.can_send_emails?(current_account) && !@submission.expired? && !submitter.declined_at? %>
+            <% if signed_in? && submitter && submitter.email && !submitter.completed_at && !@submission.completed_at? && !@submission.archived_at? && !@submission.template&.archived_at? && can?(:update, @submission) && (Docuseal.multitenant? || Accounts.can_send_emails?(current_account)) && !@submission.expired? && !submitter.declined_at? %>
               <div class="mt-2 mb-1">
                 <%= button_to button_title(title: submitter.sent_at? ? t('re_send_email') : t('send_email'), disabled_with: t('sending')), submitter_send_email_index_path(submitter), class: 'btn btn-sm btn-primary w-full' %>
               </div>
             <% end %>
-            <% if signed_in? && submitter && submitter.phone && !submitter.completed_at && !@submission.archived_at? && !@submission.template&.archived_at? && can?(:update, @submission) && !@submission.expired? && !submitter.declined_at? %>
+            <% if signed_in? && submitter && submitter.phone && !submitter.completed_at && !@submission.completed_at? && !@submission.archived_at? && !@submission.template&.archived_at? && can?(:update, @submission) && !@submission.expired? && !submitter.declined_at? %>
               <%= render 'submissions/send_sms_button', submitter: %>
             <% end %>
-            <% if signed_in? && submitter && !submitter.completed_at? && !@submission.archived_at? && !@submission.template&.archived_at? && can?(:create, @submission) && !@submission.expired? && !submitter.declined_at? %>
+            <% if signed_in? && submitter && !submitter.viewer? && !submitter.completed_at? && !@submission.completed_at? && !@submission.archived_at? && !@submission.template&.archived_at? && can?(:create, @submission) && !@submission.expired? && !submitter.declined_at? %>
               <div class="mt-2 mb-1">
                 <a class="btn btn-sm btn-primary w-full" target="_blank" href="<%= submit_form_path(slug: submitter.slug) %>">
                   <%= t('sign_in_person') %>

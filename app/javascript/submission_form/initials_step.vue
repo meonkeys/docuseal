@@ -141,6 +141,7 @@
     <img
       v-if="modelValue || computedPreviousValue"
       :src="attachmentsIndex[modelValue || computedPreviousValue].url"
+      :alt="field.name || t('initials')"
       class="mx-auto bg-white border border-base-300 rounded max-h-44"
     >
     <div class="relative">
@@ -156,6 +157,8 @@
       <canvas
         v-show="!modelValue && !computedPreviousValue"
         ref="canvas"
+        role="img"
+        :aria-label="t('initials_drawing_area')"
         class="bg-white border border-base-300 rounded-2xl w-full draw-canvas"
       />
     </div>
@@ -165,7 +168,8 @@
       ref="textInput"
       class="base-input !text-2xl w-full mt-6 text-center"
       :required="field.required && !isInitialsStarted"
-      :placeholder="`${t('type_initial_here')}...`"
+      :aria-label="field.name || t('initials')"
+      :placeholder="`${t('type_initial_here')}${field.required ? '...' : ' (' + t('optional') + ')'}`"
       type="text"
       @focus="$emit('focus')"
       @input="updateWrittenInitials"
@@ -289,7 +293,7 @@ export default {
 
             if (!this.isDrawInitials) {
               this.$nextTick(() => {
-                if (this.$refs.textInput) {
+                if (this.$refs.textInput && this.field.required === true) {
                   this.initTextInitial()
                 }
               })

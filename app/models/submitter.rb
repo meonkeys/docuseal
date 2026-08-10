@@ -28,8 +28,8 @@
 #
 # Indexes
 #
+#  index_submitters_on_account_id_and_completed_at  (account_id,completed_at) WHERE (completed_at IS NOT NULL)
 #  index_submitters_on_account_id_and_id            (account_id,id)
-#  index_submitters_on_completed_at_and_account_id  (completed_at,account_id)
 #  index_submitters_on_email                        (email)
 #  index_submitters_on_external_id                  (external_id)
 #  index_submitters_on_slug                         (slug) UNIQUE
@@ -114,6 +114,12 @@ class Submitter < ApplicationRecord
       signature_field_types = %w[signature initials]
       fields.any? { |f| f['submitter_uuid'] == uuid && signature_field_types.include?(f['type']) }
     end
+  end
+
+  def viewer?
+    return false if submission.template_submitters.blank?
+
+    submission.template_submitters.any? { |s| s['uuid'] == uuid && s['is_viewer'] }
   end
 
   private
