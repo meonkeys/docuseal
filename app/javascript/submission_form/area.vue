@@ -101,7 +101,7 @@
           </template>
         </div>
         <div>
-          {{ new Date(signature.created_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', timeZoneName: 'short' }) }}
+          {{ new Date(signature.created_at).toLocaleString(undefined, { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', timeZoneName: 'short' }) }}
         </div>
       </div>
     </div>

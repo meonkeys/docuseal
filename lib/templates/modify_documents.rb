@@ -259,20 +259,20 @@ module Templates
       image = draw_image_redaction(image, ref['redact']) if ref['redact'].present?
       image = rotate_vips_image(image, ref['rotate'].to_i % 360)
 
-      extension, format_args =
+      extension, content_type, format_args =
         if attachment.content_type == 'image/jpeg'
-          ['.jpg', { Q: 90 }]
+          ['.jpg', 'image/jpeg', { Q: 90 }]
         else
-          ['.png', {}]
+          ['.png', 'image/png', {}]
         end
 
-      data = image.write_to_buffer(extension, **format_args)
+      data = image.write_to_buffer(extension, strip: true, **format_args)
 
       blob = ActiveStorage::Blob.create_and_upload!(
         io: StringIO.new(data),
-        filename: attachment.filename.to_s,
+        filename: "#{attachment.filename.base}#{extension}",
         metadata: { identified: true, analyzed: true },
-        content_type: attachment.content_type
+        content_type:
       )
 
       document = template.documents.create!(blob:)
@@ -345,10 +345,7 @@ module Templates
 
       uuid = pdf_ref['attachment_uuid']
       source = sources[[uuid, nil]] ||= open_or_build_pdf(attachments_index[uuid])
-      page = source.get_page(pdf_ref['page'])
-
-      width = page.width
-      height = page.height
+      width, height = source.page_size(pdf_ref['page'])
 
       width, height = height, width unless (pdf_ref['rotate'].to_i % 180).zero?
 
@@ -435,7 +432,9 @@ module Templates
     end
 
     def save_document(template, old_attachment, data)
-      annotations = data.size < ANNOTATIONS_SIZE_LIMIT ? Templates::BuildAnnotations.call(data) : []
+      doc = Pdfium::Document.open_io(StringIO.new(data))
+
+      annotations = data.size < ANNOTATIONS_SIZE_LIMIT ? Templates::BuildPdfiumAnnotations.call(doc) : []
       sha256 = Base64.urlsafe_encode64(Digest::SHA256.digest(data))
 
       blob = ActiveStorage::Blob.create_and_upload!(
@@ -448,7 +447,9 @@ module Templates
 
       document = template.documents.create!(blob:)
 
-      Templates::ProcessDocument.call(document, data)
+      Templates::ProcessDocument.call(document, data, doc:)
+    ensure
+      doc&.close
     end
 
     def remap_fields(template, mapping)

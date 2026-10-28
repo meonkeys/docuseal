@@ -18,6 +18,16 @@ class SubmissionsController < ApplicationController
     'payment' => 'credit_card', 'verification' => 'id', 'kba' => 'user_scan'
   }.freeze
 
+  STATUS_BADGES = {
+    'awaiting' => 'badge-info', 'sent' => 'badge-info', 'completed' => 'badge-success',
+    'opened' => 'badge-warning', 'declined' => 'badge-error'
+  }.freeze
+
+  STATUS_ICONS = {
+    'awaiting' => 'clock', 'sent' => 'send', 'completed' => 'circle_check',
+    'opened' => 'mail_opened', 'declined' => 'x_circle'
+  }.freeze
+
   def show
     @submission = Submissions.preload_with_pages(@submission)
 
@@ -40,7 +50,7 @@ class SubmissionsController < ApplicationController
   def create
     return redirect_to template_path(@template), alert: I18n.t('template_has_been_archived') if @template.archived_at?
 
-    save_template_message(@template, params) if params[:save_message] == '1'
+    save_template_message(@template, params) if params[:save_message] == '1' && can?(:update, @template)
 
     [params.delete(:subject), params.delete(:body)] if params[:is_custom_message] != '1'
 
@@ -55,6 +65,8 @@ class SubmissionsController < ApplicationController
       else
         create_submissions(@template, submissions_params, params)
       end
+
+    raise Submissions::CreateFromSubmitters::BaseError, 'Invalid email address' if submissions.blank?
 
     WebhookUrls.enqueue_events(submissions, 'submission.created')
 
@@ -83,7 +95,14 @@ class SubmissionsController < ApplicationController
         I18n.t('submission_has_been_archived')
       end
 
-    redirect_back(fallback_location: @submission.template_id ? template_path(@submission.template) : root_path, notice:)
+    if turbo_native_app? && request.format.turbo_stream?
+      flash.now[:notice] = notice
+
+      render turbo_stream: [turbo_stream.remove(@submission), turbo_stream.append_all('body', partial: 'shared/flash')]
+    else
+      redirect_back(fallback_location: @submission.template_id ? template_path(@submission.template) : root_path,
+                    notice:)
+    end
   end
 
   private

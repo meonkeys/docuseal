@@ -104,6 +104,11 @@ export default {
       required: false,
       default: () => ({})
     },
+    fieldsUuidIndex: {
+      type: Object,
+      required: false,
+      default: () => ({})
+    },
     values: {
       type: Object,
       required: true
@@ -121,6 +126,11 @@ export default {
       type: String,
       required: false,
       default: ''
+    },
+    fetchOptions: {
+      type: Object,
+      required: false,
+      default: () => ({})
     }
   },
   emits: ['focus', 'submit', 'update:model-value', 'attached'],
@@ -132,7 +142,7 @@ export default {
     }
   },
   computed: {
-    fieldsUuidIndex () {
+    formulaFieldsUuidIndex () {
       return this.fields.reduce((acc, field) => {
         acc[field.uuid] = field
 
@@ -146,7 +156,7 @@ export default {
       return this.provider === 'paypal'
     },
     paymentEndpoint () {
-      return this.isPaypal ? '/api/paypal_payments' : '/api/stripe_payments'
+      return `/s/${this.submitterSlug}/${this.isPaypal ? 'paypal_payments' : 'stripe_payments'}`
     },
     sessionId () {
       return this.queryParams.get('stripe_session_id') || this.queryParams.get('paypal_order_id') || (this.isPaypal && this.queryParams.get('token'))
@@ -211,17 +221,31 @@ export default {
     },
     calculateFormula () {
       const transformedFormula = this.normalizeFormula(this.field.preferences.formula).replace(/{{(.*?)}}/g, (match, uuid) => {
-        return this.readonlyValues[uuid] || this.values[uuid] || 0.0
+        const value = this.readonlyValues[uuid] || this.values[uuid]
+
+        if (this.fieldsUuidIndex[uuid]?.type === 'date') {
+          return this.dateFormulaValue(value)
+        }
+
+        return value || 0.0
       })
 
       return this.math.evaluate(transformedFormula.toLowerCase())
+    },
+    dateFormulaValue (value) {
+      if (!value) return 'null'
+      if (value === '{{date}}') return 'today()'
+
+      const [year, month, day = 1] = value.slice(0, 10).split('-').map(Number)
+
+      return Date.UTC(year, month - 1, day) / 86400000
     },
     normalizeFormula (formula, depth = 0) {
       if (depth > 10) return formula
 
       return formula.replace(/{{(.*?)}}/g, (match, uuid) => {
-        if (this.fieldsUuidIndex[uuid]) {
-          return `(${this.normalizeFormula(this.fieldsUuidIndex[uuid].preferences.formula, depth + 1)})`
+        if (this.formulaFieldsUuidIndex[uuid]) {
+          return `(${this.normalizeFormula(this.formulaFieldsUuidIndex[uuid].preferences.formula, depth + 1)})`
         } else {
           return match
         }
@@ -231,10 +255,8 @@ export default {
       if (this.sessionId) {
         return fetch(this.baseUrl + this.paymentEndpoint + '/' + this.sessionId, {
           method: 'PUT',
-          body: JSON.stringify({
-            submitter_slug: this.submitterSlug
-          }),
-          headers: { 'Content-Type': 'application/json' }
+          ...this.fetchOptions,
+          headers: { 'Content-Type': 'application/json', ...this.fetchOptions.headers }
         }).then(async (resp) => {
           if (resp.status === 422 || resp.status === 500) {
             this.isProcessing = false
@@ -269,12 +291,12 @@ export default {
       fetch(this.baseUrl + this.paymentEndpoint, {
         method: 'POST',
         body: JSON.stringify({
-          submitter_slug: this.submitterSlug,
           field_uuid: this.field.uuid,
           check_status: checkStatus,
           referer: this.normalizedPaymentUrl()
         }),
-        headers: { 'Content-Type': 'application/json' }
+        ...this.fetchOptions,
+        headers: { 'Content-Type': 'application/json', ...this.fetchOptions.headers }
       }).then(async (resp) => {
         if (resp.status === 422 || resp.status === 500) {
           const data = await resp.json()

@@ -57,8 +57,11 @@ en: &en
   paypal_account_has_been_connected: PayPal account has been connected.
   re_connect_paypal: Re-connect PayPal
   disconnect: Disconnect
-  failed_to_connect_paypal: Failed to connect PayPal. Please try again.
-  paypal_connect_not_completed: PayPal connection was not completed.
+  failed_to_connect_paypal_please_try_again: Failed to connect PayPal. Please try again.
+  paypal_connection_was_not_completed: PayPal connection was not completed.
+  disconnecting_your_paypal_account_will_prevent_you_from_offering_paypal_services_and_products_on_your_website_do_you_wish_to_continue: Disconnecting your PayPal account will prevent you from offering PayPal services and products on your website. Do you wish to continue?
+  attention_you_currently_cannot_receive_payments_due_to_restriction_on_your_paypal_account_please_reach_out_to_paypal_customer_support_or_connect_to_paypal_com_for_more_information: 'Attention: You currently cannot receive payments due to restriction on your PayPal account. Please reach out to PayPal Customer Support or connect to https://www.paypal.com for more information.'
+  attention_please_confirm_your_email_address_on_paypal_com_in_order_to_receive_payments_you_currently_cannot_receive_payments: 'Attention: Please confirm your email address on https://www.paypal.com/businessprofile/settings in order to receive payments! You currently cannot receive payments.'
   payment_receipt: Payment Receipt
   amount_paid: Amount paid
   transaction: Transaction
@@ -225,6 +228,7 @@ en: &en
   profile_details: Profile Details
   sign_up_with_google: Sign up with Google
   sign_up_with_microsoft: Sign up with Microsoft
+  redirecting_to_provider: Redirecting to %{provider}...
   by_creating_an_account_you_agree_to_our_html: 'By creating an account, you agree to our <a target="_blank" href="https://www.docuseal.com/privacy">Privacy Policy</a> and <a target="_blank" href="https://www.docuseal.com/terms">Terms of Service</a>.'
   enter_email_to_continue: Enter email to continue
   account: Account
@@ -257,6 +261,9 @@ en: &en
   should_be_a_valid_url: should be a valid URL
   your_account_will_be_permanently_deleted_within_2_months_please_contact_us_if_you_want_to_keep_your_account: Your account will be permanently deleted within 2 months. Please contact us if you want to keep your account.
   test_mode: Test mode
+  exit_test_mode: Exit test mode
+  enter_test_mode: Enter test mode
+  sort_by: Sort by
   copy: Copy
   copied: Copied
   rotate: Rotate
@@ -407,6 +414,7 @@ en: &en
   powered_by: Powered by
   qr_code: QR Code
   print: Print
+  scan: Scan
   scan_the_qr_code_above_with_your_phone_camera_to_open_and_sign_this_document: Scan the QR code above with your phone camera to open and sign this document.
   count_documents_signed_with_html: '<b>%{count}</b> documents signed with'
   storage: Storage
@@ -476,6 +484,8 @@ en: &en
   document_templates_html: <span class="hidden lg:inline">Document</span> Templates
   archived: Archived
   search: Search
+  no_results: No Results
+  folders: Folders
   submissions_not_found: Submissions not Found
   create: Create
   view_archived: View Archived
@@ -498,7 +508,7 @@ en: &en
   upload_new_document: Upload New Document
   uploading: Uploading
   expired: Expired
-  sign_now: Sign now
+  sign_now: Sign Now
   archive: Archive
   archiving: Archiving
   restore: Restore
@@ -517,8 +527,12 @@ en: &en
   export: Export
   there_are_no_submissions: There are no Submissions
   send_an_invitation_to_fill_and_complete_the_form: Send an invitation to fill and complete the form
+  send: Send
   send_to_recipients: Send to Recipients
   sign_it_yourself: Sign it Yourself
+  sign_yourself: Sign Yourself
+  revisions: Revisions
+  no_revisions_yet: No revisions yet
   api_and_embedding: API and Embedding
   template_id: Template ID
   embedding_url: Embedding URL
@@ -593,6 +607,9 @@ en: &en
   there_are_no_signatures: There are no signatures
   signed_with_trusted_certificate: Signed with trusted certificate
   signed_with_external_certificate: Signed with external certificate
+  signature_valid: Signature valid
+  signature_verification_failed: Signature verification failed
+  contains_unsigned_changes_after_the_last_signature: Contains unsigned changes after the last signature
   setup_2fa_to_continue: Setup 2FA to continue.
   create_a_new_account: Create a new account.
   you_are_already_signed_in: You are already signed in.
@@ -607,6 +624,7 @@ en: &en
   form_has_been_declined: Form has been declined.
   form_is_view_only: Form is view only.
   file_is_missing: File is missing
+  file_is_not_an_image: File is not an image
   folder_name_has_been_updated: Folder name has been updated.
   unable_to_rename_folder: Unable to rename folder.
   template_has_been_removed: Template has been removed.
@@ -666,7 +684,7 @@ en: &en
   thirty_days: 30 days
   free: Free
   unlimited_documents_storage: Unlimited documents storage
-  users_management: Users management
+  user_management: User management
   ten_field_types: 10 field types
   multiple_signers: Multiple signers
   automatic_esignature: Automatic eSignature
@@ -686,6 +704,7 @@ en: &en
   developer_sandbox: Developer Sandbox.
   upgrade_to_start_using_in_production_html: '<a href="%{url}" target="_blank" class="link font-semibold">Upgrade</a> to start using in Production.'
   download_combined_pdf: Download combined PDF
+  download_event_log: Download Event Log
   audit_log: Audit Log
   signers: Signers
   not_invited_yet:  Not invited yet
@@ -697,7 +716,7 @@ en: &en
   declined_on_time: 'Declined on %{time}'
   expire_on_time: 'Expire on %{time}'
   sign_in_person: Sign In-person
-  create_a_new_template_document_form_or_submit_the_existing_one_html: <a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Create a new template</a> document form or <a href="%{start_form_link}" target="_blank" class="inline underline font-medium">submit the existing one</a>
+  create_a_new_template_document_form_html: <a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Create a new template</a> document form
   send_email_copy_with_completed_documents_to_a_specified_bcc_address: Send email copy with completed documents to a specified BCC address.
   re_send_email: Re-send Email
   re_send_emails: Re-send Emails
@@ -760,6 +779,7 @@ en: &en
   submitter_cannot_be_updated: Submitter cannot be updated.
   at_least_one_field_must_be_filled: At least one field must be filled.
   archived_users: Archived Users
+  archived_submissions: Archived Submissions
   embedding_users: Embedding Users
   view_embedding_users: View Embedding Users
   key: Key
@@ -783,6 +803,7 @@ en: &en
   the_code_has_been_sent_to_your_email: The code has been sent to your email.
   enter_the_verification_code_from_your_email: Enter the verification code from your email.
   too_many_attempts: Too many attempts.
+  verification_email_bounced: "Unable to send the verification code: email to this address bounced."
   verification_code: Verification Code
   resend_code: Resend Code
   verify_new_sign_in: Verify new sign in
@@ -810,10 +831,13 @@ en: &en
   overdue_payment: Overdue Payment
   your_pro_plan_has_been_suspended_due_to_unpaid_invoices_you_can_update_your_payment_details_to_settle_the_invoice_and_continue_using_docuseal_or_cancel_your_subscription: Your Pro Plan has been suspended due to unpaid invoices. You can update your payment details to settle the invoice and continue using DocuSeal or cancel your subscription.
   manage_subscription: Manage Subscription
+  docuseal_version_security_release_is_available: "DocuSeal v%{version} security release is available."
+  click_here_to_view_the_instructions_and_update_your_app_html: '<a href="%{url}" class="link" target="_blank" rel="noopener noreferrer nofollow">Click here</a> to view the instructions and update your app.'
   submission_created_by_email_html: '<b>Submission created</b> by %{email}'
   submission_created_by_email_via_source_html: '<b>Submission created</b> by %{email} via %{source}'
   submission_created_via_source_html: '<b>Submission created</b> via %{source}'
   pro_user_seats_used: Pro user seats used
+  manage: Manage
   manage_plan: Manage plan
   this_submission_has_multiple_signers_which_prevents_the_use_of_a_sharing_link_html: This submission has multiple signers, which prevents the use of a sharing link as it's unclear which signer is responsible for specific fields. To resolve this, follow this <a href="https://www.docuseal.com/resources/pre-filling-recipients" class="link font-bold" rel="noopener noreferrer nofollow" target="_blank">guide</a> to define the default signer details.
   welcome_to_docuseal: Welcome to DocuSeal
@@ -914,6 +938,9 @@ en: &en
   connect_google_drive: Connect Google Drive
   google_drive_has_been_connected: Google Drive has been connected
   unable_to_identify_reset_your_password_to_sign_in: Unable to identify. Reset your password to sign in.
+  use_sso_to_sign_in: Use SAML SSO app to sign in.
+  contact_your_admin_to_invite_you: Contact your administrator to invite you to the team.
+  too_many_sign_ups: Too many sign ups. Try again later.
   desktop: Desktop
   mobile: Mobile
   tablet: Tablet
@@ -985,6 +1012,24 @@ en: &en
   open_file_from: 'Open file from'
   cancel: Cancel
   open: Open
+  signature_request_email_sent_to_recipients_with_a_link_to_review_and_sign: Signature request email sent to recipients with a link to review and sign.
+  view_only_email_sent_to_recipients_that_need_to_only_review_the_documents: View only email sent to recipients that need to only review the documents.
+  reminds_recipients_who_havent_completed_their_part_yet_to_sign_following_the_reminders_schedule: Reminds recipients who haven't completed their part yet to sign, following the reminders schedule.
+  signature_request_sms_sent_to_recipients_with_a_link_to_review_and_sign: Signature request SMS sent to recipients with a link to review and sign.
+  phone_2fa_verification_text_message: Phone 2FA verification text message.
+  notification_email_sent_to_the_sender_user_and_bcc_addresses_once_the_submission_is_completed_by_all_parties: Notification email sent to the sender user and BCC addresses once the submission is completed by all parties.
+  completed_documents_copy_email_sent_to_recipients_upon_completion_containing_their_documents: Completed documents copy email sent to recipients upon completion containing their documents.
+  fields: Fields
+  more: More
+  ok: OK
+  failed_to_download_files: Failed to download files
+  failed_to_upload_files: Failed to upload files
+  failed_to_save_the_scan: Failed to save the scan
+  failed_to_scan_the_document: Failed to scan the document
+  document_scanning_is_not_available_on_this_device: Document scanning is not available on this device
+  click_to_upload: Click to upload
+  cc_view_only: CC View-only
+  bcc_completed: BCC Completed
   devise:
     confirmations:
       confirmed: Your email address has been successfully confirmed.
@@ -1000,6 +1045,7 @@ en: &en
     invite: Invite
     link: Link
     mcp: MCP
+    self: Sign Yourself
   submission_event_names:
     send_email_to_html: '<b>Email sent</b> to %{submitter_name}'
     bounce_email_html: '<b>Email bounced</b> %{submitter_name}'
@@ -1113,11 +1159,19 @@ en: &en
     submission_submitters: Submitters list
     submission_link: Submission link
     documents_link: Documents link
+  date:
+    formats:
+      default: "%m/%d/%Y"
+      short: "%b %-d"
+      long: "%B %-d, %Y"
   time:
     formats:
-      detailed: "%B %d, %Y %H:%M:%S"
+      short: "%b %-d, %-I:%M %p"
+      long: "%B %-d, %Y at %-I:%M %p"
+      detailed: "%B %-d, %Y at %-I:%M:%S %p"
 
 es: &es
+  click_to_upload: Haz clic para cargar
   knowledge_based_authentication: Autenticación basada en el conocimiento
   kba_field: KBA
   passed: Aprobado
@@ -1147,8 +1201,11 @@ es: &es
   paypal_integration: Integración con PayPal
   paypal_account_has_been_connected: La cuenta de PayPal ha sido conectada.
   re_connect_paypal: Volver a conectar PayPal
-  failed_to_connect_paypal: No se pudo conectar PayPal. Por favor, inténtalo de nuevo.
-  paypal_connect_not_completed: La conexión con PayPal no se completó.
+  failed_to_connect_paypal_please_try_again: No se pudo conectar PayPal. Por favor, inténtalo de nuevo.
+  paypal_connection_was_not_completed: La conexión con PayPal no se completó.
+  disconnecting_your_paypal_account_will_prevent_you_from_offering_paypal_services_and_products_on_your_website_do_you_wish_to_continue: Desconectar tu cuenta de PayPal impedirá que ofrezcas servicios y productos de PayPal en tu sitio web. ¿Deseas continuar?
+  attention_you_currently_cannot_receive_payments_due_to_restriction_on_your_paypal_account_please_reach_out_to_paypal_customer_support_or_connect_to_paypal_com_for_more_information: 'Atención: Actualmente no puedes recibir pagos debido a una restricción en tu cuenta de PayPal. Por favor, contacta con el Soporte al Cliente de PayPal o visita https://www.paypal.com para más información.'
+  attention_please_confirm_your_email_address_on_paypal_com_in_order_to_receive_payments_you_currently_cannot_receive_payments: 'Atención: Por favor, confirma tu dirección de correo electrónico en https://www.paypal.com/businessprofile/settings para poder recibir pagos. Actualmente no puedes recibir pagos.'
   payment_receipt: Recibo de pago
   amount_paid: Importe pagado
   transaction: Transacción
@@ -1325,6 +1382,7 @@ es: &es
   profile_details: Detalles del perfil
   sign_up_with_google: Registrarse con Google
   sign_up_with_microsoft: Registrarse con Microsoft
+  redirecting_to_provider: Redirigiendo a %{provider}...
   by_creating_an_account_you_agree_to_our_html: 'Al crear una cuenta, aceptas nuestra <a target="_blank" href="https://www.docuseal.com/privacy">Política de Privacidad</a> y <a target="_blank" href="https://www.docuseal.com/terms">Términos de Servicio</a>.'
   enter_email_to_continue: Ingresa tu correo electrónico para continuar
   account: Cuenta
@@ -1357,6 +1415,9 @@ es: &es
   should_be_a_valid_url: debe ser una URL válida
   your_account_will_be_permanently_deleted_within_2_months_please_contact_us_if_you_want_to_keep_your_account: Tu solicitud de eliminación de cuenta se procesará en un plazo de 2 meses. Por favor contáctanos si deseas mantener tu cuenta.
   test_mode: Modo de prueba
+  exit_test_mode: Salir del modo de prueba
+  enter_test_mode: Entrar en modo de prueba
+  sort_by: Ordenar por
   copy: Copiar
   copied: Copiado
   rotate: Rotar
@@ -1452,6 +1513,13 @@ es: &es
   completed_form_message: Mensaje de formulario completado
   completed_form_redirect_button: Botón de redirección de formulario completado
   documents_copy_email: Correo de copia de documentos
+  signature_request_email_sent_to_recipients_with_a_link_to_review_and_sign: Correo de solicitud de firma enviado a los destinatarios con un enlace para revisar y firmar.
+  view_only_email_sent_to_recipients_that_need_to_only_review_the_documents: Correo de solo lectura enviado a los destinatarios que solo necesitan revisar los documentos.
+  reminds_recipients_who_havent_completed_their_part_yet_to_sign_following_the_reminders_schedule: Recuerda firmar a los destinatarios que aún no han completado su parte, según la programación de recordatorios.
+  signature_request_sms_sent_to_recipients_with_a_link_to_review_and_sign: SMS de solicitud de firma enviado a los destinatarios con un enlace para revisar y firmar.
+  phone_2fa_verification_text_message: Mensaje de texto de verificación 2FA por teléfono.
+  notification_email_sent_to_the_sender_user_and_bcc_addresses_once_the_submission_is_completed_by_all_parties: Correo de notificación enviado al usuario remitente y a las direcciones BCC una vez que todas las partes han completado el envío.
+  completed_documents_copy_email_sent_to_recipients_upon_completion_containing_their_documents: Correo con la copia de los documentos completados enviado a los destinatarios al finalizar, con sus documentos.
   form_custom_css: CSS personalizado del formulario
   subject: Asunto
   body: Cuerpo
@@ -1507,6 +1575,7 @@ es: &es
   powered_by: Desarrollado por
   qr_code: Código QR
   print: Imprimir
+  scan: Escanear
   scan_the_qr_code_above_with_your_phone_camera_to_open_and_sign_this_document: Escanea el código QR de arriba con la cámara de tu teléfono para abrir y firmar este documento.
   count_documents_signed_with_html: '<b>%{count}</b> documentos firmados con'
   storage: Almacenamiento
@@ -1576,6 +1645,8 @@ es: &es
   document_templates_html: Plantillas <span class="hidden lg:inline">de documento</span>
   archived: Archivado
   search: Buscar
+  no_results: Sin resultados
+  folders: Carpetas
   submissions_not_found: Envíos no encontrados
   create: Crear
   view_archived: Ver Archivados
@@ -1617,8 +1688,12 @@ es: &es
   export: Exportar
   there_are_no_submissions: No hay envíos
   send_an_invitation_to_fill_and_complete_the_form: Enviar una invitación para completar el formulario
+  send: Enviar
   send_to_recipients: Enviar a los destinatarios
   sign_it_yourself: Fírmalo tú mismo
+  sign_yourself: Firma tú mismo
+  revisions: Revisiones
+  no_revisions_yet: Aún no hay revisiones
   api_and_embedding: API e Integración
   template_id: ID de plantilla
   embedding_url: URL de integración
@@ -1693,6 +1768,9 @@ es: &es
   there_are_no_signatures: No hay firmas
   signed_with_trusted_certificate: Firmado con certificado de confianza
   signed_with_external_certificate: Firmado con certificado externo
+  signature_valid: Firma válida
+  signature_verification_failed: Verificación de firma fallida
+  contains_unsigned_changes_after_the_last_signature: Contiene cambios no firmados después de la última firma
   setup_2fa_to_continue: Configura 2FA para continuar.
   create_a_new_account: Crear una nueva cuenta.
   you_are_already_signed_in: Ya has iniciado sesión.
@@ -1707,6 +1785,7 @@ es: &es
   form_has_been_declined: El formulario ha sido rechazado.
   form_is_view_only: El formulario es de solo lectura.
   file_is_missing: Falta el archivo
+  file_is_not_an_image: El archivo no es una imagen
   folder_name_has_been_updated: El nombre de la carpeta ha sido actualizado.
   unable_to_rename_folder: No se pudo renombrar la carpeta.
   template_has_been_removed: La plantilla ha sido eliminada.
@@ -1766,7 +1845,7 @@ es: &es
   thirty_days: 30 días
   free: Gratis
   unlimited_documents_storage: Almacenamiento ilimitado
-  users_management: Gestión de usuarios
+  user_management: Gestión de usuarios
   ten_field_types: 10 tipos de campos
   multiple_signers: Múltiples firmantes
   automatic_esignature: Firma electrónica automática
@@ -1786,6 +1865,7 @@ es: &es
   developer_sandbox: Sandbox para desarrolladores.
   upgrade_to_start_using_in_production_html: '<a href="%{url}" target="_blank" class="link font-semibold">Actualiza</a> para empezar a usar en Producción.'
   download_combined_pdf: Descargar PDF combinado
+  download_event_log: Descargar registro de eventos
   audit_log: Registro de Auditoría
   signers: Firmantes
   not_invited_yet: Aún no invitado
@@ -1797,7 +1877,7 @@ es: &es
   declined_on_time: 'Rechazado el %{time}'
   expire_on_time: 'Expira el %{time}'
   sign_in_person: Firma en persona
-  create_a_new_template_document_form_or_submit_the_existing_one_html: <a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Crear una nueva plantilla</a> de documento o <a href="%{start_form_link}" target="_blank" class="inline underline font-medium">enviar el existente</a>
+  create_a_new_template_document_form_html: <a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Crear una nueva plantilla</a> de documento
   send_email_copy_with_completed_documents_to_a_specified_bcc_address: Enviar una copia del correo electrónico con los documentos completados a una dirección BCC especificada.
   re_send_email: Reenviar email
   re_send_emails: Reenviar emails
@@ -1857,6 +1937,7 @@ es: &es
   submitter_cannot_be_updated: No se puede editar el destinatario.
   at_least_one_field_must_be_filled: Al menos un campo debe estar completo.
   archived_users: Usuarios Archivados
+  archived_submissions: Envíos Archivados
   embedding_users: Usuarios integrados
   view_embedding_users: Ver usuarios integrados
   key: Clave
@@ -1880,6 +1961,7 @@ es: &es
   the_code_has_been_sent_to_your_email: El código ha sido enviado a tu correo electrónico.
   enter_the_verification_code_from_your_email: Ingresa el código de verificación de tu correo electrónico.
   too_many_attempts: Demasiados intentos.
+  verification_email_bounced: "No se pudo enviar el código de verificación: el correo a esta dirección rebotó."
   verification_code: Código de Verificación
   resend_code: Reenviar Código
   verify_new_sign_in: Verificar nuevo inicio de sesión
@@ -1907,10 +1989,13 @@ es: &es
   overdue_payment: Pago Atrasado
   your_pro_plan_has_been_suspended_due_to_unpaid_invoices_you_can_update_your_payment_details_to_settle_the_invoice_and_continue_using_docuseal_or_cancel_your_subscription: Tu plan Pro ha sido suspendido debido a facturas impagas. Puedes actualizar tus datos de pago para liquidar la factura y seguir usando DocuSeal o cancelar tu suscripción.
   manage_subscription: Gestionar Suscripción
+  docuseal_version_security_release_is_available: "La versión de seguridad DocuSeal v%{version} está disponible."
+  click_here_to_view_the_instructions_and_update_your_app_html: '<a href="%{url}" class="link" target="_blank" rel="noopener noreferrer nofollow">Haz clic aquí</a> para ver las instrucciones y actualizar tu aplicación.'
   submission_created_by_email_html: '<b>Envío creado</b> por %{email}'
   submission_created_by_email_via_source_html: '<b>Envío creado</b> por %{email} a través de %{source}'
   submission_created_via_source_html: '<b>Envío creado</b> a través de %{source}'
   pro_user_seats_used: Plazas de usuario Pro en uso
+  manage: Gestionar
   manage_plan: Gestionar plan
   this_submission_has_multiple_signers_which_prevents_the_use_of_a_sharing_link_html: 'Este envío tiene múltiples firmantes, lo que impide el uso de un enlace para compartir, ya que no está claro qué firmante es responsable de los campos específicos. Para resolver esto, sigue esta <a href="https://www.docuseal.com/resources/pre-filling-recipients" class="link font-bold" rel="noopener noreferrer nofollow" target="_blank">guía</a> para definir los detalles predeterminados del firmante.'
   welcome_to_docuseal: Bienvenido a DocuSeal
@@ -2011,6 +2096,9 @@ es: &es
   connect_google_drive: Conectar Google Drive
   google_drive_has_been_connected: Google Drive se ha conectado
   unable_to_identify_reset_your_password_to_sign_in: No se pudo identificar. Restablece tu contraseña para iniciar sesión.
+  use_sso_to_sign_in: Usa la aplicación SAML SSO para iniciar sesión.
+  contact_your_admin_to_invite_you: Contacta a tu administrador para que te invite al equipo.
+  too_many_sign_ups: Demasiados registros. Inténtalo de nuevo más tarde.
   desktop: Escritorio
   mobile: Móvil
   tablet: Tableta
@@ -2082,6 +2170,16 @@ es: &es
   open_file_from: 'Abrir archivo desde'
   cancel: Cancelar
   open: Abrir
+  fields: Campos
+  more: Más
+  ok: Aceptar
+  failed_to_download_files: No se pudieron descargar los archivos
+  failed_to_upload_files: No se pudieron subir los archivos
+  failed_to_save_the_scan: No se pudo guardar el escaneo
+  failed_to_scan_the_document: No se pudo escanear el documento
+  document_scanning_is_not_available_on_this_device: El escaneo de documentos no está disponible en este dispositivo
+  cc_view_only: CC Solo lectura
+  bcc_completed: CCO Completado
   devise:
     confirmations:
       confirmed: Tu dirección de correo electrónico ha sido confirmada correctamente.
@@ -2097,6 +2195,7 @@ es: &es
     invite: Invitación
     link: Enlace
     mcp: MCP
+    self: Firma tú mismo
   submission_event_names:
     send_email_to_html: '<b>Correo electrónico enviado</b> a %{submitter_name}'
     bounce_email_html: '<b>Correo electrónico rebotado</b> %{submitter_name}'
@@ -2210,11 +2309,33 @@ es: &es
     submission_submitters: Lista de firmantes
     submission_link: Enlace del envío
     documents_link: Enlace de los documentos
+  date:
+    abbr_month_names:
+      -
+      - ene
+      - feb
+      - mar
+      - abr
+      - may
+      - jun
+      - jul
+      - ago
+      - sept
+      - oct
+      - nov
+      - dic
+    formats:
+      default: "%d/%m/%Y"
+      short: "%-d %b"
+      long: "%-d de %B de %Y"
   time:
     formats:
-      detailed: "%-d de %B de %Y %H:%M:%S"
+      short: "%-d %b, %-H:%M"
+      long: "%-d de %B de %Y a las %-H:%M"
+      detailed: "%-d de %B de %Y a las %-H:%M:%S"
 
 it: &it
+  click_to_upload: Clicca per caricare
   knowledge_based_authentication: Autenticazione basata sulla conoscenza
   kba_field: KBA
   passed: Superato
@@ -2244,8 +2365,11 @@ it: &it
   paypal_integration: Integrazione PayPal
   paypal_account_has_been_connected: L'account PayPal è stato collegato.
   re_connect_paypal: Ricollega PayPal
-  failed_to_connect_paypal: Impossibile collegare PayPal. Riprova.
-  paypal_connect_not_completed: La connessione con PayPal non è stata completata.
+  failed_to_connect_paypal_please_try_again: Impossibile collegare PayPal. Riprova.
+  paypal_connection_was_not_completed: La connessione con PayPal non è stata completata.
+  disconnecting_your_paypal_account_will_prevent_you_from_offering_paypal_services_and_products_on_your_website_do_you_wish_to_continue: La disconnessione del tuo account PayPal ti impedirà di offrire servizi e prodotti PayPal sul tuo sito web. Vuoi continuare?
+  attention_you_currently_cannot_receive_payments_due_to_restriction_on_your_paypal_account_please_reach_out_to_paypal_customer_support_or_connect_to_paypal_com_for_more_information: 'Attenzione: Al momento non puoi ricevere pagamenti a causa di una restrizione sul tuo account PayPal. Contatta l''Assistenza Clienti PayPal o visita https://www.paypal.com per maggiori informazioni.'
+  attention_please_confirm_your_email_address_on_paypal_com_in_order_to_receive_payments_you_currently_cannot_receive_payments: 'Attenzione: Conferma il tuo indirizzo email su https://www.paypal.com/businessprofile/settings per poter ricevere pagamenti! Al momento non puoi ricevere pagamenti.'
   payment_receipt: Ricevuta di pagamento
   amount_paid: Importo pagato
   transaction: Transazione
@@ -2422,6 +2546,7 @@ it: &it
   profile_details: Dettagli del profilo
   sign_up_with_google: Registrati con Google
   sign_up_with_microsoft: Registrati con Microsoft
+  redirecting_to_provider: Reindirizzamento a %{provider}...
   by_creating_an_account_you_agree_to_our_html: 'Creando un account, accetti la nostra <a target="_blank" href="https://www.docuseal.com/privacy">Privacy Policy</a> e i nostri <a target="_blank" href="https://www.docuseal.com/terms">Termini di servizio</a>.'
   enter_email_to_continue: "Inserisci l'email per continuare"
   account: Account
@@ -2454,6 +2579,9 @@ it: &it
   should_be_a_valid_url: deve essere un URL valido
   your_account_will_be_permanently_deleted_within_2_months_please_contact_us_if_you_want_to_keep_your_account: "La tua richiesta di rimozione dell'account sarà elaborata entro 2 mesi. Contattaci se desideri mantenere il tuo account."
   test_mode: Modalità di test
+  exit_test_mode: Esci dalla modalità di prova
+  enter_test_mode: Entra in modalità di prova
+  sort_by: Ordina per
   copy: Copia
   copied: Copiato
   rotate: Ruota
@@ -2549,6 +2677,13 @@ it: &it
   completed_form_message: Messaggio di completamento del modulo
   completed_form_redirect_button: Pulsante di reindirizzamento dopo il completamento del modulo
   documents_copy_email: Email con copia dei documenti
+  signature_request_email_sent_to_recipients_with_a_link_to_review_and_sign: Email di richiesta di firma inviata ai destinatari con un link per revisionare e firmare.
+  view_only_email_sent_to_recipients_that_need_to_only_review_the_documents: Email di sola lettura inviata ai destinatari che devono solo revisionare i documenti.
+  reminds_recipients_who_havent_completed_their_part_yet_to_sign_following_the_reminders_schedule: Ricorda di firmare ai destinatari che non hanno ancora completato la loro parte, in base alla pianificazione dei promemoria.
+  signature_request_sms_sent_to_recipients_with_a_link_to_review_and_sign: SMS di richiesta di firma inviato ai destinatari con un link per revisionare e firmare.
+  phone_2fa_verification_text_message: Messaggio di testo per la verifica 2FA tramite telefono.
+  notification_email_sent_to_the_sender_user_and_bcc_addresses_once_the_submission_is_completed_by_all_parties: Email di notifica inviata all'utente mittente e agli indirizzi BCC una volta che l'invio è stato completato da tutte le parti.
+  completed_documents_copy_email_sent_to_recipients_upon_completion_containing_their_documents: Email con la copia dei documenti completati inviata ai destinatari al completamento, con i loro documenti.
   form_custom_css: CSS personalizzato del modulo
   subject: Oggetto
   body: Corpo
@@ -2604,6 +2739,7 @@ it: &it
   powered_by: Fornito da
   qr_code: Codice QR
   print: Stampa
+  scan: Scansiona
   scan_the_qr_code_above_with_your_phone_camera_to_open_and_sign_this_document: Scansiona il codice QR qui sopra con la fotocamera del tuo telefono per aprire e firmare questo documento.
   count_documents_signed_with_html: '<b>%{count}</b> documenti firmati con'
   storage: Archiviazione
@@ -2673,6 +2809,8 @@ it: &it
   document_templates_html: Modelli <span class="hidden lg:inline">di documento</span>
   archived: Archiviato
   search: Cerca
+  no_results: Nessun risultato
+  folders: Cartelle
   submissions_not_found: Invii non trovati
   create: Crea
   view_archived: Visualizza Archiviati
@@ -2714,8 +2852,12 @@ it: &it
   export: Esporta
   there_are_no_submissions: Non ci sono invii
   send_an_invitation_to_fill_and_complete_the_form: Invia un invito per compilare e completare il modulo
+  send: Invia
   send_to_recipients: Invia ai destinatari
   sign_it_yourself: Firmalo tu stesso
+  sign_yourself: Firma tu stesso
+  revisions: Revisioni
+  no_revisions_yet: Nessuna revisione ancora
   api_and_embedding: API e Incorporazione
   template_id: ID modello
   embedding_url: URL di incorporazione
@@ -2790,6 +2932,9 @@ it: &it
   there_are_no_signatures: Non ci sono firme
   signed_with_trusted_certificate: Firmato con certificato affidabile
   signed_with_external_certificate: Firmato con certificato esterno
+  signature_valid: Firma valida
+  signature_verification_failed: Verifica della firma non riuscita
+  contains_unsigned_changes_after_the_last_signature: Contiene modifiche non firmate dopo l’ultima firma
   setup_2fa_to_continue: Configura 2FA per continuare.
   create_a_new_account: Crea un nuovo account.
   you_are_already_signed_in: "Hai già effettuato l'accesso."
@@ -2804,6 +2949,7 @@ it: &it
   form_has_been_declined: Il modulo è stato rifiutato.
   form_is_view_only: Il modulo è di sola lettura.
   file_is_missing: File mancante
+  file_is_not_an_image: Il file non è un'immagine
   folder_name_has_been_updated: Il nome della cartella è stato aggiornato.
   unable_to_rename_folder: Impossibile rinominare la cartella.
   template_has_been_removed: Il modello è stato rimosso.
@@ -2863,7 +3009,7 @@ it: &it
   thirty_days: 30 giorni
   free: Gratuito
   unlimited_documents_storage: Archiviazione illimitata di documenti
-  users_management: Gestione utenti
+  user_management: Gestione utenti
   ten_field_types: 10 tipi di campi
   multiple_signers: Firmatari multipli
   automatic_esignature: Firma elettronica automatica
@@ -2883,6 +3029,7 @@ it: &it
   developer_sandbox: Sandbox per sviluppatori
   upgrade_to_start_using_in_production_html: '<a href="%{url}" target="_blank" class="link font-semibold">Aggiorna</a> per iniziare a usare in produzione.'
   download_combined_pdf: Scarica PDF combinato
+  download_event_log: Scarica registro degli eventi
   audit_log: Registro di audit
   signers: Firmatari
   not_invited_yet: Non ancora invitato
@@ -2894,7 +3041,7 @@ it: &it
   declined_on_time: 'Rifiutato il %{time}'
   expire_on_time: 'Scade il %{time}'
   sign_in_person: Firma di persona
-  create_a_new_template_document_form_or_submit_the_existing_one_html: <a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Crea un nuovo modello</a> di documento o <a href="%{start_form_link}" target="_blank" class="inline underline font-medium">invia quello esistente</a>
+  create_a_new_template_document_form_html: <a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Crea un nuovo modello</a> di documento
   send_email_copy_with_completed_documents_to_a_specified_bcc_address: Invia una copia dell'email con i documenti completati a un indirizzo BCC specificato.
   re_send_email: Reinvia email
   re_send_emails: Reinvia le email
@@ -2954,6 +3101,7 @@ it: &it
   submitter_cannot_be_updated: Non è possibile modificare il destinatario.
   at_least_one_field_must_be_filled: Almeno un campo deve essere compilato.
   archived_users: Utenti Archiviati
+  archived_submissions: Invii Archiviati
   embedding_users: Utenti integrati
   view_embedding_users: Vedi utenti integrati
   key: Chiave
@@ -2977,6 +3125,7 @@ it: &it
   the_code_has_been_sent_to_your_email: Il codice è stato inviato alla tua e-mail.
   enter_the_verification_code_from_your_email: Inserisci il codice di verifica dalla tua e-mail.
   too_many_attempts: Troppi tentativi.
+  verification_email_bounced: "Impossibile inviare il codice di verifica: l'email a questo indirizzo è stata respinta."
   verification_code: Codice di Verifica
   resend_code: Reinvia Codice
   verify_new_sign_in: Verifica nuovo accesso
@@ -3004,10 +3153,13 @@ it: &it
   overdue_payment: Pagamento Scaduto
   your_pro_plan_has_been_suspended_due_to_unpaid_invoices_you_can_update_your_payment_details_to_settle_the_invoice_and_continue_using_docuseal_or_cancel_your_subscription: Il tuo piano Pro è stato sospeso a causa di fatture non pagate. Puoi aggiornare i tuoi dati di pagamento per saldare la fattura e continuare a utilizzare DocuSeal o annullare l'abbonamento.
   manage_subscription: Gestisci Abbonamento
+  docuseal_version_security_release_is_available: "È disponibile il rilascio di sicurezza DocuSeal v%{version}."
+  click_here_to_view_the_instructions_and_update_your_app_html: '<a href="%{url}" class="link" target="_blank" rel="noopener noreferrer nofollow">Fai clic qui</a> per vedere le istruzioni e aggiornare la tua app.'
   submission_created_by_email_html: '<b>Invio creato</b> da %{email}'
   submission_created_by_email_via_source_html: '<b>Invio creato</b> da %{email} tramite %{source}'
   submission_created_via_source_html: '<b>Invio creato</b> tramite %{source}'
   pro_user_seats_used: Posti utente Pro in uso
+  manage: Gestisci
   manage_plan: Gestisci piano
   this_submission_has_multiple_signers_which_prevents_the_use_of_a_sharing_link_html: "Questa sottomissione ha più firmatari, il che impedisce l'uso di un link di condivisione poiché non è chiaro quale firmatario sia responsabile di specifici campi. Per risolvere questo problema, segui questa <a href=\"https://www.docuseal.com/resources/pre-filling-recipients\" class=\"link font-bold\" rel=\"noopener noreferrer nofollow\" target=\"_blank\">guida</a> per definire i dettagli predefiniti del firmatario."
   welcome_to_docuseal: Benvenuto in DocuSeal
@@ -3108,6 +3260,9 @@ it: &it
   connect_google_drive: Connetti Google Drive
   google_drive_has_been_connected: Google Drive è stato connesso
   unable_to_identify_reset_your_password_to_sign_in: Impossibile identificare. Reimposta la password per accedere.
+  use_sso_to_sign_in: Usa l'app SAML SSO per accedere.
+  contact_your_admin_to_invite_you: Contatta il tuo amministratore per essere invitato nel team.
+  too_many_sign_ups: Troppe registrazioni. Riprova più tardi.
   desktop: Desktop
   mobile: Mobile
   tablet: Tablet
@@ -3179,6 +3334,16 @@ it: &it
   open_file_from: 'Aprire file da'
   cancel: Annulla
   open: Apri
+  fields: Campi
+  more: Altro
+  ok: OK
+  failed_to_download_files: Impossibile scaricare i file
+  failed_to_upload_files: Impossibile caricare i file
+  failed_to_save_the_scan: Impossibile salvare la scansione
+  failed_to_scan_the_document: Impossibile scansionare il documento
+  document_scanning_is_not_available_on_this_device: La scansione dei documenti non è disponibile su questo dispositivo
+  cc_view_only: CC Sola lettura
+  bcc_completed: BCC Completato
   devise:
     confirmations:
       confirmed: Il tuo indirizzo email è stato confermato con successo.
@@ -3194,6 +3359,7 @@ it: &it
     invite: Invito
     link: Link
     mcp: MCP
+    self: Firma te stesso
   submission_event_names:
     send_email_to_html: '<b>Email inviata</b> a %{submitter_name}'
     bounce_email_html: '<b>Email respinta</b> %{submitter_name}'
@@ -3307,11 +3473,19 @@ it: &it
     submission_submitters: Lista dei firmatari
     submission_link: Link dell'invio
     documents_link: Link dei documenti
+  date:
+    formats:
+      default: "%d/%m/%Y"
+      short: "%-d %b"
+      long: "%-d %B %Y"
   time:
     formats:
-      detailed: "%d %B %Y %H:%M:%S"
+      short: "%-d %b, %H:%M"
+      long: "%-d %B %Y alle ore %H:%M"
+      detailed: "%-d %B %Y alle ore %H:%M:%S"
 
 fr: &fr
+  click_to_upload: Cliquez pour téléverser
   knowledge_based_authentication: Authentification basée sur la connaissance
   kba_field: KBA
   passed: Réussi
@@ -3341,8 +3515,11 @@ fr: &fr
   paypal_integration: Intégration PayPal
   paypal_account_has_been_connected: Le compte PayPal a été connecté.
   re_connect_paypal: Reconnecter PayPal
-  failed_to_connect_paypal: Échec de la connexion à PayPal. Veuillez réessayer.
-  paypal_connect_not_completed: La connexion à PayPal n'a pas été complétée.
+  failed_to_connect_paypal_please_try_again: Échec de la connexion à PayPal. Veuillez réessayer.
+  paypal_connection_was_not_completed: La connexion à PayPal n'a pas été complétée.
+  disconnecting_your_paypal_account_will_prevent_you_from_offering_paypal_services_and_products_on_your_website_do_you_wish_to_continue: Déconnecter votre compte PayPal vous empêchera de proposer des services et produits PayPal sur votre site web. Voulez-vous continuer ?
+  attention_you_currently_cannot_receive_payments_due_to_restriction_on_your_paypal_account_please_reach_out_to_paypal_customer_support_or_connect_to_paypal_com_for_more_information: 'Attention : Vous ne pouvez actuellement pas recevoir de paiements en raison d''une restriction sur votre compte PayPal. Veuillez contacter le service client PayPal ou visiter https://www.paypal.com pour plus d''informations.'
+  attention_please_confirm_your_email_address_on_paypal_com_in_order_to_receive_payments_you_currently_cannot_receive_payments: 'Attention : Veuillez confirmer votre adresse e-mail sur https://www.paypal.com/businessprofile/settings afin de pouvoir recevoir des paiements ! Vous ne pouvez actuellement pas recevoir de paiements.'
   payment_receipt: Reçu de paiement
   amount_paid: Montant payé
   transaction: Transaction
@@ -3519,6 +3696,7 @@ fr: &fr
   profile_details: Détails du profil
   sign_up_with_google: S’inscrire avec Google
   sign_up_with_microsoft: S’inscrire avec Microsoft
+  redirecting_to_provider: Redirection vers %{provider}...
   by_creating_an_account_you_agree_to_our_html: En créant un compte, vous acceptez notre <a target="_blank" href="https://www.docuseal.com/privacy">Politique de confidentialité</a> et nos <a target="_blank" href="https://www.docuseal.com/terms">Conditions d’utilisation</a>.
   enter_email_to_continue: Entrez votre e‑mail pour continuer
   account: Compte
@@ -3551,6 +3729,9 @@ fr: &fr
   should_be_a_valid_url: doit être une URL valide
   your_account_will_be_permanently_deleted_within_2_months_please_contact_us_if_you_want_to_keep_your_account: Votre demande de suppression de compte sera traitée sous 2 mois. Veuillez nous contacter si vous souhaitez conserver votre compte.
   test_mode: Mode test
+  exit_test_mode: Quitter le mode test
+  enter_test_mode: Passer en mode test
+  sort_by: Trier par
   copy: Copier
   copied: Copié
   rotate: Pivoter
@@ -3646,6 +3827,13 @@ fr: &fr
   completed_form_message: Message de formulaire complété
   completed_form_redirect_button: Bouton de redirection après finalisation
   documents_copy_email: E‑mail avec copie des documents
+  signature_request_email_sent_to_recipients_with_a_link_to_review_and_sign: E-mail de demande de signature envoyé aux destinataires avec un lien pour consulter et signer.
+  view_only_email_sent_to_recipients_that_need_to_only_review_the_documents: E-mail en lecture seule envoyé aux destinataires qui doivent uniquement consulter les documents.
+  reminds_recipients_who_havent_completed_their_part_yet_to_sign_following_the_reminders_schedule: Rappelle de signer aux destinataires qui n'ont pas encore terminé leur partie, selon la planification des rappels.
+  signature_request_sms_sent_to_recipients_with_a_link_to_review_and_sign: SMS de demande de signature envoyé aux destinataires avec un lien pour consulter et signer.
+  phone_2fa_verification_text_message: Message texte de vérification 2FA par téléphone.
+  notification_email_sent_to_the_sender_user_and_bcc_addresses_once_the_submission_is_completed_by_all_parties: E-mail de notification envoyé à l'utilisateur expéditeur et aux adresses Cci une fois la soumission complétée par toutes les parties.
+  completed_documents_copy_email_sent_to_recipients_upon_completion_containing_their_documents: E-mail avec la copie des documents finalisés, envoyé aux destinataires à la finalisation, contenant leurs documents.
   form_custom_css: CSS personnalisé du formulaire
   subject: Objet
   body: Corps
@@ -3701,6 +3889,7 @@ fr: &fr
   powered_by: Propulsé par
   qr_code: Code QR
   print: Imprimer
+  scan: Scanner
   scan_the_qr_code_above_with_your_phone_camera_to_open_and_sign_this_document: Scannez le code QR ci-dessus avec l'appareil photo de votre téléphone pour ouvrir et signer ce document.
   count_documents_signed_with_html: "<b>%{count}</b> documents signés avec"
   storage: Stockage
@@ -3770,6 +3959,8 @@ fr: &fr
   document_templates_html: Modèles <span class="hidden lg:inline">de documents</span>
   archived: Archivé
   search: Rechercher
+  no_results: Aucun résultat
+  folders: Dossiers
   submissions_not_found: Soumissions introuvables
   create: Créer
   view_archived: Voir les archivés
@@ -3811,8 +4002,12 @@ fr: &fr
   export: Exporter
   there_are_no_submissions: Il n’y a aucune soumission
   send_an_invitation_to_fill_and_complete_the_form: Envoyer une invitation pour remplir et terminer le formulaire
+  send: Envoyer
   send_to_recipients: Envoyer aux destinataires
   sign_it_yourself: Signer vous‑même
+  sign_yourself: Signer vous-même
+  revisions: Révisions
+  no_revisions_yet: Aucune révision pour le moment
   api_and_embedding: API et Embedding
   template_id: ID du modèle
   embedding_url: URL d’embedding
@@ -3887,6 +4082,9 @@ fr: &fr
   there_are_no_signatures: Il n’y a pas de signatures
   signed_with_trusted_certificate: Signé avec un certificat de confiance
   signed_with_external_certificate: Signé avec un certificat externe
+  signature_valid: Signature valide
+  signature_verification_failed: Échec de la vérification de la signature
+  contains_unsigned_changes_after_the_last_signature: Contient des modifications non signées après la dernière signature
   setup_2fa_to_continue: Configurez la 2FA pour continuer.
   create_a_new_account: Créer un nouveau compte.
   you_are_already_signed_in: Vous êtes déjà connecté.
@@ -3901,6 +4099,7 @@ fr: &fr
   form_has_been_declined: Le formulaire a été refusé.
   form_is_view_only: Le formulaire est en lecture seule.
   file_is_missing: Fichier manquant
+  file_is_not_an_image: Le fichier n'est pas une image
   folder_name_has_been_updated: Le nom du dossier a été mis à jour.
   unable_to_rename_folder: Impossible de renommer le dossier.
   template_has_been_removed: Le modèle a été supprimé.
@@ -3960,7 +4159,7 @@ fr: &fr
   thirty_days: 30 jours
   free: Gratuit
   unlimited_documents_storage: Stockage de documents illimité
-  users_management: Gestion des utilisateurs
+  user_management: Gestion des utilisateurs
   ten_field_types: 10 types de champs
   multiple_signers: Plusieurs signataires
   automatic_esignature: Signature électronique automatique
@@ -3980,6 +4179,7 @@ fr: &fr
   developer_sandbox: Bac à sable développeur.
   upgrade_to_start_using_in_production_html: <a href="%{url}" target="_blank" class="link font-semibold">Mettez à niveau</a> pour commencer à utiliser en production.
   download_combined_pdf: Télécharger le PDF combiné
+  download_event_log: Télécharger le journal des événements
   audit_log: Journal d’audit
   signers: Signataires
   not_invited_yet: Pas encore invité
@@ -3991,7 +4191,7 @@ fr: &fr
   declined_on_time: Refusé le %{time}
   expire_on_time: Expire le %{time}
   sign_in_person: Signer en personne
-  create_a_new_template_document_form_or_submit_the_existing_one_html: <a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Créez un nouveau modèle</a> de document ou <a href="%{start_form_link}" target="_blank" class="inline underline font-medium">soumettez l’existant</a>
+  create_a_new_template_document_form_html: <a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Créez un nouveau modèle</a> de document
   send_email_copy_with_completed_documents_to_a_specified_bcc_address: Envoyer une copie e‑mail avec les documents complétés à une adresse Cci spécifiée.
   re_send_email: Renvoyer l’e‑mail
   re_send_emails: Renvoyer e‑mails
@@ -4051,6 +4251,7 @@ fr: &fr
   submitter_cannot_be_updated: Impossible de modifier le destinataire.
   at_least_one_field_must_be_filled: Au moins un champ doit être rempli.
   archived_users: Utilisateurs archivés
+  archived_submissions: Soumissions archivées
   embedding_users: Utilisateurs intégrés
   view_embedding_users: Voir les utilisateurs intégrés
   key: Clé
@@ -4074,6 +4275,7 @@ fr: &fr
   the_code_has_been_sent_to_your_email: Le code a été envoyé à votre e‑mail.
   enter_the_verification_code_from_your_email: Saisissez le code de vérification reçu par e‑mail.
   too_many_attempts: Trop de tentatives.
+  verification_email_bounced: "Impossible d'envoyer le code de vérification : l'e-mail à cette adresse a été rejeté."
   verification_code: Code de vérification
   resend_code: Renvoyer le code
   verify_new_sign_in: Vérifier une nouvelle connexion
@@ -4101,10 +4303,13 @@ fr: &fr
   overdue_payment: Paiement en retard
   your_pro_plan_has_been_suspended_due_to_unpaid_invoices_you_can_update_your_payment_details_to_settle_the_invoice_and_continue_using_docuseal_or_cancel_your_subscription: "Votre offre Pro a été suspendue en raison de factures impayées.\nVous pouvez mettre à jour vos informations de paiement pour régler la facture et continuer à utiliser DocuSeal, ou annuler votre abonnement."
   manage_subscription: Gérer l’abonnement
+  docuseal_version_security_release_is_available: "La mise à jour de sécurité DocuSeal v%{version} est disponible."
+  click_here_to_view_the_instructions_and_update_your_app_html: '<a href="%{url}" class="link" target="_blank" rel="noopener noreferrer nofollow">Cliquez ici</a> pour voir les instructions et mettre à jour votre application.'
   submission_created_by_email_html: "<b>Soumission créée</b> par %{email}"
   submission_created_by_email_via_source_html: "<b>Soumission créée</b> par %{email} via %{source}"
   submission_created_via_source_html: "<b>Soumission créée</b> via %{source}"
   pro_user_seats_used: Places d’utilisateurs Pro utilisées
+  manage: Gérer
   manage_plan: Gérer la formule
   this_submission_has_multiple_signers_which_prevents_the_use_of_a_sharing_link_html: Cette soumission comporte plusieurs signataires, ce qui empêche l’utilisation d’un lien de partage car il n’est pas clair quel signataire est responsable de quels champs. Pour résoudre cela, suivez ce <a href="https://www.docuseal.com/resources/pre-filling-recipients" class="link font-bold" rel="noopener noreferrer nofollow" target="_blank">guide</a> pour définir les détails du signataire par défaut.
   welcome_to_docuseal: Bienvenue sur DocuSeal
@@ -4201,6 +4406,9 @@ fr: &fr
   connect_google_drive: Connecter Google Drive
   google_drive_has_been_connected: Google Drive a été connecté
   unable_to_identify_reset_your_password_to_sign_in: Impossible d’identifier. Réinitialisez votre mot de passe pour vous connecter.
+  use_sso_to_sign_in: Utilisez l'application SAML SSO pour vous connecter.
+  contact_your_admin_to_invite_you: Contactez votre administrateur pour être invité dans l'équipe.
+  too_many_sign_ups: Trop d'inscriptions. Réessayez plus tard.
   desktop: Bureau
   mobile: Mobile
   tablet: Tablette
@@ -4273,6 +4481,16 @@ fr: &fr
   open_file_from: 'Ouvrir le fichier depuis'
   cancel: Annuler
   open: Ouvrir
+  fields: Champs
+  more: Plus
+  ok: OK
+  failed_to_download_files: Impossible de télécharger les fichiers
+  failed_to_upload_files: Impossible de téléverser les fichiers
+  failed_to_save_the_scan: Impossible d’enregistrer la numérisation
+  failed_to_scan_the_document: Impossible de numériser le document
+  document_scanning_is_not_available_on_this_device: La numérisation de documents n’est pas disponible sur cet appareil
+  cc_view_only: Cc Lecture seule
+  bcc_completed: Cci Terminé
   devise:
     confirmations:
       confirmed: Votre adresse e-mail a été confirmée avec succès.
@@ -4288,6 +4506,7 @@ fr: &fr
     invite: Invitation
     link: Lien
     mcp: MCP
+    self: Signer vous-même
   submission_event_names:
     send_email_to_html: "<b>E‑mail envoyé</b> à %{submitter_name}"
     bounce_email_html: "<b>E‑mail rejeté</b> %{submitter_name}"
@@ -4401,11 +4620,32 @@ fr: &fr
     submission_submitters: Liste des signataires
     submission_link: Lien de la soumission
     documents_link: Lien des documents
+  date:
+    abbr_month_names:
+      -
+      - janv.
+      - févr.
+      - mars
+      - avr.
+      - mai
+      - juin
+      - juil.
+      - août
+      - sept.
+      - oct.
+      - nov.
+      - déc.
+    formats:
+      short: "%-d %b"
+      long: "%-d %B %Y"
   time:
     formats:
-      detailed: "%A %d %B %Y %Hh%Mm%Ss"
+      short: "%-d %b, %H:%M"
+      long: "%-d %B %Y à %H:%M"
+      detailed: "%-d %B %Y à %H:%M:%S"
 
 pt: &pt
+  click_to_upload: Clique para fazer o upload
   knowledge_based_authentication: Autenticação baseada em conhecimento
   kba_field: KBA
   passed: Aprovado
@@ -4435,8 +4675,11 @@ pt: &pt
   paypal_integration: Integração com PayPal
   paypal_account_has_been_connected: Conta PayPal foi conectada.
   re_connect_paypal: Reconectar PayPal
-  failed_to_connect_paypal: Falha ao conectar PayPal. Tente novamente.
-  paypal_connect_not_completed: A conexão com PayPal não foi concluída.
+  failed_to_connect_paypal_please_try_again: Falha ao conectar PayPal. Tente novamente.
+  paypal_connection_was_not_completed: A conexão com PayPal não foi concluída.
+  disconnecting_your_paypal_account_will_prevent_you_from_offering_paypal_services_and_products_on_your_website_do_you_wish_to_continue: Desconectar sua conta PayPal impedirá que você ofereça serviços e produtos PayPal no seu site. Deseja continuar?
+  attention_you_currently_cannot_receive_payments_due_to_restriction_on_your_paypal_account_please_reach_out_to_paypal_customer_support_or_connect_to_paypal_com_for_more_information: 'Atenção: No momento você não pode receber pagamentos devido a uma restrição na sua conta PayPal. Entre em contato com o Suporte ao Cliente PayPal ou acesse https://www.paypal.com para mais informações.'
+  attention_please_confirm_your_email_address_on_paypal_com_in_order_to_receive_payments_you_currently_cannot_receive_payments: 'Atenção: Por favor, confirme seu endereço de e-mail em https://www.paypal.com/businessprofile/settings para poder receber pagamentos! No momento você não pode receber pagamentos.'
   payment_receipt: Recibo de pagamento
   amount_paid: Valor pago
   transaction: Transação
@@ -4613,6 +4856,7 @@ pt: &pt
   profile_details: Detalhes do perfil
   sign_up_with_google: Inscrever-se com Google
   sign_up_with_microsoft: Inscrever-se com Microsoft
+  redirecting_to_provider: Redirecionando para %{provider}...
   by_creating_an_account_you_agree_to_our_html: 'Ao criar uma conta, você concorda com nossa <a target="_blank" href="https://www.docuseal.com/privacy">Política de Privacidade</a> e <a target="_blank" href="https://www.docuseal.com/terms">Termos de Serviço</a>.'
   enter_email_to_continue: Insira o e-mail para continuar
   account: Conta
@@ -4645,6 +4889,9 @@ pt: &pt
   should_be_a_valid_url: deve ser um URL válido
   your_account_will_be_permanently_deleted_within_2_months_please_contact_us_if_you_want_to_keep_your_account: Seu pedido de remoção da conta será processado em até 2 meses. Entre em contato conosco se você quiser manter sua conta.
   test_mode: Modo de teste
+  exit_test_mode: Sair do modo de teste
+  enter_test_mode: Entrar no modo de teste
+  sort_by: Ordenar por
   copy: Copiar
   copied: Copiado
   rotate: Girar
@@ -4740,6 +4987,13 @@ pt: &pt
   completed_form_message: Mensagem de formulário concluído
   completed_form_redirect_button: Botão de redirecionamento do formulário concluído
   documents_copy_email: E-mail com cópia dos documentos
+  signature_request_email_sent_to_recipients_with_a_link_to_review_and_sign: E-mail de solicitação de assinatura enviado aos destinatários com um link para revisar e assinar.
+  view_only_email_sent_to_recipients_that_need_to_only_review_the_documents: E-mail somente de leitura enviado aos destinatários que precisam apenas revisar os documentos.
+  reminds_recipients_who_havent_completed_their_part_yet_to_sign_following_the_reminders_schedule: Lembra os destinatários que ainda não concluíram a sua parte de assinar, de acordo com o agendamento de lembretes.
+  signature_request_sms_sent_to_recipients_with_a_link_to_review_and_sign: SMS de solicitação de assinatura enviado aos destinatários com um link para revisar e assinar.
+  phone_2fa_verification_text_message: Mensagem de texto de verificação 2FA por telefone.
+  notification_email_sent_to_the_sender_user_and_bcc_addresses_once_the_submission_is_completed_by_all_parties: E-mail de notificação enviado ao usuário remetente e aos endereços BCC assim que a submissão for concluída por todas as partes.
+  completed_documents_copy_email_sent_to_recipients_upon_completion_containing_their_documents: E-mail com a cópia dos documentos concluídos enviado aos destinatários na conclusão, com os seus documentos.
   form_custom_css: CSS personalizado do formulário
   subject: Assunto
   body: Corpo
@@ -4795,6 +5049,7 @@ pt: &pt
   powered_by: Desenvolvido por
   qr_code: Código QR
   print: Imprimir
+  scan: Digitalizar
   scan_the_qr_code_above_with_your_phone_camera_to_open_and_sign_this_document: Escaneie o código QR acima com a câmera do seu telefone para abrir e assinar este documento.
   count_documents_signed_with_html: '<b>%{count}</b> documentos assinados com'
   storage: Armazenamento
@@ -4864,6 +5119,8 @@ pt: &pt
   document_templates_html: Modelos <span class="hidden lg:inline">de documento</span>
   archived: Arquivado
   search: Buscar
+  no_results: Sem resultados
+  folders: Pastas
   submissions_not_found: Submissões não encontradas
   create: Criar
   view_archived: Ver arquivados
@@ -4905,8 +5162,12 @@ pt: &pt
   export: Exportar
   there_are_no_submissions: Não há submissões
   send_an_invitation_to_fill_and_complete_the_form: Enviar um convite para preencher e concluir o formulário
+  send: Enviar
   send_to_recipients: Enviar para destinatários
   sign_it_yourself: Assine você mesmo
+  sign_yourself: Assine você mesmo
+  revisions: Revisões
+  no_revisions_yet: Nenhuma revisão ainda
   api_and_embedding: API e Incorporação
   template_id: ID do modelo
   embedding_url: URL de incorporação
@@ -4981,6 +5242,9 @@ pt: &pt
   there_are_no_signatures: Não há assinaturas
   signed_with_trusted_certificate: Assinado com certificado confiável
   signed_with_external_certificate: Assinado com certificado externo
+  signature_valid: Assinatura válida
+  signature_verification_failed: Falha na verificação da assinatura
+  contains_unsigned_changes_after_the_last_signature: Contém alterações não assinadas após a última assinatura
   setup_2fa_to_continue: Configure 2FA para continuar.
   create_a_new_account: Criar uma nova conta.
   you_are_already_signed_in: Você já está conectado.
@@ -4995,6 +5259,7 @@ pt: &pt
   form_has_been_declined: O formulário foi recusado.
   form_is_view_only: O formulário é somente leitura.
   file_is_missing: O arquivo está ausente
+  file_is_not_an_image: O arquivo não é uma imagem
   folder_name_has_been_updated: O nome da pasta foi atualizado.
   unable_to_rename_folder: Não foi possível renomear a pasta.
   template_has_been_removed: O modelo foi removido.
@@ -5054,7 +5319,7 @@ pt: &pt
   thirty_days: 30 dias
   free: Gratuito
   unlimited_documents_storage: Armazenamento ilimitado
-  users_management: Gerenciamento de usuários
+  user_management: Gerenciamento de usuários
   ten_field_types: 10 tipos de campo
   multiple_signers: Múltiplos signatários
   automatic_esignature: Assinatura eletrônica automática
@@ -5074,6 +5339,7 @@ pt: &pt
   developer_sandbox: Sandbox para desenvolvedores
   upgrade_to_start_using_in_production_html: '<a href="%{url}" target="_blank" class="link font-semibold">Atualizar</a> para começar a usar em produção.'
   download_combined_pdf: Baixar PDF combinado
+  download_event_log: Baixar log de eventos
   audit_log: Log de auditoria
   signers: Signatários
   not_invited_yet: Ainda não convidado
@@ -5085,7 +5351,7 @@ pt: &pt
   declined_on_time: 'Recusado em %{time}'
   expire_on_time: 'Expira em %{time}'
   sign_in_person: Assinar pessoalmente
-  create_a_new_template_document_form_or_submit_the_existing_one_html: '<a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Criar um novo modelo</a> de documento ou <a href="%{start_form_link}" target="_blank" class="inline underline font-medium">submeter o existente</a>'
+  create_a_new_template_document_form_html: '<a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Criar um novo modelo</a> de documento'
   send_email_copy_with_completed_documents_to_a_specified_bcc_address: Envie uma cópia do e-mail com documentos concluídos para um endereço BCC especificado.
   re_send_email: Reenviar e-mail
   re_send_emails: Reenviar e-mails
@@ -5145,6 +5411,7 @@ pt: &pt
   submitter_cannot_be_updated: Não é possível editar o destinatário.
   at_least_one_field_must_be_filled: Pelo menos um campo deve ser preenchido.
   archived_users: Usuários Arquivados
+  archived_submissions: Submissões Arquivadas
   embedding_users: Usuários integrados
   view_embedding_users: Ver usuários integrados
   key: Chave
@@ -5168,6 +5435,7 @@ pt: &pt
   the_code_has_been_sent_to_your_email: O código foi enviado para seu e-mail.
   enter_the_verification_code_from_your_email: Insira o código de verificação do seu e-mail.
   too_many_attempts: Muitas tentativas.
+  verification_email_bounced: "Não foi possível enviar o código de verificação: o e-mail para este endereço não foi entregue."
   verification_code: Código de Verificação
   resend_code: Reenviar Código
   verify_new_sign_in: Verificar novo login
@@ -5195,10 +5463,13 @@ pt: &pt
   overdue_payment: Pagamento Atrasado
   your_pro_plan_has_been_suspended_due_to_unpaid_invoices_you_can_update_your_payment_details_to_settle_the_invoice_and_continue_using_docuseal_or_cancel_your_subscription: Seu plano Pro foi suspenso devido a faturas não pagas. Você pode atualizar seus dados de pagamento para quitar a fatura e continuar usando o DocuSeal ou cancelar sua assinatura.
   manage_subscription: Gerenciar Assinatura
+  docuseal_version_security_release_is_available: "A versão de segurança DocuSeal v%{version} está disponível."
+  click_here_to_view_the_instructions_and_update_your_app_html: '<a href="%{url}" class="link" target="_blank" rel="noopener noreferrer nofollow">Clique aqui</a> para ver as instruções e atualizar seu aplicativo.'
   submission_created_by_email_html: '<b>Envio criado</b> por %{email}'
   submission_created_by_email_via_source_html: '<b>Envio criado</b> por %{email} via %{source}'
   submission_created_via_source_html: '<b>Envio criado</b> via %{source}'
   pro_user_seats_used: Lugares de usuário Pro em uso
+  manage: Gerenciar
   manage_plan: Gerenciar plano
   this_submission_has_multiple_signers_which_prevents_the_use_of_a_sharing_link_html: 'Este envio tem vários signatários, o que impede o uso de um link de compartilhamento, pois não está claro qual signatário é responsável por quais campos. Para resolver isso, siga este <a href="https://www.docuseal.com/resources/pre-filling-recipients" class="link font-bold" rel="noopener noreferrer nofollow" target="_blank">guia</a> para definir os detalhes padrão do signatário.'
   welcome_to_docuseal: Bem-vindo ao DocuSeal
@@ -5299,6 +5570,9 @@ pt: &pt
   connect_google_drive: Conectar Google Drive
   google_drive_has_been_connected: O Google Drive foi conectado
   unable_to_identify_reset_your_password_to_sign_in: Não foi possível identificar. Redefina sua senha para fazer login.
+  use_sso_to_sign_in: Use o aplicativo SAML SSO para entrar.
+  contact_your_admin_to_invite_you: Entre em contato com o administrador para ser convidado para a equipe.
+  too_many_sign_ups: Muitos cadastros. Tente novamente mais tarde.
   desktop: Computador
   mobile: Celular
   tablet: Tablet
@@ -5370,6 +5644,16 @@ pt: &pt
   open_file_from: 'Abrir arquivo de'
   cancel: Cancelar
   open: Abrir
+  fields: Campos
+  more: Mais
+  ok: OK
+  failed_to_download_files: Não foi possível baixar os arquivos
+  failed_to_upload_files: Não foi possível enviar os arquivos
+  failed_to_save_the_scan: Não foi possível salvar a digitalização
+  failed_to_scan_the_document: Não foi possível digitalizar o documento
+  document_scanning_is_not_available_on_this_device: A digitalização de documentos não está disponível neste dispositivo
+  cc_view_only: CC Somente leitura
+  bcc_completed: BCC Concluído
   devise:
     confirmations:
       confirmed: Seu endereço de e-mail foi confirmado com sucesso.
@@ -5385,6 +5669,7 @@ pt: &pt
     invite: Convite
     link: Link
     mcp: MCP
+    self: Assine você mesmo
   submission_event_names:
     send_email_to_html: '<b>Email enviado</b> para %{submitter_name}'
     bounce_email_html: '<b>Email não entregue</b> %{submitter_name}'
@@ -5498,11 +5783,32 @@ pt: &pt
     submission_submitters: Lista de signatários
     submission_link: Link da submissão
     documents_link: Link dos documentos
+  date:
+    abbr_month_names:
+      -
+      - jan.
+      - fev.
+      - mar.
+      - abr.
+      - mai.
+      - jun.
+      - jul.
+      - ago.
+      - set.
+      - out.
+      - nov.
+      - dez.
+    formats:
+      short: "%-d de %b"
+      long: "%-d de %B de %Y"
   time:
     formats:
-      detailed: "%A, %d de %B de %Y, %H:%M:%Sh"
+      short: "%-d de %b, %H:%M"
+      long: "%-d de %B de %Y às %H:%M"
+      detailed: "%-d de %B de %Y às %H:%M:%S"
 
 de: &de
+  click_to_upload: Zum Hochladen klicken
   knowledge_based_authentication: Wissensbasierte Authentifizierung
   kba_field: KBA
   passed: Bestanden
@@ -5542,8 +5848,11 @@ de: &de
   paypal_integration: PayPal-Integration
   paypal_account_has_been_connected: PayPal-Konto wurde verbunden.
   re_connect_paypal: PayPal erneut verbinden
-  failed_to_connect_paypal: PayPal konnte nicht verbunden werden. Bitte erneut versuchen.
-  paypal_connect_not_completed: Die PayPal-Verbindung wurde nicht abgeschlossen.
+  failed_to_connect_paypal_please_try_again: PayPal konnte nicht verbunden werden. Bitte erneut versuchen.
+  paypal_connection_was_not_completed: Die PayPal-Verbindung wurde nicht abgeschlossen.
+  disconnecting_your_paypal_account_will_prevent_you_from_offering_paypal_services_and_products_on_your_website_do_you_wish_to_continue: Das Trennen Ihres PayPal-Kontos verhindert, dass Sie PayPal-Dienste und -Produkte auf Ihrer Website anbieten können. Möchten Sie fortfahren?
+  attention_you_currently_cannot_receive_payments_due_to_restriction_on_your_paypal_account_please_reach_out_to_paypal_customer_support_or_connect_to_paypal_com_for_more_information: 'Achtung: Sie können derzeit aufgrund einer Einschränkung Ihres PayPal-Kontos keine Zahlungen empfangen. Bitte wenden Sie sich an den PayPal-Kundenservice oder besuchen Sie https://www.paypal.com für weitere Informationen.'
+  attention_please_confirm_your_email_address_on_paypal_com_in_order_to_receive_payments_you_currently_cannot_receive_payments: 'Achtung: Bitte bestätigen Sie Ihre E-Mail-Adresse auf https://www.paypal.com/businessprofile/settings, um Zahlungen empfangen zu können! Sie können derzeit keine Zahlungen empfangen.'
   payment_receipt: Zahlungsbeleg
   amount_paid: Gezahlter Betrag
   transaction: Transaktion
@@ -5710,6 +6019,7 @@ de: &de
   profile_details: Profildetails
   sign_up_with_google: Mit Google registrieren
   sign_up_with_microsoft: Mit Microsoft registrieren
+  redirecting_to_provider: Weiterleitung zu %{provider}...
   by_creating_an_account_you_agree_to_our_html: 'Durch die Erstellung eines Kontos stimmen Sie unseren <a target="_blank" href="https://www.docuseal.com/privacy">Datenschutzrichtlinien</a> und <a target="_blank" href="https://www.docuseal.com/terms">Nutzungsbedingungen</a> zu.'
   enter_email_to_continue: E-Mail eingeben, um fortzufahren
   account: Konto
@@ -5742,6 +6052,9 @@ de: &de
   should_be_a_valid_url: sollte eine gültige URL sein
   your_account_will_be_permanently_deleted_within_2_months_please_contact_us_if_you_want_to_keep_your_account: Ihre Anfrage zur Kontolöschung wird innerhalb von 2 Monaten bearbeitet. Bitte kontaktieren Sie uns, wenn Sie Ihr Konto behalten möchten.
   test_mode: Testmodus
+  exit_test_mode: Testmodus verlassen
+  enter_test_mode: Testmodus starten
+  sort_by: Sortieren nach
   copy: Kopieren
   copied: Kopiert
   rotate: Drehen
@@ -5837,6 +6150,13 @@ de: &de
   completed_form_message: Nachricht zum abgeschlossenen Formular
   completed_form_redirect_button: Weiterleitungsschaltfläche nach Formularabschluss
   documents_copy_email: E-Mail mit Dokumentenkopie
+  signature_request_email_sent_to_recipients_with_a_link_to_review_and_sign: E-Mail mit der Signaturanfrage, die mit einem Link zum Prüfen und Signieren an die Empfänger gesendet wird.
+  view_only_email_sent_to_recipients_that_need_to_only_review_the_documents: E-Mail nur zur Ansicht, die an Empfänger gesendet wird, die die Dokumente nur prüfen müssen.
+  reminds_recipients_who_havent_completed_their_part_yet_to_sign_following_the_reminders_schedule: Erinnert Empfänger, die ihren Teil noch nicht abgeschlossen haben, an das Signieren, gemäß dem Erinnerungszeitplan.
+  signature_request_sms_sent_to_recipients_with_a_link_to_review_and_sign: SMS mit der Signaturanfrage, die mit einem Link zum Prüfen und Signieren an die Empfänger gesendet wird.
+  phone_2fa_verification_text_message: Textnachricht zur 2FA-Verifizierung per Telefon.
+  notification_email_sent_to_the_sender_user_and_bcc_addresses_once_the_submission_is_completed_by_all_parties: Benachrichtigungs-E-Mail, die an den absendenden Benutzer und die BCC-Adressen gesendet wird, sobald die Einreichung von allen Parteien abgeschlossen wurde.
+  completed_documents_copy_email_sent_to_recipients_upon_completion_containing_their_documents: E-Mail mit der Kopie der abgeschlossenen Dokumente, die nach Abschluss an die Empfänger gesendet wird.
   form_custom_css: Benutzerdefiniertes CSS für Formular
   subject: Betreff
   body: Inhalt
@@ -5892,6 +6212,7 @@ de: &de
   powered_by: Bereitgestellt von
   qr_code: QR-Code
   print: Drucken
+  scan: Scannen
   scan_the_qr_code_above_with_your_phone_camera_to_open_and_sign_this_document: Scannen Sie den QR-Code oben mit Ihrer Handykamera, um dieses Dokument zu öffnen und zu unterzeichnen.
   count_documents_signed_with_html: '<b>%{count}</b> Dokumente signiert mit'
   storage: Speicher
@@ -5961,6 +6282,8 @@ de: &de
   document_templates_html: <span class="lg:hidden">Vorlagen</span><span class="hidden lg:inline">Dokumentvorlagen</span>
   archived: Archiviert
   search: Suchen
+  no_results: Keine Ergebnisse
+  folders: Ordner
   submissions_not_found: Einreichungen nicht gefunden
   create: Erstellen
   view_archived: Archivierte anzeigen
@@ -6002,8 +6325,12 @@ de: &de
   export: Exportieren
   there_are_no_submissions: Es gibt keine Einreichungen
   send_an_invitation_to_fill_and_complete_the_form: Einladung zum Ausfüllen und Abschließen des Formulars senden
+  send: Senden
   send_to_recipients: An Empfänger senden
   sign_it_yourself: Selbst unterschreiben
+  sign_yourself: Selbst unterschreiben
+  revisions: Revisionen
+  no_revisions_yet: Noch keine Revisionen
   api_and_embedding: API und Einbettung
   template_id: Vorlagen-ID
   embedding_url: Einbettungs-URL
@@ -6078,6 +6405,9 @@ de: &de
   there_are_no_signatures: Es gibt keine Unterschriften
   signed_with_trusted_certificate: Signiert mit vertrauenswürdigem Zertifikat
   signed_with_external_certificate: Signiert mit externem Zertifikat
+  signature_valid: Signatur gültig
+  signature_verification_failed: Signaturprüfung fehlgeschlagen
+  contains_unsigned_changes_after_the_last_signature: Enthält nicht signierte Änderungen nach der letzten Signatur
   setup_2fa_to_continue: Richten Sie 2FA ein, um fortzufahren.
   create_a_new_account: Neues Konto erstellen.
   you_are_already_signed_in: Sie sind bereits angemeldet.
@@ -6092,6 +6422,7 @@ de: &de
   form_has_been_declined: Das Formular wurde abgelehnt.
   form_is_view_only: Das Formular ist schreibgeschützt.
   file_is_missing: Datei fehlt
+  file_is_not_an_image: Datei ist kein Bild
   folder_name_has_been_updated: Der Ordnername wurde aktualisiert.
   unable_to_rename_folder: Der Ordner konnte nicht umbenannt werden.
   template_has_been_removed: Die Vorlage wurde entfernt.
@@ -6151,7 +6482,7 @@ de: &de
   thirty_days: 30 Tage
   free: Kostenlos
   unlimited_documents_storage: Unbegrenzter Dokumentenspeicher
-  users_management: Benutzerverwaltung
+  user_management: Benutzerverwaltung
   ten_field_types: 10 Feldtypen
   multiple_signers: Mehrere Unterzeichner
   automatic_esignature: Automatische E‑Signatur
@@ -6171,6 +6502,7 @@ de: &de
   developer_sandbox: Entwickler-Sandbox.
   upgrade_to_start_using_in_production_html: '<a href="%{url}" target="_blank" class="link font-semibold">Upgrade</a> durchführen, um die Produktionsnutzung zu starten.'
   download_combined_pdf: Kombiniertes PDF herunterladen
+  download_event_log: Ereignisprotokoll herunterladen
   audit_log: Prüfprotokoll
   signers: Unterzeichner
   not_invited_yet: Noch nicht eingeladen
@@ -6182,7 +6514,7 @@ de: &de
   declined_on_time: 'Abgelehnt am %{time}'
   expire_on_time: 'Läuft ab am %{time}'
   sign_in_person: Vor Ort unterschreiben
-  create_a_new_template_document_form_or_submit_the_existing_one_html: <a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Neue Vorlage erstellen</a> oder <a href="%{start_form_link}" target="_blank" class="inline underline font-medium">bestehende einreichen</a>
+  create_a_new_template_document_form_html: <a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Neue Vorlage erstellen</a>
   send_email_copy_with_completed_documents_to_a_specified_bcc_address: Senden Sie eine E-Mail-Kopie mit abgeschlossenen Dokumenten an eine angegebene BCC-Adresse.
   re_send_email: E-Mail erneut senden
   re_send_emails: E-Mails senden
@@ -6242,6 +6574,7 @@ de: &de
   submitter_cannot_be_updated: Der Empfänger kann nicht bearbeitet werden.
   at_least_one_field_must_be_filled: Mindestens ein Feld muss ausgefüllt werden.
   archived_users: Archivierte Benutzer
+  archived_submissions: Archivierte Einreichungen
   embedding_users: Integrationsbenutzer
   view_embedding_users: Integrationsbenutzer anzeigen
   key: Schlüssel
@@ -6265,6 +6598,7 @@ de: &de
   the_code_has_been_sent_to_your_email: Der Code wurde an Ihre E-Mail gesendet.
   enter_the_verification_code_from_your_email: Geben Sie den Verifizierungscode aus Ihrer E-Mail ein.
   too_many_attempts: Zu viele Versuche.
+  verification_email_bounced: "Der Verifizierungscode konnte nicht gesendet werden: E-Mail an diese Adresse ist unzustellbar."
   verification_code: Verifizierungscode
   resend_code: Code erneut senden
   verify_new_sign_in: Neue Anmeldung verifizieren
@@ -6292,10 +6626,13 @@ de: &de
   overdue_payment: Überfällige Zahlung
   your_pro_plan_has_been_suspended_due_to_unpaid_invoices_you_can_update_your_payment_details_to_settle_the_invoice_and_continue_using_docuseal_or_cancel_your_subscription: Ihr Pro-Plan wurde aufgrund unbezahlter Rechnungen ausgesetzt. Sie können Ihre Zahlungsdaten aktualisieren, um die Rechnung zu begleichen und DocuSeal weiterhin zu nutzen, oder Ihr Abonnement kündigen.
   manage_subscription: Abonnement verwalten
+  docuseal_version_security_release_is_available: "Das Sicherheitsupdate DocuSeal v%{version} ist verfügbar."
+  click_here_to_view_the_instructions_and_update_your_app_html: '<a href="%{url}" class="link" target="_blank" rel="noopener noreferrer nofollow">Klicken Sie hier</a>, um die Anleitung anzuzeigen und Ihre App zu aktualisieren.'
   submission_created_by_email_html: '<b>Einreichung erstellt</b> von %{email}'
   submission_created_by_email_via_source_html: '<b>Einreichung erstellt</b> von %{email} über %{source}'
   submission_created_via_source_html: '<b>Einreichung erstellt</b> über %{source}'
   pro_user_seats_used: Verwendete Pro-Benutzerplätze
+  manage: Verwalten
   manage_plan: Plan verwalten
   this_submission_has_multiple_signers_which_prevents_the_use_of_a_sharing_link_html: 'Diese Einreichung hat mehrere Unterzeichner, was die Nutzung eines Freigabelinks verhindert, da unklar ist, welcher Unterzeichner für welche Felder verantwortlich ist. Um dies zu lösen, folgen Sie dieser <a href="https://www.docuseal.com/resources/pre-filling-recipients" class="link font-bold" rel="noopener noreferrer nofollow" target="_blank">Anleitung</a>, um die Standarddetails des Unterzeichners festzulegen.'
   welcome_to_docuseal: Willkommen bei DocuSeal
@@ -6396,6 +6733,9 @@ de: &de
   connect_google_drive: Google Drive verbinden
   google_drive_has_been_connected: Google Drive wurde verbunden
   unable_to_identify_reset_your_password_to_sign_in: Identifizierung nicht möglich. Setzen Sie Ihr Passwort zurück, um sich anzumelden.
+  use_sso_to_sign_in: Verwenden Sie die SAML-SSO-App zum Anmelden.
+  contact_your_admin_to_invite_you: Wenden Sie sich an Ihren Administrator, um ins Team eingeladen zu werden.
+  too_many_sign_ups: Zu viele Registrierungen. Versuchen Sie es später erneut.
   desktop: Desktop
   mobile: Mobil
   tablet: Tablet
@@ -6467,6 +6807,16 @@ de: &de
   open_file_from: 'Datei öffnen von'
   cancel: Abbrechen
   open: Öffnen
+  fields: Felder
+  more: Mehr
+  ok: OK
+  failed_to_download_files: Dateien konnten nicht heruntergeladen werden
+  failed_to_upload_files: Dateien konnten nicht hochgeladen werden
+  failed_to_save_the_scan: Scan konnte nicht gespeichert werden
+  failed_to_scan_the_document: Dokument konnte nicht gescannt werden
+  document_scanning_is_not_available_on_this_device: Das Scannen von Dokumenten ist auf diesem Gerät nicht verfügbar
+  cc_view_only: CC Nur Ansicht
+  bcc_completed: BCC Abgeschlossen
   devise:
     confirmations:
       confirmed: Ihre E-Mail-Adresse wurde erfolgreich bestätigt.
@@ -6482,6 +6832,7 @@ de: &de
     invite: Einladung
     link: Link
     mcp: MCP
+    self: Selbst unterschreiben
   submission_event_names:
     send_email_to_html: '<b>E-Mail gesendet</b> an %{submitter_name}'
     bounce_email_html: '<b>E-Mail unzustellbar</b> %{submitter_name}'
@@ -6595,11 +6946,42 @@ de: &de
     submission_submitters: Liste der Unterzeichner
     submission_link: Link der Einreichung
     documents_link: Link der Dokumente
+  date:
+    abbr_month_names:
+      -
+      - Jan.
+      - Feb.
+      - März
+      - Apr.
+      - Mai
+      - Juni
+      - Juli
+      - Aug.
+      - Sept.
+      - Okt.
+      - Nov.
+      - Dez.
+    formats:
+      default: "%d.%m.%Y"
+      short: "%-d. %b"
+      long: "%-d. %B %Y"
   time:
     formats:
-      detailed: "%A, %d. %B %Y, %H:%M:%S Uhr"
+      short: "%-d. %b, %H:%M"
+      long: "%-d. %B %Y um %H:%M"
+      detailed: "%-d. %B %Y um %H:%M:%S"
 
 pl:
+  date:
+    formats:
+      default: "%d.%m.%Y"
+      short: "%-d %b"
+      long: "%-d %B %Y"
+  time:
+    formats:
+      short: "%-d %b, %H:%M"
+      long: "%-d %B %Y %H:%M"
+      detailed: "%-d %B %Y %H:%M:%S"
   require_phone_2fa_to_open: Wymagaj uwierzytelniania telefonicznego 2FA do otwarcia
   the_sender_has_requested_a_two_factor_authentication_via_one_time_password_sent_to_your_html: Nadawca zażądał uwierzytelnienia dwuskładnikowego poprzez jednorazowe hasło wysłane na Twój numer telefonu <b>%{phone}</b>.
   send_verification_code: Wyślij kod weryfikacyjny
@@ -6617,14 +6999,14 @@ pl:
   decline_reason: Powód odrzucenia
   provide_a_reason: Podaj powód
   notify_the_sender_with_the_reason_you_declined: Powiadom nadawcę o powodzie, dla którego odrzuciłeś
-  form_has_been_declined_on_html: 'Formularz został odrzucony o <span class="font-semibold">%{time}</span>'
-  document_has_been_delegated_on_html: 'Dokument został oddelegowany o <span class="font-semibold">%{time}</span>'
+  form_has_been_declined_on_html: 'Formularz został odrzucony <span class="font-semibold">%{time}</span>'
+  document_has_been_delegated_on_html: 'Dokument został oddelegowany <span class="font-semibold">%{time}</span>'
   name_declined_by_submitter: '"%{name}" odrzucono przez %{submitter}'
   name_declined_by_submitter_with_the_following_reason: '"%{name}" został odrzucony przez %{submitter} z następującym powodem:'
   email: E-mail
   verification_code_code: 'Kod weryfikacyjny: %{code}'
   digitally_signed_by: Podpis cyfrowy przez
-  form_expired_at_html: 'Formularz wygasł o <span class="font-semibold">%{time}</span>'
+  form_expired_at_html: 'Formularz wygasł <span class="font-semibold">%{time}</span>'
   role: Rola
   provide_your_email_to_start: Podaj swój e-mail, aby rozpocząć
   provide_your_email: Podaj swój e-mail
@@ -6666,11 +7048,14 @@ pl:
   profile_details: Szczegóły profilu
   sign_up_with_google: Zarejestruj się przez Google
   sign_up_with_microsoft: Zarejestruj się przez Microsoft
+  redirecting_to_provider: Przekierowywanie do %{provider}...
   by_creating_an_account_you_agree_to_our_html: 'Tworząc konto, akceptujesz naszą <a target="_blank" href="https://www.docuseal.com/privacy">Politykę Prywatności</a> i <a target="_blank" href="https://www.docuseal.com/terms">Regulamin</a>.'
   enter_email_to_continue: Wprowadź e-mail, aby kontynuować
   the_code_has_been_sent_to_your_email: Kod został wysłany na Twój e-mail.
   enter_the_verification_code_from_your_email: Wprowadź kod weryfikacyjny z Twojego e-maila.
   too_many_attempts: Zbyt wiele prób.
+  verification_email_bounced: "Nie można wysłać kodu weryfikacyjnego: e-mail na ten adres został odrzucony."
+  back: Wstecz
   verification_code: Kod Weryfikacyjny
   resend_code: Wyślij Kod Ponownie
   powered_by: 'Napędzany przez'
@@ -6701,6 +7086,44 @@ pl:
   too_many_requests_try_again_later: Zbyt wiele żądań. Spróbuj ponownie później.
 
 uk:
+  date:
+    month_names:
+      -
+      - січня
+      - лютого
+      - березня
+      - квітня
+      - травня
+      - червня
+      - липня
+      - серпня
+      - вересня
+      - жовтня
+      - листопада
+      - грудня
+    abbr_month_names:
+      -
+      - січ.
+      - лют.
+      - бер.
+      - квіт.
+      - трав.
+      - черв.
+      - лип.
+      - серп.
+      - вер.
+      - жовт.
+      - лист.
+      - груд.
+    formats:
+      default: "%d.%m.%Y"
+      short: "%-d %b"
+      long: "%-d %B %Y р."
+  time:
+    formats:
+      short: "%-d %b, %H:%M"
+      long: "%-d %B %Y р. о %H:%M"
+      detailed: "%-d %B %Y р. о %H:%M:%S"
   require_phone_2fa_to_open: Вимагати двофакторну автентифікацію через телефон для відкриття
   the_sender_has_requested_a_two_factor_authentication_via_one_time_password_sent_to_your_html: Відправник запитав двофакторну автентифікацію за допомогою одноразового пароля, надісланого на ваш номер телефону <b>%{phone}</b>.
   send_verification_code: Надіслати код перевірки
@@ -6718,8 +7141,8 @@ uk:
   decline_reason: Причина відхилення
   provide_a_reason: Надайте причину
   notify_the_sender_with_the_reason_you_declined: Повідомте відправника про причину свого відхилення
-  form_has_been_declined_on_html: 'Форму було відхилено о <span class="font-semibold">%{time}</span>'
-  document_has_been_delegated_on_html: 'Документ було делеговано о <span class="font-semibold">%{time}</span>'
+  form_has_been_declined_on_html: 'Форму було відхилено <span class="font-semibold">%{time}</span>'
+  document_has_been_delegated_on_html: 'Документ було делеговано <span class="font-semibold">%{time}</span>'
   name_declined_by_submitter: '"%{name}" відхилено %{submitter}'
   name_declined_by_submitter_with_the_following_reason: '"%{name}" було відхилено %{submitter} з такою причиною:'
   email: E-mail
@@ -6767,11 +7190,14 @@ uk:
   profile_details: Дані профілю
   sign_up_with_google: Зареєструватися через Google
   sign_up_with_microsoft: Зареєструватися через Microsoft
+  redirecting_to_provider: Перенаправлення до %{provider}...
   by_creating_an_account_you_agree_to_our_html: 'Створюючи акаунт, ви погоджуєтесь з нашою <a target="_blank" href="https://www.docuseal.com/privacy">Політикою конфіденційності</a> і <a target="_blank" href="https://www.docuseal.com/terms">Умовами надання послуг</a>.'
   enter_email_to_continue: Введіть електронну пошту, щоб продовжити
   the_code_has_been_sent_to_your_email: Код було надіслано на вашу електронну пошту.
   enter_the_verification_code_from_your_email: Введіть код перевірки з вашої електронної пошти.
   too_many_attempts: Забагато спроб.
+  verification_email_bounced: "Не вдалося надіслати код підтвердження: лист на цю адресу було відхилено."
+  back: Назад
   verification_code: Код перевірки
   resend_code: Надіслати код знову
   powered_by: 'Працює на базі'
@@ -6802,6 +7228,44 @@ uk:
   too_many_requests_try_again_later: Забагато запитів. Спробуйте пізніше.
 
 cs:
+  date:
+    month_names:
+      -
+      - ledna
+      - února
+      - března
+      - dubna
+      - května
+      - června
+      - července
+      - srpna
+      - září
+      - října
+      - listopadu
+      - prosince
+    abbr_month_names:
+      -
+      - led
+      - úno
+      - bře
+      - dub
+      - kvě
+      - čvn
+      - čvc
+      - srp
+      - zář
+      - říj
+      - lis
+      - pro
+    formats:
+      default: "%d. %m. %Y"
+      short: "%-d. %-m."
+      long: "%-d. %B %Y"
+  time:
+    formats:
+      short: "%-d. %-m. %-H:%M"
+      long: "%-d. %B %Y v %-H:%M"
+      detailed: "%-d. %B %Y v %-H:%M:%S"
   require_phone_2fa_to_open: Vyžadovat otevření pomocí telefonního 2FA
   the_sender_has_requested_a_two_factor_authentication_via_one_time_password_sent_to_your_html: Odesílatel požádal o dvoufaktorové ověření pomocí jednorázového hesla zaslaného na vaše telefonní číslo <b>%{phone}</b>.
   send_verification_code: Odeslat ověřovací kód
@@ -6868,11 +7332,14 @@ cs:
   profile_details: Detaily profilu
   sign_up_with_google: Zaregistrovat se pomocí Googlu
   sign_up_with_microsoft: Zaregistrovat se pomocí Microsoftu
+  redirecting_to_provider: Přesměrování na %{provider}...
   by_creating_an_account_you_agree_to_our_html: 'Vytvořením účtu souhlasíte s našimi <a target="_blank" href="https://www.docuseal.com/privacy">Zásadami ochrany osobních údajů</a> a <a target="_blank" href="https://www.docuseal.com/terms">Podmínkami služby</a>.'
   enter_email_to_continue: Zadejte e-mail pro pokračování
   the_code_has_been_sent_to_your_email: Kód byl odeslán na váš e-mail.
   enter_the_verification_code_from_your_email: Zadejte ověřovací kód z vašeho e-mailu.
   too_many_attempts: Příliš mnoho pokusů.
+  verification_email_bounced: "Ověřovací kód nelze odeslat: e-mail na tuto adresu byl odmítnut."
+  back: Zpět
   verification_code: Ověřovací kód
   resend_code: Znovu odeslat kód
   powered_by: 'Poháněno'
@@ -6903,6 +7370,30 @@ cs:
   too_many_requests_try_again_later: Příliš mnoho požadavků. Zkuste to později.
 
 he:
+  date:
+    abbr_month_names:
+      -
+      - ינו׳
+      - פבר׳
+      - מרץ
+      - אפר׳
+      - מאי
+      - יוני
+      - יולי
+      - אוג׳
+      - ספט׳
+      - אוק׳
+      - נוב׳
+      - דצמ׳
+    formats:
+      default: "%d.%m.%Y"
+      short: "%-d ב%b"
+      long: "%-d ב%B %Y"
+  time:
+    formats:
+      short: "%-d ב%b, %-H:%M"
+      long: "%-d ב%B %Y בשעה %-H:%M"
+      detailed: "%-d ב%B %Y בשעה %-H:%M:%S"
   require_phone_2fa_to_open: דרוש אימות דו-שלבי באמצעות טלפון לפתיחה
   the_sender_has_requested_a_two_factor_authentication_via_one_time_password_sent_to_your_html: השולח ביקש אימות דו-שלבי באמצעות סיסמה חד פעמית שנשלחה למספר הטלפון שלך <b>%{phone}</b>.
   send_verification_code: שלח קוד אימות
@@ -6969,11 +7460,14 @@ he:
   profile_details: פרטי הפרופיל
   sign_up_with_google: הירשם עם גוגל
   sign_up_with_microsoft: הירשם עם מיקרוסופט
+  redirecting_to_provider: מפנה אל %{provider}...
   by_creating_an_account_you_agree_to_our_html: 'על ידי יצירת חשבון, אתה מסכים ל<a target="_blank" href="https://www.docuseal.com/privacy">מדיניות הפרטיות</a> ול<a target="_blank" href="https://www.docuseal.com/terms">תנאי השירות</a> שלנו.'
   enter_email_to_continue: הכנס דוא"ל כדי להמשיך
   the_code_has_been_sent_to_your_email: הקוד נשלח לדוא"ל שלך.
   enter_the_verification_code_from_your_email: הזן את קוד האימות מדוא"ל שלך.
   too_many_attempts: יותר מדי ניסיונות.
+  verification_email_bounced: "לא ניתן לשלוח את קוד האימות: האימייל לכתובת זו נדחה."
+  back: חזרה
   verification_code: קוד אימות
   resend_code: שלח קוד מחדש
   powered_by: 'מופעל על ידי'
@@ -7004,6 +7498,7 @@ he:
   too_many_requests_try_again_later: יותר מדי בקשות. נסה שוב מאוחר יותר.
 
 nl: &nl
+  click_to_upload: Klik om te uploaden
   knowledge_based_authentication: Kennisgebaseerde authenticatie
   kba_field: KBA
   passed: Geslaagd
@@ -7043,8 +7538,11 @@ nl: &nl
   paypal_integration: PayPal-integratie
   paypal_account_has_been_connected: PayPal-account is verbonden.
   re_connect_paypal: PayPal opnieuw verbinden
-  failed_to_connect_paypal: PayPal kon niet worden verbonden. Probeer het opnieuw.
-  paypal_connect_not_completed: De verbinding met PayPal is niet voltooid.
+  failed_to_connect_paypal_please_try_again: PayPal kon niet worden verbonden. Probeer het opnieuw.
+  paypal_connection_was_not_completed: De verbinding met PayPal is niet voltooid.
+  disconnecting_your_paypal_account_will_prevent_you_from_offering_paypal_services_and_products_on_your_website_do_you_wish_to_continue: Het loskoppelen van uw PayPal-account voorkomt dat u PayPal-diensten en -producten op uw website kunt aanbieden. Wilt u doorgaan?
+  attention_you_currently_cannot_receive_payments_due_to_restriction_on_your_paypal_account_please_reach_out_to_paypal_customer_support_or_connect_to_paypal_com_for_more_information: 'Let op: U kunt momenteel geen betalingen ontvangen vanwege een beperking op uw PayPal-account. Neem contact op met de PayPal-klantenservice of ga naar https://www.paypal.com voor meer informatie.'
+  attention_please_confirm_your_email_address_on_paypal_com_in_order_to_receive_payments_you_currently_cannot_receive_payments: 'Let op: Bevestig uw e-mailadres op https://www.paypal.com/businessprofile/settings om betalingen te kunnen ontvangen! U kunt momenteel geen betalingen ontvangen.'
   payment_receipt: Betalingsbewijs
   amount_paid: Betaald bedrag
   transaction: Transactie
@@ -7212,6 +7710,7 @@ nl: &nl
   profile_details: Profielgegevens
   sign_up_with_google: Registreren met Google
   sign_up_with_microsoft: Registreren met Microsoft
+  redirecting_to_provider: Doorverwijzen naar %{provider}...
   by_creating_an_account_you_agree_to_our_html: Door een account aan te maken gaat u akkoord met ons <a target="_blank" href="https://www.docuseal.com/privacy">Privacybeleid</a> en onze <a target="_blank" href="https://www.docuseal.com/terms">Servicevoorwaarden</a>.
   enter_email_to_continue: Voer e-mailadres in om door te gaan
   account: Account
@@ -7244,6 +7743,9 @@ nl: &nl
   should_be_a_valid_url: moet een geldige URL zijn
   your_account_will_be_permanently_deleted_within_2_months_please_contact_us_if_you_want_to_keep_your_account: Uw account wordt binnen 2 maanden permanent verwijderd. Neem contact met ons op als u uw account wilt behouden.
   test_mode: Testmodus
+  exit_test_mode: Testmodus verlaten
+  enter_test_mode: Testmodus openen
+  sort_by: Sorteren op
   copy: Kopiëren
   copied: Gekopieerd
   rotate: Draaien
@@ -7339,6 +7841,13 @@ nl: &nl
   completed_form_message: Bericht voltooid formulier
   completed_form_redirect_button: Knop voor doorverwijzing na voltooid formulier
   documents_copy_email: E-mail met kopie van documenten
+  signature_request_email_sent_to_recipients_with_a_link_to_review_and_sign: E-mail met het handtekeningverzoek die naar de ontvangers wordt verzonden met een link om te bekijken en te ondertekenen.
+  view_only_email_sent_to_recipients_that_need_to_only_review_the_documents: E-mail met alleen weergave die wordt verzonden naar ontvangers die de documenten alleen hoeven te bekijken.
+  reminds_recipients_who_havent_completed_their_part_yet_to_sign_following_the_reminders_schedule: Herinnert ontvangers die hun deel nog niet hebben voltooid eraan te ondertekenen, volgens het herinneringsschema.
+  signature_request_sms_sent_to_recipients_with_a_link_to_review_and_sign: Sms met het handtekeningverzoek die naar de ontvangers wordt verzonden met een link om te bekijken en te ondertekenen.
+  phone_2fa_verification_text_message: Sms-bericht voor 2FA-verificatie via telefoon.
+  notification_email_sent_to_the_sender_user_and_bcc_addresses_once_the_submission_is_completed_by_all_parties: Meldingse-mail die naar de verzendende gebruiker en de BCC-adressen wordt gestuurd zodra de indiening door alle partijen is voltooid.
+  completed_documents_copy_email_sent_to_recipients_upon_completion_containing_their_documents: E-mail met een kopie van de voltooide documenten die na voltooiing naar de ontvangers wordt verzonden.
   form_custom_css: Aangepaste CSS voor formulier
   subject: Onderwerp
   body: Inhoud
@@ -7394,6 +7903,7 @@ nl: &nl
   powered_by: Aangedreven door
   qr_code: QR-code
   print: Afdrukken
+  scan: Scannen
   scan_the_qr_code_above_with_your_phone_camera_to_open_and_sign_this_document: Scan de bovenstaande QR-code met je telefooncamera om dit document te openen en te ondertekenen.
   count_documents_signed_with_html: "<b>%{count}</b> documenten ondertekend met"
   storage: Opslag
@@ -7463,6 +7973,8 @@ nl: &nl
   document_templates_html: <span class="lg:hidden">Sjablonen</span><span class="hidden lg:inline">Documentsjablonen</span>
   archived: Gearchiveerd
   search: Zoeken
+  no_results: Geen resultaten
+  folders: Mappen
   submissions_not_found: Geen inzendingen gevonden
   create: Aanmaken
   view_archived: Archief bekijken
@@ -7504,8 +8016,12 @@ nl: &nl
   export: Exporteren
   there_are_no_submissions: Er zijn geen inzendingen
   send_an_invitation_to_fill_and_complete_the_form: Stuur een uitnodiging om het formulier in te vullen en te voltooien
+  send: Verzenden
   send_to_recipients: Verzenden naar ontvangers
   sign_it_yourself: Zelf ondertekenen
+  sign_yourself: Zelf ondertekenen
+  revisions: Revisies
+  no_revisions_yet: Nog geen revisies
   api_and_embedding: API en insluiten
   template_id: Sjabloon-ID
   embedding_url: Insluitings-URL
@@ -7580,6 +8096,9 @@ nl: &nl
   there_are_no_signatures: Er zijn geen handtekeningen
   signed_with_trusted_certificate: Ondertekend met vertrouwd certificaat
   signed_with_external_certificate: Ondertekend met extern certificaat
+  signature_valid: Handtekening geldig
+  signature_verification_failed: Verificatie van handtekening mislukt
+  contains_unsigned_changes_after_the_last_signature: Bevat niet-ondertekende wijzigingen na de laatste handtekening
   setup_2fa_to_continue: Stel 2FA in om door te gaan.
   create_a_new_account: Maak een nieuw account aan.
   you_are_already_signed_in: U bent al aangemeld.
@@ -7594,6 +8113,7 @@ nl: &nl
   form_has_been_declined: Formulier is geweigerd.
   form_is_view_only: Formulier is alleen-lezen.
   file_is_missing: Bestand ontbreekt
+  file_is_not_an_image: Bestand is geen afbeelding
   folder_name_has_been_updated: Mapnaam is bijgewerkt.
   unable_to_rename_folder: Kan map niet hernoemen.
   template_has_been_removed: Sjabloon is verwijderd.
@@ -7653,7 +8173,7 @@ nl: &nl
   thirty_days: 30 dagen
   free: Gratis
   unlimited_documents_storage: Onbeperkte documentopslag
-  users_management: Gebruikersbeheer
+  user_management: Gebruikersbeheer
   ten_field_types: 10 veldtypen
   multiple_signers: Meerdere ondertekenaars
   automatic_esignature: Automatische e-handtekening
@@ -7673,6 +8193,7 @@ nl: &nl
   developer_sandbox: Ontwikkelaars-sandbox.
   upgrade_to_start_using_in_production_html: <a href="%{url}" target="_blank" class="link font-semibold">Upgrade</a> om in productie te gaan gebruiken.
   download_combined_pdf: Gecombineerde PDF downloaden
+  download_event_log: Gebeurtenislogboek downloaden
   audit_log: Auditlogboek
   signers: Ondertekenaars
   not_invited_yet: Nog niet uitgenodigd
@@ -7684,7 +8205,7 @@ nl: &nl
   declined_on_time: Geweigerd op %{time}
   expire_on_time: Verloopt op %{time}
   sign_in_person: In persoon ondertekenen
-  create_a_new_template_document_form_or_submit_the_existing_one_html: <a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Maak een nieuw sjabloon</a> voor een documentformulier of <a href="%{start_form_link}" target="_blank" class="inline underline font-medium">dien het bestaande in</a>
+  create_a_new_template_document_form_html: <a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Maak een nieuw sjabloon</a> voor een documentformulier
   send_email_copy_with_completed_documents_to_a_specified_bcc_address: Stuur een e-mailkopie met voltooide documenten naar een opgegeven BCC-adres.
   re_send_email: E-mail opnieuw verzenden
   re_send_emails: E-mails verzenden
@@ -7706,7 +8227,7 @@ nl: &nl
   awaiting: Wachten
   document_id: Document-ID
   envelope_id: Envelop-ID
-  event_log: Gebeurtenissenlogboek
+  event_log: Gebeurtenislogboek
   verify: Verifiëren
   testing_log_not_for_production_use: Testlogboek - Niet voor productiegebruik
   original_sha256: Oorspronkelijke SHA256
@@ -7744,6 +8265,7 @@ nl: &nl
   submitter_cannot_be_updated: Ontvanger kan niet worden bewerkt.
   at_least_one_field_must_be_filled: Er moet minstens één veld worden ingevuld.
   archived_users: Gearchiveerde gebruikers
+  archived_submissions: Gearchiveerde inzendingen
   embedding_users: Integratiegebruikers
   view_embedding_users: Integratiegebruikers bekijken
   key: Sleutel
@@ -7767,6 +8289,7 @@ nl: &nl
   the_code_has_been_sent_to_your_email: De code is naar uw e-mail verzonden.
   enter_the_verification_code_from_your_email: Voer de verificatiecode uit uw e-mail in.
   too_many_attempts: Te veel pogingen.
+  verification_email_bounced: "Verificatiecode kan niet worden verzonden: e-mail naar dit adres is geretourneerd."
   verification_code: Verificatiecode
   resend_code: Code opnieuw verzenden
   verify_new_sign_in: Nieuwe aanmelding verifiëren
@@ -7794,10 +8317,13 @@ nl: &nl
   overdue_payment: Achterstallige betaling
   your_pro_plan_has_been_suspended_due_to_unpaid_invoices_you_can_update_your_payment_details_to_settle_the_invoice_and_continue_using_docuseal_or_cancel_your_subscription: Uw Pro-abonnement is opgeschort vanwege onbetaalde facturen. U kunt uw betaalgegevens bijwerken om de factuur te voldoen en DocuSeal te blijven gebruiken of uw abonnement opzeggen.
   manage_subscription: Abonnement beheren
+  docuseal_version_security_release_is_available: "Beveiligingsupdate DocuSeal v%{version} is beschikbaar."
+  click_here_to_view_the_instructions_and_update_your_app_html: '<a href="%{url}" class="link" target="_blank" rel="noopener noreferrer nofollow">Klik hier</a> om de instructies te bekijken en uw app bij te werken.'
   submission_created_by_email_html: "<b>Inzending aangemaakt</b> door %{email}"
   submission_created_by_email_via_source_html: "<b>Inzending aangemaakt</b> door %{email} via %{source}"
   submission_created_via_source_html: "<b>Inzending aangemaakt</b> via %{source}"
   pro_user_seats_used: Gebruikersplaatsen Pro gebruikt
+  manage: Beheren
   manage_plan: Abonnement beheren
   this_submission_has_multiple_signers_which_prevents_the_use_of_a_sharing_link_html: Deze inzending heeft meerdere ondertekenaars, waardoor het gebruik van een deellink niet mogelijk is omdat onduidelijk is welke ondertekenaar verantwoordelijk is voor specifieke velden. Volg deze <a href="https://www.docuseal.com/resources/pre-filling-recipients" class="link font-bold" rel="noopener noreferrer nofollow" target="_blank">handleiding</a> om de standaardgegevens van de ondertekenaar te definiëren.
   welcome_to_docuseal: Welkom bij DocuSeal
@@ -7894,6 +8420,9 @@ nl: &nl
   connect_google_drive: Verbind Google Drive
   google_drive_has_been_connected: Google Drive is verbonden
   unable_to_identify_reset_your_password_to_sign_in: Kan niet worden geïdentificeerd. Stel uw wachtwoord opnieuw in om in te loggen.
+  use_sso_to_sign_in: Gebruik de SAML SSO-app om in te loggen.
+  contact_your_admin_to_invite_you: Neem contact op met je beheerder om uitgenodigd te worden voor het team.
+  too_many_sign_ups: Te veel registraties. Probeer het later opnieuw.
   desktop: Desktop
   mobile: Mobiel
   tablet: Tablet
@@ -7965,6 +8494,16 @@ nl: &nl
   open_file_from: 'Bestand openen van'
   cancel: Annuleren
   open: Openen
+  fields: Velden
+  more: Meer
+  ok: OK
+  failed_to_download_files: Bestanden konden niet worden gedownload
+  failed_to_upload_files: Bestanden konden niet worden geüpload
+  failed_to_save_the_scan: Scan kon niet worden opgeslagen
+  failed_to_scan_the_document: Document kon niet worden gescand
+  document_scanning_is_not_available_on_this_device: Documenten scannen is niet beschikbaar op dit apparaat
+  cc_view_only: CC Alleen bekijken
+  bcc_completed: BCC Voltooid
   devise:
     confirmations:
       confirmed: Uw e-mailadres is succesvol bevestigd.
@@ -7980,6 +8519,7 @@ nl: &nl
     invite: Uitnodiging
     link: Link
     mcp: MCP
+    self: Zelf ondertekenen
   submission_event_names:
     send_email_to_html: "<b>E-mail verzonden</b> naar %{submitter_name}"
     bounce_email_html: "<b>E-mail geretourneerd</b> %{submitter_name}"
@@ -8093,11 +8633,29 @@ nl: &nl
     submission_submitters: Lijst van ondertekenaars
     submission_link: Link van de inzending
     documents_link: Link van de documenten
+  date:
+    formats:
+      short: "%-d %b"
+      long: "%-d %B %Y"
   time:
     formats:
-      detailed: "%d %B %Y %H:%M:%S"
+      short: "%-d %b, %H:%M"
+      long: "%-d %B %Y om %H:%M"
+      detailed: "%-d %B %Y om %H:%M:%S"
 
 ar:
+  date:
+    formats:
+      default: "%d‏/%m‏/%Y"
+      short: "%-d %b"
+      long: "%-d %B %Y"
+  time:
+    am: "ص"
+    pm: "م"
+    formats:
+      short: "%-d %b، %-I:%M %p"
+      long: "%-d %B %Y في %-I:%M %p"
+      detailed: "%-d %B %Y في %-I:%M:%S %p"
   require_phone_2fa_to_open: "يتطلب المصادقة الثنائية عبر الهاتف للفتح"
   the_sender_has_requested_a_two_factor_authentication_via_one_time_password_sent_to_your_html: "طلب المرسل المصادقة الثنائية عبر كلمة مرور لمرة واحدة مرسلة إلى رقم هاتفك <b>%{phone}</b>."
   send_verification_code: "إرسال رمز التحقق"
@@ -8164,11 +8722,14 @@ ar:
   profile_details: تفاصيل الملف الشخصي
   sign_up_with_google: الاشتراك باستخدام جوجل
   sign_up_with_microsoft: الاشتراك باستخدام مايكروسوفت
+  redirecting_to_provider: جارٍ إعادة التوجيه إلى %{provider}...
   by_creating_an_account_you_agree_to_our_html: 'من خلال إنشاء حساب، فإنك توافق على <a target="_blank" href="https://www.docuseal.com/privacy">سياسة الخصوصية</a> و<a target="_blank" href="https://www.docuseal.com/terms">شروط الخدمة</a> الخاصة بنا.'
   enter_email_to_continue: أدخل البريد الإلكتروني للمتابعة
   the_code_has_been_sent_to_your_email: تم إرسال الرمز إلى بريدك الإلكتروني.
   enter_the_verification_code_from_your_email: أدخل رمز التحقق من بريدك الإلكتروني.
   too_many_attempts: عدد المحاولات كبير جدًا.
+  verification_email_bounced: "تعذر إرسال رمز التحقق: تم رفض البريد الإلكتروني المرسل إلى هذا العنوان."
+  back: رجوع
   verification_code: رمز التحقق
   resend_code: إعادة إرسال الرمز
   powered_by: 'مشغل بواسطة'
@@ -8199,6 +8760,16 @@ ar:
   too_many_requests_try_again_later: طلبات كثيرة جدًا. حاول مرة أخرى لاحقًا.
 
 ko:
+  date:
+    formats:
+      default: "%Y. %m. %d."
+      short: "%b %-d일"
+      long: "%Y년 %B %-d일"
+  time:
+    formats:
+      short: "%b %-d일 %p %-I:%M"
+      long: "%Y년 %B %-d일 %p %-I:%M"
+      detailed: "%Y년 %B %-d일 %p %-I:%M:%S"
   require_phone_2fa_to_open: 열려면 휴대폰 2FA 요구
   the_sender_has_requested_a_two_factor_authentication_via_one_time_password_sent_to_your_html: 발신자가 <b>%{phone}</b> 전화번호로 전송된 일회용 비밀번호를 통해 2단계 인증을 요청했습니다.
   send_verification_code: 인증 코드 보내기
@@ -8265,11 +8836,14 @@ ko:
   profile_details: 프로필 세부 정보
   sign_up_with_google: Google로 가입
   sign_up_with_microsoft: Microsoft로 가입
+  redirecting_to_provider: "%{provider}(으)로 이동 중..."
   by_creating_an_account_you_agree_to_our_html: '계정을 생성함으로써, <a target="_blank" href="https://www.docuseal.com/privacy">개인정보 처리방침</a> 및 <a target="_blank" href="https://www.docuseal.com/terms">서비스 약관</a>에 동의하게 됩니다.'
   enter_email_to_continue: 계속하려면 이메일을 입력하세요
   the_code_has_been_sent_to_your_email: 코드가 이메일로 전송되었습니다.
   enter_the_verification_code_from_your_email: 이메일로 받은 인증 코드를 입력하세요.
   too_many_attempts: 시도 횟수가 너무 많습니다.
+  verification_email_bounced: "인증 코드를 보낼 수 없습니다: 이 주소로 보낸 이메일이 반송되었습니다."
+  back: 뒤로
   verification_code: 인증 코드
   resend_code: 코드 재전송
   powered_by: '제공:'
@@ -8300,6 +8874,16 @@ ko:
   too_many_requests_try_again_later: 요청이 너무 많습니다. 나중에 다시 시도하세요.
 
 ja:
+  date:
+    formats:
+      default: "%Y/%m/%d"
+      short: "%-m月%-d日"
+      long: "%Y年%-m月%-d日"
+  time:
+    formats:
+      short: "%-m月%-d日 %-H:%M"
+      long: "%Y年%-m月%-d日 %-H:%M"
+      detailed: "%Y年%-m月%-d日 %-H:%M:%S"
   require_phone_2fa_to_open: 電話による2段階認証が必要です
   the_sender_has_requested_a_two_factor_authentication_via_one_time_password_sent_to_your_html: 送信者は、<b>%{phone}</b> に送信されたワンタイムパスワードによる2段階認証を要求しました。
   send_verification_code: 認証コードを送信
@@ -8366,11 +8950,14 @@ ja:
   profile_details: プロフィールの詳細
   sign_up_with_google: Googleで登録
   sign_up_with_microsoft: Microsoftで登録
+  redirecting_to_provider: "%{provider} にリダイレクトしています..."
   by_creating_an_account_you_agree_to_our_html: '<a target="_blank" href="https://www.docuseal.com/privacy">プライバシーポリシー</a>および<a target="_blank" href="https://www.docuseal.com/terms">利用規約</a>に同意の上、アカウントを作成します。'
   enter_email_to_continue: 続行するにはメールを入力してください
   the_code_has_been_sent_to_your_email: コードがあなたのメールに送信されました
   enter_the_verification_code_from_your_email: メールに記載された認証コードを入力してください
   too_many_attempts: 試行回数が多すぎます
+  verification_email_bounced: "認証コードを送信できません：このアドレス宛のメールが配信できませんでした。"
+  back: 戻る
   verification_code: 認証コード
   resend_code: コードを再送信
   powered_by: '提供元：'
@@ -8402,21 +8989,33 @@ ja:
 
 en-US:
   <<: *en
-  date:
-    formats:
-      default: "%m/%d/%Y"
-  time:
-    formats:
-      detailed: "%B %d, %Y %I:%M:%S %p"
 
 en-GB:
   <<: *en
   date:
+    abbr_month_names:
+      -
+      - Jan
+      - Feb
+      - Mar
+      - Apr
+      - May
+      - Jun
+      - Jul
+      - Aug
+      - Sept
+      - Oct
+      - Nov
+      - Dec
     formats:
       default: "%d/%m/%Y"
+      short: "%-d %b"
+      long: "%-d %B %Y"
   time:
     formats:
-      detailed: "%d %B, %Y %H:%M:%S"
+      short: "%-d %b, %H:%M"
+      long: "%-d %B %Y at %H:%M"
+      detailed: "%-d %B %Y at %H:%M:%S"
 
 es-ES:
   <<: *es

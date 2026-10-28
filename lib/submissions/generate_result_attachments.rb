@@ -36,8 +36,12 @@ module Submissions
 
     SIGN_REASON = 'Signed with DocuSeal.com'
 
+    UNSUPPORTED_IMAGE_TYPES = ['image/heic', 'image/avif'].freeze
+
     RTL_REGEXP = TextUtils::RTL_REGEXP
 
+    TEXT_ALIGNS = %w[left center right justify].freeze
+    TEXT_VALIGNS = %w[top center bottom].freeze
     TEXT_LEFT_MARGIN = 1
     TEXT_TOP_MARGIN = 1
     MAX_PAGE_ROTATE = 50
@@ -278,10 +282,10 @@ module Submissions
           value = field['default_value'] if field['type'] == 'heading'
           value = field['default_value'] if field['type'] == 'strikethrough' && value.nil? && field['conditions'].blank?
 
-          text_align = field.dig('preferences', 'align').to_s.to_sym.presence ||
+          text_align = field.dig('preferences', 'align').to_s.presence_in(TEXT_ALIGNS)&.to_sym ||
                        (value.to_s.match?(RTL_REGEXP) ? :right : :left)
 
-          text_valign = (field.dig('preferences', 'valign').to_s.presence || 'center').to_sym
+          text_valign = (field.dig('preferences', 'valign').to_s.presence_in(TEXT_VALIGNS) || 'center').to_sym
 
           layouter = HexaPDF::Layout::TextLayouter.new(text_valign:, text_align:, font:, font_size:)
 
@@ -300,8 +304,9 @@ module Submissions
 
           field_type = field['type']
 
-          if field_type == 'image' &&
-             submitter.attachments.find { |a| a.uuid == value }.then { |a| !a.image? || a.content_type == 'image/heic' }
+          if (field_type == 'image' || field_type == 'stamp') &&
+             submitter.attachments.find { |a| a.uuid == value }
+                      .then { |a| !a.image? || a.content_type.in?(UNSUPPORTED_IMAGE_TYPES) }
             field_type = 'file'
           end
 
@@ -346,8 +351,11 @@ module Submissions
                   (with_signature_id_completed_at ? submitter.completed_at : nil) || attachment.created_at
 
                 if with_signature_id_reason || field.dig('preferences', 'reasons').present?
-                  "#{"#{I18n.t('reason')}: " if reason_value}#{reason_value || I18n.t('digitally_signed_by')} " \
-                    "#{submitter.name}#{" <#{submitter.email}>" if submitter.email.present?}\n" \
+                  reason_line =
+                    "#{"#{I18n.t('reason')}: " if reason_value}#{reason_value || I18n.t('digitally_signed_by')} " \
+                    "#{submitter.name}#{" <#{submitter.email}>" if submitter.email.present?}"
+
+                  "#{TextUtils.maybe_rtl_reverse(reason_line)}\n" \
                     "#{I18n.l(signature_timestamp.in_time_zone(timezone), format: time_format)} " \
                     "#{TimeUtils.timezone_abbr(timezone, signature_timestamp)}"
                 else
@@ -509,7 +517,9 @@ module Submissions
                 cv.image(PdfIcons.paperclip_io, at: [0, 0], width: box.content_width)
               end
 
-              acc << HexaPDF::Layout::TextFragment.create("#{attachment.filename}\n", font:, font_size:)
+              acc << HexaPDF::Layout::TextFragment.create(
+                "#{TextUtils.maybe_rtl_reverse(attachment.filename.to_s)}\n", font:, font_size:
+              )
             end
 
             lines = layouter.fit(items, area['w'] * width, height).lines
@@ -589,8 +599,10 @@ module Submissions
             )
           when ->(type) { type == 'cells' && !area['cell_w'].to_f.zero? }
             cell_width = area['cell_w'] * width
-            cell_valign = field.dig('preferences', 'valign').to_s.presence || 'center'
+            cell_valign = field.dig('preferences', 'valign').to_s.presence_in(TEXT_VALIGNS) || 'center'
             cell_layouter = cell_layouters[cell_valign]
+
+            value = value.to_s
 
             if (mask = field.dig('preferences', 'mask').presence)
               value = TextUtils.mask_value(value, mask)
@@ -804,7 +816,7 @@ module Submissions
       end
 
       ActiveStorage::Attachment.new(
-        blob: ActiveStorage::Blob.create_and_upload!(io: io.tap(&:rewind), filename: "#{name}.pdf"),
+        blob: ActiveStorage::Blob.create_and_upload!(io: io.tap(&:rewind), filename: "#{name}.pdf".tr('/', '-')),
         metadata: { original_uuid: uuid,
                     analyzed: true,
                     sha256: Base64.urlsafe_encode64(Digest::SHA256.digest(io.string)) },
@@ -872,6 +884,8 @@ module Submissions
     end
 
     def maybe_flatten_pdf(pdf)
+      pdf.catalog.delete(:AcroForm) if pdf.catalog[:AcroForm].is_a?(Integer)
+
       pdf.acro_form.create_appearances(force: true) if pdf.acro_form && pdf.acro_form[:NeedAppearances]
       pdf.acro_form&.flatten
     rescue HexaPDF::MissingGlyphError

@@ -98,7 +98,7 @@ module Api
 
       render json: build_create_json(submissions)
     rescue Submitters::NormalizeValues::BaseError, Submissions::CreateFromSubmitters::BaseError,
-           DownloadUtils::UnableToDownload => e
+           Submitters::SubmitValues::ValidationError, DownloadUtils::UnableToDownload => e
       Rollbar.warning(e) if defined?(Rollbar)
 
       render json: { error: e.message }, status: :unprocessable_content
@@ -173,7 +173,6 @@ module Api
     end
 
     def filter_submissions(submissions, params)
-      submissions = submissions.where(template_id: params[:template_id]) if params[:template_id].present?
       submissions = submissions.where(slug: params[:slug]) if params[:slug].present?
 
       if params[:template_folder].present?

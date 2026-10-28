@@ -8,6 +8,9 @@ module Submitters
     VARIABLE_REGEXP = /\{\{?(\w+)\}\}?/
     PHONE_REGEXP = /[+\d()\s-]+/
     NONEDITABLE_FIELD_TYPES = %w[stamp heading strikethrough].freeze
+    REQUIRED_FIELD_TYPES = %w[payment kba verification].freeze
+    CHOICE_FIELD_TYPES = %w[radio multiple select].freeze
+    BOOLEAN_VALUES = [true, false].freeze
 
     STRFTIME_MAP = {
       'hour' => '%-k',
@@ -53,11 +56,8 @@ module Submitters
         reason_field = maybe_set_signature_reason!(values, submitter, params)
         validate_values!(reason_field ? values.except(reason_field['uuid']) : values, submitter, params, request)
 
-        if (touch_attachment_uuid = params[:touch_attachment_uuid].presence)
-          ActiveStorage::Attachment.where(uuid: touch_attachment_uuid, record: submitter).touch_all(:created_at)
-        end
-
         if params[:completed] == 'true'
+          validate_invite_submitters!(submitter)
           maybe_invite_via_field(submitter, request)
 
           SubmissionEvents.create_with_tracking_data(submitter, 'complete_form', request)
@@ -95,7 +95,9 @@ module Submitters
       required_field_uuids_acc.each do |uuid|
         next if submitter.values[uuid].present?
 
-        raise RequiredFieldError, uuid if validate_required
+        if validate_required || submitter.submission.fields_uuid_index.dig(uuid, 'type').in?(REQUIRED_FIELD_TYPES)
+          raise RequiredFieldError, uuid
+        end
 
         Rollbar.warning("Required field #{submitter.id}: #{uuid}") if defined?(Rollbar)
       end
@@ -114,7 +116,7 @@ module Submitters
       end
 
       reason_field = submitter.submission.template_fields.find do |e|
-        e['uuid'] == reason_field_uuid && e['submitter_uuid'] == submitter.uuid
+        e['uuid'] == reason_field_uuid
       end
 
       if reason_field
@@ -228,7 +230,11 @@ module Submitters
           else
             normalized_formula = normalize_formula(formula, submitter.submission, submission_values:)
 
-            calculate_formula_value(normalized_formula, values)
+            if field['type'] == 'date'
+              calculate_date_formula_value(normalized_formula, values, submitter.submission)
+            else
+              calculate_formula_value(normalized_formula, values, submitter.submission)
+            end
           end
       end
 
@@ -253,8 +259,12 @@ module Submitters
       end
     end
 
-    def calculate_formula_value(_formula, _values)
+    def calculate_formula_value(_formula, _values, _submission)
       0
+    end
+
+    def calculate_date_formula_value(_formula, _values, _submission)
+      nil
     end
 
     def eval_text_formula_value(_formula, _values, _submission)
@@ -487,7 +497,7 @@ module Submitters
 
         submission.submitters.create!(uuid: s['uuid'], email:, phone:, account_id: submitter.account_id)
 
-        SubmissionEvents.create_with_tracking_data(submitter, 'invite_party', request, { uuid: submitter.uuid })
+        SubmissionEvents.create_with_tracking_data(submitter, 'invite_party', request, { uuid: s['uuid'] })
 
         is_invited = true
       end
@@ -497,7 +507,7 @@ module Submitters
       submitter
     end
 
-    def validate_value!(_value, field, _params, submitter, _request)
+    def validate_value!(value, field, _params, submitter, _request)
       raise ValidationError, 'Missing field' unless field
       raise ValidationError, 'Invalid field' if field['submitter_uuid'] != submitter.uuid
 
@@ -507,7 +517,34 @@ module Submitters
         raise ValidationError, 'Read-only field'
       end
 
+      raise ValidationError, 'Value is invalid' if field['type'] == 'checkbox' && !value.in?(BOOLEAN_VALUES)
+
+      validate_choice_value!(value, field, submitter) if field['type'].in?(CHOICE_FIELD_TYPES)
+
       true
+    end
+
+    def validate_choice_value!(value, field, submitter)
+      return if value.blank?
+
+      raise ValidationError, 'Value is invalid' unless value.is_a?(field['type'] == 'multiple' ? Array : String)
+
+      option_names = field['options'].to_a.map.with_index do |option, index|
+        option['value'].presence ||
+          "#{I18n.t('option', locale: submitter.metadata.fetch('lang', submitter.account.locale))} #{index + 1}"
+      end
+
+      raise ValidationError, 'Value is invalid' unless Array.wrap(value).all? { |item| option_names.include?(item) }
+    end
+
+    def validate_invite_submitters!(submitter)
+      submission = submitter.submission
+
+      is_pending_invite = (submission.template_submitters || submission.template.submitters).any? do |s|
+        s['invite_by_uuid'] == submitter.uuid && submission.submitters.none? { |e| e.uuid == s['uuid'] }
+      end
+
+      raise ValidationError, 'Invite required' if is_pending_invite
     end
   end
 end

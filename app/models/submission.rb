@@ -112,7 +112,8 @@ class Submission < ApplicationRecord
     api: 'api',
     embed: 'embed',
     mcp: 'mcp',
-    link: 'link'
+    link: 'link',
+    self: 'self'
   }, scope: false, prefix: true
 
   enum :submitters_order, {

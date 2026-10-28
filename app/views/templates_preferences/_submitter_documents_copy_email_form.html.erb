@@ -10,7 +10,12 @@
     <%= f.fields_for :preferences, Struct.new(:documents_copy_email_reply_to, :documents_copy_email_subject, :documents_copy_email_body).new(@template.preferences['documents_copy_email_reply_to'].presence || configs['reply_to'], @template.preferences['documents_copy_email_subject'].presence || configs['subject'], @template.preferences['documents_copy_email_body'].presence || configs['body']) do |ff| %>
       <div class="form-control">
         <div class="flex justify-between">
-          <%= ff.label :documents_copy_email_subject, t('email_subject'), class: 'label' %>
+          <div class="flex items-center">
+            <%= ff.label :documents_copy_email_subject, t('email_subject'), class: 'label' %>
+            <span class="tooltip tooltip-right hidden md:flex" data-tip="<%= t('completed_documents_copy_email_sent_to_recipients_upon_completion_containing_their_documents') %>">
+              <%= svg_icon('info_circle', class: 'w-4 h-4') %>
+            </span>
+          </div>
           <% if is_custom_template_email %>
             <label for="submitter_documents_copy_email_reset_link" class="label underline">
               <%= t('reset_default') %>

@@ -25,8 +25,6 @@ Rails.application.routes.draw do
 
   namespace :api, defaults: { format: :json } do
     resource :user, only: %i[show]
-    resources :attachments, only: %i[create]
-    resources :submitter_email_clicks, only: %i[create]
     resources :submitter_form_views, only: %i[create]
     resources :submitters, only: %i[index show update]
     resources :submissions, only: %i[index show create update destroy] do
@@ -58,9 +56,9 @@ Rails.application.routes.draw do
   resources :encrypted_user_configs, only: %i[destroy]
   resources :timestamp_server, only: %i[create] unless Docuseal.multitenant?
   resources :dashboard, only: %i[index]
+  resources :search, only: %i[index]
   resources :setup, only: %i[index create]
   resource :newsletter, only: %i[show update]
-  resources :enquiries, only: %i[create]
   resources :users, only: %i[new create edit update destroy] do
     resource :send_reset_password, only: %i[update], controller: 'users_send_reset_password'
   end
@@ -73,6 +71,7 @@ Rails.application.routes.draw do
     resources :events, only: %i[index], controller: 'submission_events'
     resources :download, only: %i[index], controller: 'submissions_download'
     resources :resend_email, only: %i[create], controller: 'submissions_resend_email'
+    get ':tab', action: :show, on: :member, as: :tab, constraints: { tab: /recipients/ }
   end
   resources :submitters, only: %i[edit update]
   resources :console_redirect, only: %i[index]
@@ -127,13 +126,7 @@ Rails.application.routes.draw do
                          controller: 'api/active_storage_blobs_proxy'
 
   if Docuseal.multitenant?
-    resource :blobs_proxy_legacy, only: %i[show],
-                                  path: '/blobs/proxy/:signed_id/*filename',
-                                  controller: 'api/active_storage_blobs_proxy_legacy',
-                                  as: :rails_blob
-    get '/disk/:encoded_key/*filename' => 'active_storage/disk#show', as: :rails_disk_service
-    put '/disk/:encoded_token' => 'active_storage/disk#update', as: :update_rails_disk_service
-    post '/direct_uploads' => 'active_storage/direct_uploads#create', as: :rails_direct_uploads
+    get '/disk/:encoded_key/*filename' => 'active_storage/disk#show', as: :rails_disk_service if Rails.env.local?
 
     ActiveSupport.run_load_hooks(:multitenant_routes, self)
   end
@@ -142,7 +135,8 @@ Rails.application.routes.draw do
     get :completed
   end
 
-  resource :resubmit_form, controller: 'start_form', only: :update
+  resource :resubmit_form, controller: 'start_form_resubmit', only: :update
+  resources :start_form_self, only: :update
   resource :submit_form_email_2fa, only: %i[create update]
   resources :start_form_email_2fa_send, only: :create
 
@@ -158,6 +152,10 @@ Rails.application.routes.draw do
     resources :delegate, only: %i[create], controller: 'submit_form_delegate'
     resources :invite, only: %i[create], controller: 'submit_form_invite'
     resources :metadata, only: %i[index], controller: 'submit_form_metadata'
+    resource :click_email, only: %i[create], controller: 'submit_form_click_email'
+    resources :view, only: %i[create], controller: 'submit_form_view'
+    resources :upload, only: %i[create], controller: 'submit_form_upload'
+    resources :prefill_attachments, only: %i[create], controller: 'submit_form_prefill_attachments'
     resources :debug, only: %i[index], controller: 'submissions_debug' if Rails.env.development?
     get :completed
     get :delegated
@@ -174,8 +172,11 @@ Rails.application.routes.draw do
 
   resources :submitters, only: %i[] do
     resources :download, only: %i[index], controller: 'submitters_download', constraints: { submitter_id: /\d+/ }
-    resources :download, only: %i[index], controller: 'submit_form_completed_download'
     resources :send_email, only: %i[create], controller: 'submitters_send_email'
+  end
+
+  resources :submitters, only: %i[], param: 'slug' do
+    resources :download, only: %i[index], controller: 'submit_form_completed_download'
   end
 
   resources :settings, only: %i[index]

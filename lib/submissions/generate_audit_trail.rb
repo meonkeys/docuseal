@@ -19,6 +19,7 @@ module Submissions
     }.freeze
 
     TESTING_FOOTER = GenerateResultAttachments::TESTING_FOOTER
+    UNSUPPORTED_IMAGE_TYPES = GenerateResultAttachments::UNSUPPORTED_IMAGE_TYPES
 
     RTL_REGEXP = TextUtils::RTL_REGEXP
     MAX_IMAGE_HEIGHT = 100
@@ -61,7 +62,7 @@ module Submissions
         ActiveStorage::Attachment.create!(
           blob: ActiveStorage::Blob.create_and_upload!(
             io: io.tap(&:rewind), filename: "#{I18n.t('audit_log')} - " \
-                                            "#{submission.name || submission.template&.name}.pdf"
+                                            "#{submission.name || submission.template&.name}.pdf".tr('/', '-')
           ),
           name: 'audit_trail',
           record: submission
@@ -219,7 +220,7 @@ module Submissions
 
         [
           composer.document.layout.formatted_text_box(
-            [{ text: document.filename.to_s }]
+            [{ text: TextUtils.maybe_rtl_reverse(document.filename.to_s) }]
           ),
           composer.document.layout.formatted_text_box(
             [
@@ -266,13 +267,18 @@ module Submissions
 
         is_id_verified = submission_events.any?(&:complete_verification?)
 
-        is_kba_passed = submission_events.any?(&:complete_kba?)
+        complete_kba_event = submission_events.find(&:complete_kba?) || SubmissionEvent.new
+
+        kba_answers = complete_kba_event.data['answers']
+        kba_score = " (#{kba_answers['correct']}/#{kba_answers['asked']})" if kba_answers
 
         info_rows = [
           [
             composer.document.layout.formatted_text_box(
               [
-                submission.template_submitters.size > 1 && { text: "#{item['name']}\n" },
+                submission.template_submitters.size > 1 && {
+                  text: "#{TextUtils.maybe_rtl_reverse(item['name'].to_s)}\n"
+                },
                 submitter.email && { text: "#{submitter.email}\n", font: [FONT_NAME, { variant: :bold }] },
                 submitter.name && { text: "#{TextUtils.maybe_rtl_reverse(submitter.name)}\n" },
                 submitter.phone && { text: "#{submitter.phone}\n" }
@@ -294,12 +300,12 @@ module Submissions
                 is_id_verified && {
                   text: "#{I18n.t('identity_verification')}: #{I18n.t('verified')}\n"
                 },
-                is_kba_passed && {
-                  text: "#{I18n.t('knowledge_based_authentication')}: #{I18n.t('passed')}\n"
+                complete_kba_event.persisted? && {
+                  text: "#{I18n.t('knowledge_based_authentication')}: #{I18n.t('passed')}#{kba_score}\n"
                 },
                 completed_event.data['ip'] && { text: "IP: #{completed_event.data['ip']}\n" },
                 completed_event.data['sid'] && { text: "#{I18n.t('session_id')}: #{completed_event.data['sid']}\n" },
-                completed_event.data['ua'] && { text: "User agent: #{completed_event.data['ua']}\n" },
+                completed_event.data['ua'] && { text: "User agent: #{completed_event.data['ua'].to_s.squish}\n" },
                 submitter.timezone && { text: "Time zone: #{submitter.timezone.to_s.sub('Kiev', 'Kyiv')}\n" },
                 "\n"
               ].compact_blank, line_spacing: 1.3, padding: [10, 20, 20, 0]
@@ -352,8 +358,9 @@ module Submissions
 
           field_type = field['type']
 
-          if field_type == 'image' &&
-             submitter.attachments.find { |a| a.uuid == value }.then { |a| !a.image? || a.content_type == 'image/heic' }
+          if (field_type == 'image' || field_type == 'stamp') &&
+             submitter.attachments.find { |a| a.uuid == value }
+                      .then { |a| !a.image? || a.content_type.in?(UNSUPPORTED_IMAGE_TYPES) }
             field_type = 'file'
           end
 
@@ -425,7 +432,7 @@ module Submissions
                       r.submissions_preview_url(submission.slug, **Docuseal.default_url_options)
                     end
 
-                  { link:, text: "#{attachment.filename}\n", style: :link }
+                  { link:, text: "#{TextUtils.maybe_rtl_reverse(attachment.filename.to_s)}\n", style: :link }
                 end,
                 padding: [0, 0, 10, 0]
               )
@@ -476,6 +483,8 @@ module Submissions
               submitter.name || submitter.email || submitter.phone
           end
 
+        submitter_name = TextUtils.maybe_rtl_reverse(submitter_name.to_s.squish)
+
         text =
           if event.event_type == 'complete_verification'
             I18n.t('submission_event_names.complete_verification_by_html', provider: event.data['method'],
@@ -483,18 +492,22 @@ module Submissions
           elsif event.event_type == 'invite_party' &&
                 (invited_submitter = submission.submitters.find { |e| e.uuid == event.data['uuid'] }) &&
                 (name = submission.template_submitters.find { |e| e['uuid'] == event.data['uuid'] }&.dig('name'))
-            invited_submitter_name = [invited_submitter.name || invited_submitter.email || invited_submitter.phone,
-                                      name].join(' ')
+            invited_submitter_name = TextUtils.maybe_rtl_reverse(
+              [invited_submitter.name || invited_submitter.email || invited_submitter.phone, name].join(' ').squish
+            )
             I18n.t('submission_event_names.invite_party_by_html', invited_submitter_name:,
                                                                   submitter_name:)
           elsif with_audit_sender && (event.event_type == 'send_email' || event.event_type == 'send_sms')
+            created_by_name = TextUtils.maybe_rtl_reverse(submission.created_by_user.full_name.to_s.squish)
+
             [
               I18n.t("submission_event_names.#{event.event_type}_to_html", submitter_name:),
-              "<b>#{I18n.t(:from)}</b> #{submission.created_by_user.full_name} #{submission.created_by_user.email}"
+              "<b>#{I18n.t(:from)}</b> #{created_by_name} #{submission.created_by_user.email}"
             ].join("\n")
           elsif event.event_type == 'delegate_form'
             from = event.data['old_email'].presence ||
                    versions.rfind { |v| v.created_at <= event.event_timestamp }&.then { |v| v.name || v.phone }
+            from = TextUtils.maybe_rtl_reverse(from.to_s.squish)
             I18n.t('submission_event_names.delegate_form_by_html', from:, to: event.data['email'])
           elsif event.event_type.include?('send_')
             I18n.t("submission_event_names.#{event.event_type}_to_html", submitter_name:)

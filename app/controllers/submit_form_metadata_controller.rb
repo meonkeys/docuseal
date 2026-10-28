@@ -17,12 +17,12 @@ class SubmitFormMetadataController < ApplicationController
       submission.schema_documents.find { |a| a.uuid == item['attachment_uuid'] }
     end
 
-    ActiveRecord::Associations::Preloader.new(records: documents, associations: %i[blob record]).call
+    ActiveRecord::Associations::Preloader.new(records: documents, associations: :blob).call
 
     text_runs = documents.to_h do |document|
       [
         document.uuid,
-        DocumentMetadatas.find_or_create_for_document(document, account_id: document.record.account_id).text_runs
+        DocumentMetadatas.find_or_create_for_document(document, account_id: submission.account_id).text_runs
       ]
     end
 
@@ -39,6 +39,6 @@ class SubmitFormMetadataController < ApplicationController
       !submitter.submission.expired? &&
       !submitter.submission.template&.archived_at? &&
       !submitter.account.archived_at? &&
-      Submitters::AuthorizedForForm.call(submitter, current_user, request)
+      Submitters::AuthorizedForForm.call(submitter, current_user, request, with_order: true)
   end
 end

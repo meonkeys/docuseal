@@ -19,14 +19,15 @@ class SubmitFormDeclineController < ApplicationController
                                                                                                 request)
 
     ApplicationRecord.transaction do
-      @submitter.update!(declined_at: Time.current)
+      @submitter.update!(declined_at: Time.current, values: @submitter.preferences['default_values'] || {})
 
       SubmissionEvents.create_with_tracking_data(@submitter, 'decline_form', request, { reason: params[:reason] })
     end
 
     user = @submitter.submission.created_by_user || @submitter.template.author
 
-    if user.user_configs.find_by(key: UserConfig::RECEIVE_DECLINED_EMAIL)&.value != false
+    if Users.send_emails?(user) &&
+       user.user_configs.find_by(key: UserConfig::RECEIVE_DECLINED_EMAIL)&.value != false
       SubmitterMailer.declined_email(@submitter, user).deliver_later!
     end
 

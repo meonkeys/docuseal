@@ -10,7 +10,12 @@
     <%= f.fields_for :preferences, Struct.new(:invitation_view_email_subject, :invitation_view_email_body).new(@template.preferences['invitation_view_email_subject'].presence || configs['subject'], @template.preferences['invitation_view_email_body'].presence || configs['body']) do |ff| %>
       <div class="form-control">
         <div class="flex justify-between">
-          <%= ff.label :invitation_view_email_subject, t('email_subject'), class: 'label' %>
+          <div class="flex items-center">
+            <%= ff.label :invitation_view_email_subject, t('email_subject'), class: 'label' %>
+            <span class="tooltip tooltip-right hidden md:flex" data-tip="<%= t('view_only_email_sent_to_recipients_that_need_to_only_review_the_documents') %>">
+              <%= svg_icon('info_circle', class: 'w-4 h-4') %>
+            </span>
+          </div>
           <% if is_custom_template_email %>
             <label for="submitter_view_invitation_email_reset_link" class="label underline">
               <%= t('reset_default') %>

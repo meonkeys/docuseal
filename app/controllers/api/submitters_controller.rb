@@ -78,7 +78,8 @@ module Api
 
       render json: Submitters::SerializeForApi.call(@submitter, with_template: false, with_urls: true,
                                                                 with_events: false, params:)
-    rescue Submitters::NormalizeValues::BaseError, DownloadUtils::UnableToDownload => e
+    rescue Submitters::NormalizeValues::BaseError, Submitters::SubmitValues::ValidationError,
+           DownloadUtils::UnableToDownload => e
       Rollbar.warning(e) if defined?(Rollbar)
 
       render json: { error: e.message }, status: :unprocessable_content
@@ -178,10 +179,7 @@ module Api
       submitters = submitters.where(external_id: params[:external_id]) if params[:external_id].present?
       submitters = submitters.where(slug: params[:slug]) if params[:slug].present?
       submitters = submitters.where(submission_id: params[:submission_id]) if params[:submission_id].present?
-
-      if params[:template_id].present?
-        submitters = submitters.joins(:submission).where(submissions: { template_id: params[:template_id] })
-      end
+      submitters = submitters.where(template_id: params[:template_id]) if params[:template_id].present?
 
       maybe_filter_by_completed_at(submitters, params)
     end

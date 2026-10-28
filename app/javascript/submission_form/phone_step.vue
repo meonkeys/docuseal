@@ -261,7 +261,7 @@ export default {
       }
     },
     resendCode () {
-      if (this.codeSentAt && Date.now() - this.codeSentAt < 15000) {
+      if (this.codeSentAt && Date.now() - this.codeSentAt < 30000) {
         this.startResendCodeCountdown()
       } else {
         this.isResendLoading = true
@@ -274,7 +274,7 @@ export default {
       }
     },
     startResendCodeCountdown () {
-      this.resendCodeCountdown = 15 - parseInt((Date.now() - this.codeSentAt) / 1000)
+      this.resendCodeCountdown = 30 - parseInt((Date.now() - this.codeSentAt) / 1000)
 
       this.interval = setInterval(() => {
         this.resendCodeCountdown--
@@ -285,7 +285,7 @@ export default {
       }, 1000)
     },
     sendVerificationCode () {
-      return fetch(this.baseUrl + '/api/send_phone_verification_code', {
+      const options = {
         method: 'POST',
         body: JSON.stringify({
           submitter_slug: this.submitterSlug,
@@ -293,6 +293,14 @@ export default {
           phone: this.fullInternationalPhoneValue
         }),
         headers: { 'Content-Type': 'application/json' }
+      }
+
+      return fetch(this.baseUrl + `/s/${this.submitterSlug}/send_phone_verification_code`, options).then((resp) => {
+        if (resp.status === 404) {
+          return fetch(this.baseUrl + '/api/send_phone_verification_code', options)
+        } else {
+          return resp
+        }
       }).then(async (resp) => {
         if ([422, 429].includes(resp.status)) {
           const data = await resp.json()

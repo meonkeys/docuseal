@@ -197,7 +197,7 @@ describe 'Submission API' do
       expect(response.parsed_body).to eq({ 'error' => 'Defined more signing parties than in template' })
     end
 
-    it 'returns an error if the message has no body value' do
+    it 'creates a submission when the message has only a subject' do
       post '/api/submissions', headers: { 'x-auth-token': author.access_token.token }, params: {
         template_id: templates[0].id,
         send_email: true,
@@ -209,8 +209,13 @@ describe 'Submission API' do
         }
       }.to_json
 
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(response.parsed_body).to eq({ 'error' => 'body is required in `message`.' })
+      expect(response).to have_http_status(:ok)
+
+      submission = Submission.last
+      email_message = EmailMessage.last
+
+      expect(submission.submitters.first.preferences['email_message_uuid']).to eq(email_message.uuid)
+      expect(email_message).to have_attributes(subject: 'Custom Email Subject', body: '')
     end
   end
 

@@ -94,7 +94,7 @@ module LoadIco
 
     palette = []
     if dib_bpp <= 8
-      num_palette_entries = dib_clr_used.zero? ? (1 << dib_bpp) : dib_clr_used
+      num_palette_entries = [dib_clr_used.zero? ? (1 << dib_bpp) : dib_clr_used, 1 << dib_bpp].min
       num_palette_entries.times do
         palette_color_bytes = dib_io.read(4)
         return nil unless palette_color_bytes && palette_color_bytes.bytesize == 4

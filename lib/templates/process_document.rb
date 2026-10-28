@@ -19,15 +19,13 @@ module Templates
 
     module_function
 
-    def call(attachment, data, extract_fields: false, max_pages: MAX_NUMBER_OF_PAGES_PROCESSED)
+    def call(attachment, data, extract_fields: false, max_pages: MAX_NUMBER_OF_PAGES_PROCESSED, doc: nil)
       if attachment.content_type == PDF_CONTENT_TYPE
         if extract_fields && data.size < MAX_FLATTEN_FILE_SIZE
-          pdf = HexaPDF::Document.new(io: StringIO.new(data))
-
-          fields = Templates::FindAcroFields.call(pdf, attachment, data)
+          fields = Templates::FindPdfiumAcroFields.call(attachment, doc, data)
         end
 
-        generate_pdf_preview_images(attachment, data, pdf, max_pages:)
+        generate_pdf_preview_images(attachment, data, max_pages:, doc:)
 
         attachment.metadata['pdf']['fields'] = fields if fields
       elsif attachment.image?
@@ -37,19 +35,13 @@ module Templates
       attachment
     end
 
-    def process(attachment, data, extract_fields: false)
+    def process(attachment, data, doc:, extract_fields: false)
       if attachment.content_type == PDF_CONTENT_TYPE && extract_fields && data.size < MAX_FLATTEN_FILE_SIZE
-        pdf = HexaPDF::Document.new(io: StringIO.new(data))
-
-        fields = Templates::FindAcroFields.call(pdf, attachment, data)
+        fields = Templates::FindPdfiumAcroFields.call(attachment, doc, data)
       end
 
-      pdf ||= HexaPDF::Document.new(io: StringIO.new(data))
-
-      number_of_pages = pdf.pages.size
-
       attachment.metadata['pdf'] ||= {}
-      attachment.metadata['pdf']['number_of_pages'] = number_of_pages
+      attachment.metadata['pdf']['number_of_pages'] = doc.page_count
       attachment.metadata['pdf']['fields'] = fields if fields
 
       attachment
@@ -76,13 +68,10 @@ module Templates
       )
     end
 
-    def generate_pdf_preview_images(attachment, data, pdf = nil, max_pages: MAX_NUMBER_OF_PAGES_PROCESSED)
+    def generate_pdf_preview_images(attachment, data, doc:, max_pages: MAX_NUMBER_OF_PAGES_PROCESSED)
       ActiveStorage::Attachment.where(name: ATTACHMENT_NAME, record: attachment).destroy_all
 
-      pdf ||= HexaPDF::Document.new(io: StringIO.new(data))
-      number_of_pages = pdf.pages.size
-
-      data = maybe_flatten_form(data, pdf)
+      number_of_pages = doc.page_count
 
       attachment.metadata['pdf'] ||= {}
       attachment.metadata['pdf']['number_of_pages'] = number_of_pages
@@ -93,28 +82,36 @@ module Templates
 
       max_pages_to_process = data.size < GENERATE_PREVIEW_SIZE_LIMIT ? max_pages : 1
 
-      generate_document_preview_images(attachment, data, 0..[number_of_pages - 1, max_pages_to_process].min)
+      generate_document_preview_images(attachment, 0..[number_of_pages - 1, max_pages_to_process].min, doc:)
     end
 
-    def generate_document_preview_images(attachment, data, range, concurrency: CONCURRENCY)
-      doc = Pdfium::Document.open_bytes(data)
+    def generate_document_preview_images(attachment, range, doc:, concurrency: CONCURRENCY)
+      flatten_pages = doc.form?
 
       pool = Concurrent::FixedThreadPool.new(concurrency)
 
-      promises =
-        range.map do |page_number|
-          doc_page = doc.get_page(page_number)
+      blobs =
+        range.each_slice(concurrency).flat_map do |page_numbers|
+          promises =
+            page_numbers.map do |page_number|
+              doc_page = doc.get_page(page_number)
 
-          bytes, width, height = doc_page.render_to_bitmap(width: MAX_WIDTH)
+              hide_placeholder_widgets(doc_page, hide_empty: !flatten_pages)
+              doc_page.flatten if flatten_pages
 
-          image = Vips::Image.new_from_memory_copy(bytes, width, height, 4, :uchar)
+              bytes, width, height = doc_page.render_to_bitmap(width: MAX_WIDTH)
 
-          Concurrent::Promise.execute(executor: pool) { build_and_upload_blob(image, page_number) }
-        ensure
-          doc_page&.close
+              image = Vips::Image.new_from_memory_copy(bytes, width, height, 4, :uchar)
+
+              Concurrent::Promise.execute(executor: pool) { build_and_upload_blob(image, page_number) }
+            ensure
+              doc_page&.close
+            end
+
+          Concurrent::Promise.zip(*promises).value!
         end
 
-      Concurrent::Promise.zip(*promises).value!.each do |blob|
+      blobs.each do |blob|
         next unless blob
 
         ApplicationRecord.no_touching do
@@ -126,8 +123,28 @@ module Templates
         end
       end
     ensure
-      doc&.close
       pool&.kill
+    end
+
+    def hide_placeholder_widgets(page, hide_empty: true)
+      page.annotations.each do |annotation|
+        next unless annotation.widget?
+
+        page.with_annotation(annotation.index) do |handle|
+          next if handle.field_type != Pdfium::FPDF_FORMFIELD_COMBOBOX
+
+          value = handle.field_value.to_s
+
+          if value.blank?
+            next unless hide_empty
+          elsif handle.option_labels.blank? ||
+                !value.match?(FindPdfiumAcroFields::SELECT_PLACEHOLDER_REGEXP)
+            next
+          end
+
+          handle.hide!
+        end
+      end
     end
 
     def build_and_upload_blob(image, page_number, format = FORMAT)
@@ -153,33 +170,6 @@ module Templates
       blob
     end
 
-    def maybe_flatten_form(data, pdf)
-      return data if data.size > MAX_FLATTEN_FILE_SIZE
-      return data if pdf.acro_form.blank?
-
-      io = StringIO.new
-
-      pdf.acro_form.each_field do |field|
-        next if field.field_type != :Ch ||
-                field[:Opt].blank? ||
-                %i[combo_box editable_combo_box].exclude?(field.concrete_field_type) ||
-                !field.field_value.to_s.match?(FindAcroFields::SELECT_PLACEHOLDER_REGEXP)
-
-        field[:V] = ''
-      end
-
-      pdf.acro_form.create_appearances(force: true) if pdf.acro_form[:NeedAppearances]
-      pdf.acro_form.flatten
-
-      pdf.write(io, incremental: false, validate: false)
-
-      io.string
-    rescue StandardError
-      raise if Rails.env.development?
-
-      data
-    end
-
     def normalize_attachment_fields(template, attachments = template.documents)
       attachments.flat_map do |a|
         pdf_fields = a.metadata['pdf'].delete('fields').to_a if a.metadata['pdf'].present?
@@ -192,8 +182,8 @@ module Templates
       end
     end
 
-    def generate_pdf_preview_from_file(attachment, file_path, page_number)
-      doc = Pdfium::Document.open_file(file_path)
+    def generate_pdf_preview_from_io(attachment, io, page_number)
+      doc = Pdfium::Document.open_io(io)
 
       doc_page = doc.get_page(page_number)
 

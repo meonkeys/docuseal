@@ -15,7 +15,8 @@ class SubmitFormDelegateController < ApplicationController
                                                             @submitter.viewer? ||
                                                             !Submitters::AuthorizedForForm.call(@submitter,
                                                                                                 current_user,
-                                                                                                request)
+                                                                                                request,
+                                                                                                with_order: true)
 
     @submitter.account.account_configs.find_by!(key: AccountConfig::ALLOW_TO_DELEGATE_KEY, value: true)
 
@@ -32,7 +33,8 @@ class SubmitFormDelegateController < ApplicationController
       SubmissionEvents.create_with_tracking_data(@submitter, 'delegate_form', request,
                                                  { old_email: @submitter.email, email: })
 
-      @submitter.update!(email:, phone: nil, name: nil, slug: SecureRandom.base58(14))
+      @submitter.update!(email:, phone: nil, name: nil, slug: SecureRandom.base58(14),
+                         values: Submitters.fetch_values_for_delegate(@submitter))
     end
 
     SendSubmitterInvitationEmailJob.perform_async('submitter_id' => @submitter.id)

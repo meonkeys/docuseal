@@ -181,12 +181,21 @@ class SubmitterMailer < ApplicationMailer
   def otp_verification_email(submitter, locale: nil)
     @current_account = submitter.account
     @submitter = submitter
-    @otp_code = EmailVerificationCodes.generate([submitter.email.downcase.strip, submitter.slug].join(':'))
+    @otp_code = OtpChallenges.generate([submitter.email.downcase.squish, submitter.slug].join(':'),
+                                       purpose: 'form_email_2fa')
 
     assign_message_metadata('otp_verification_email', submitter)
 
+    from =
+      if Docuseal.multitenant? &&
+         AccountConfig.exists?(account_id: submitter.account_id, key: 'custom_otp_email', value: true)
+        from_address_for_submitter(submitter)
+      else
+        default_params[:from]
+      end
+
     I18n.with_locale(locale || submitter.account.locale) do
-      mail(to: submitter.email, subject: I18n.t('email_verification'))
+      mail(to: submitter.email, from:, subject: I18n.t('email_verification'))
     end
   end
 

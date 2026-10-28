@@ -6,6 +6,7 @@ class TestingAccountsController < ApplicationController
   def create
     authorize!(:manage, current_account)
     authorize!(:manage, current_user)
+    authorize!(:manage, EncryptedConfig)
 
     impersonate_user(Accounts.find_or_create_testing_user(true_user.account))
 

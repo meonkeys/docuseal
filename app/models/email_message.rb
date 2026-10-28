@@ -31,6 +31,8 @@ class EmailMessage < ApplicationRecord
 
   attribute :uuid, :string, default: -> { SecureRandom.uuid }
 
+  normalizes :body, with: ->(value) { value.to_s }, apply_to_nil: true
+
   before_validation :set_sha1, on: :create
 
   def normalized_body

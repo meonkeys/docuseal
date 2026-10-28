@@ -34,6 +34,7 @@
     <input
       v-if="!isTextArea"
       :id="field.uuid"
+      ref="input"
       v-model="text"
       :maxlength="cellsMaxLegth"
       dir="auto"
@@ -46,6 +47,7 @@
       :placeholder="`${t('type_here_')}${field.required ? '' : ` (${t('optional')})`}`"
       type="text"
       :name="`values[${field.uuid}]`"
+      @input="validateValue($event.target)"
       @focus="$emit('focus')"
     >
     <textarea
@@ -137,6 +139,9 @@ export default {
         return null
       }
     },
+    isIbanValidation () {
+      return this.patternMessageKeys[this.field.validation?.pattern] === 'must_be_valid_iban'
+    },
     patternMessageKeys () {
       return {
         '^[0-9]{3}-[0-9]{2}-[0-9]{4}$': 'must_be_valid_ssn',
@@ -144,6 +149,7 @@ export default {
         '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$': 'must_be_valid_email',
         '^https?://.*': 'must_be_valid_url',
         '^[0-9]{5}(?:-[0-9]{4})?$': 'must_be_valid_zip',
+        '^[A-Z]{2}[0-9]{2}(?: ?[A-Z0-9]){11,30}$': 'must_be_valid_iban',
         '^[0-9]+$': 'must_contain_numbers_only',
         '^[a-zA-Z]+$': 'must_contain_letters_only'
       }
@@ -186,8 +192,21 @@ export default {
         })
       }
     }
+
+    this.validateValue(this.$refs.input)
   },
   methods: {
+    validateValue (input) {
+      if (this.isIbanValidation) {
+        input.setCustomValidity(this.isValidIban(input.value) ? '' : this.t('must_be_valid_iban'))
+      }
+    },
+    isValidIban (value) {
+      const iban = value.replace(/\s/g, '')
+      const digits = (iban.slice(4) + iban.slice(0, 4)).replace(/[A-Z]/g, (char) => char.charCodeAt(0) - 55)
+
+      return !iban || digits.split('').reduce((remainder, digit) => (remainder * 10 + parseInt(digit)) % 97, 0) === 1
+    },
     resizeTextarea () {
       const textarea = this.$refs.textarea
 

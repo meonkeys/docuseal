@@ -11,19 +11,10 @@ module Submitters
   }.freeze
 
   UnableToSendCode = Class.new(StandardError)
+  BouncedEmail = Class.new(UnableToSendCode)
   InvalidOtp = Class.new(StandardError)
   MaliciousFileExtension = Class.new(StandardError)
   ParamsError = Class.new(StandardError)
-
-  DANGEROUS_EXTENSIONS = Set.new(%w[
-    exe com bat cmd scr pif vbs vbe js jse wsf wsh msi msp
-    hta cpl jar app deb rpm dmg pkg mpkg dll so dylib sys
-    inf reg ps1 psm1 psd1 ps1xml psc1 pssc bat cmd vb vba
-    sh bash zsh fish run out bin elf gadget workflow lnk scf
-    url desktop application action workflow apk ipa xap appx
-    appxbundle msix msixbundle diagcab diagpkg cpl msc ocx
-    drv scr ins isp mst paf prf shb shs slk ws wsc inf1 inf2
-  ].freeze)
 
   FILES_TTL = 5.minutes
 
@@ -49,7 +40,7 @@ module Submitters
   end
 
   def fulltext_search_field(current_user, submitters, keyword, field_name)
-    keyword = keyword.delete("\0\\")
+    keyword = keyword.delete("\0").tr('\\', ' ').squish
 
     return submitters.none if keyword.blank?
 
@@ -93,7 +84,8 @@ module Submitters
   def plain_search(submitters, keyword)
     return submitters if keyword.blank?
 
-    term = "%#{keyword.downcase}%"
+    sanitized = ActiveRecord::Base.sanitize_sql_like(keyword.downcase)
+    term = "%#{sanitized}%"
 
     arel_table = Submitter.arel_table
 
@@ -125,11 +117,9 @@ module Submitters
   def create_attachment!(submitter, file, metadata: {})
     raise ParamsError, 'file param is missing' if file.blank?
 
-    extension = File.extname(file.original_filename).delete_prefix('.').downcase
+    extension = FilenameUtils.dangerous_extension(file.original_filename)
 
-    if DANGEROUS_EXTENSIONS.include?(extension)
-      raise MaliciousFileExtension, "File type '.#{extension}' is not allowed."
-    end
+    raise MaliciousFileExtension, "File type '.#{extension}' is not allowed." if extension
 
     blob = ActiveStorage::Blob.create_and_upload!(io: file.tap(&:rewind).open,
                                                   filename: file.original_filename,
@@ -139,10 +129,17 @@ module Submitters
     ActiveStorage::Attachment.create!(blob:, name: 'attachments', record: submitter)
   end
 
+  def build_prefill_attachment_data(submitter, attachment)
+    token = ApplicationRecord.signed_id_verifier.generate([attachment.uuid, submitter.slug],
+                                                          purpose: :prefill_attachment)
+
+    { token:, url: attachment.url }
+  end
+
   def normalize_preferences(account, user, params)
     preferences = {}
 
-    message_params = params['message'].presence || params.slice('subject', 'body').presence
+    message_params = (params['message'].presence || params.slice('subject', 'body')).compact_blank
 
     if message_params.present?
       email_message = EmailMessages.find_or_create_for_account_user(account, user,
@@ -155,12 +152,35 @@ module Submitters
     preferences['send_sms'] = params['send_sms'].in?(TRUE_VALUES) if params.key?('send_sms')
     preferences['require_phone_2fa'] = params['require_phone_2fa'].in?(TRUE_VALUES) if params.key?('require_phone_2fa')
     preferences['require_email_2fa'] = params['require_email_2fa'].in?(TRUE_VALUES) if params.key?('require_email_2fa')
-    preferences['bcc_completed'] = params['bcc_completed'] if params.key?('bcc_completed')
+    preferences['bcc_completed'] = normalize_bcc_completed(params['bcc_completed']) if params.key?('bcc_completed')
     preferences['reply_to'] = params['reply_to'] if params.key?('reply_to')
     preferences['go_to_last'] = params['go_to_last'] if params.key?('go_to_last')
     preferences['completed_redirect_url'] = params['completed_redirect_url'] if params.key?('completed_redirect_url')
 
     preferences
+  end
+
+  def normalize_bcc_completed(value)
+    if value.is_a?(Array)
+      value.compact_blank.uniq.join(', ')
+    else
+      value
+    end
+  end
+
+  def fetch_values_for_delegate(submitter)
+    fields = submitter.submission.template_fields || submitter.template.fields
+    default_values = submitter.preferences['default_values'] || {}
+
+    field_uuids = fields.filter_map do |field|
+      next if field['submitter_uuid'] != submitter.uuid
+      next unless field['type'].in?(%w[signature phone verification kba initials])
+      next if default_values[field['uuid']].present?
+
+      field['uuid']
+    end
+
+    submitter.values.except(*field_uuids)
   end
 
   def send_signature_requests(submitters, delay_seconds: nil)
@@ -236,11 +256,19 @@ module Submitters
       I18n.l(completed_at.in_time_zone(submitter.account.timezone), format: :short)
     end
 
-    "#{filename}.#{blob.filename.extension}"
+    "#{filename}.#{blob.filename.extension}".tr('/', '-')
   end
 
   def send_shared_link_email_verification_code(submitter, request:)
+    raise UnableToSendCode, I18n.t(:provide_your_email) if submitter.email.to_s.count('@') > 1
+
     RateLimit.call("send-otp-code-#{request.remote_ip}", limit: 2, ttl: 45.seconds, enabled: true)
+
+    if Docuseal.multitenant? && email_bounced_recently?(submitter.email)
+      Rollbar.warning("Bounced OTP email for template: #{submitter.submission.template.id}") if defined?(Rollbar)
+
+      raise BouncedEmail, I18n.t(:verification_email_bounced)
+    end
 
     TemplateMailer.otp_verification_email(submitter.submission.template, email: submitter.email).deliver_later!
   rescue RateLimit::LimitApproached
@@ -249,15 +277,23 @@ module Submitters
     raise UnableToSendCode, I18n.t('too_many_attempts')
   end
 
+  def email_bounced_recently?(email)
+    EmailEvent.exists?(email:, event_type: %w[bounce soft_bounce permanent_bounce],
+                       event_datetime: 24.hours.ago..Time.current)
+  end
+
   def verify_link_otp!(otp, submitter)
     return false if otp.blank?
 
-    RateLimit.call("verify-2fa-code-#{Digest::MD5.base64digest(submitter.email)}",
-                   limit: 2, ttl: 45.seconds, enabled: true)
+    email_digest = Digest::MD5.base64digest(submitter.email.downcase.squish)
+
+    RateLimit.call("verify-2fa-code-#{email_digest}", limit: 2, ttl: 45.seconds, enabled: true)
 
     link_2fa_key = [submitter.email.downcase.squish, submitter.submission.template.slug].join(':')
 
-    raise InvalidOtp, I18n.t(:invalid_code) unless EmailVerificationCodes.verify(otp, link_2fa_key)
+    unless OtpChallenges.verify(otp.to_s.gsub(/\D/, ''), link_2fa_key, purpose: 'form_email_2fa')
+      raise InvalidOtp, I18n.t(:invalid_code)
+    end
 
     true
   end

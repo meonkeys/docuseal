@@ -16,7 +16,12 @@
       <%= f.fields_for :preferences, Struct.new(:request_email_subject, :request_email_body).new(*(template_email_preferences_values.presence || default_template_email_preferences_values)) do |ff| %>
         <div class="form-control">
           <div class="flex justify-between">
-            <%= ff.label :request_email_subject, t('email_subject'), class: 'label' %>
+            <div class="flex items-center">
+              <%= ff.label :request_email_subject, t('email_subject'), class: 'label' %>
+              <span class="tooltip tooltip-right hidden md:flex" data-tip="<%= t('signature_request_email_sent_to_recipients_with_a_link_to_review_and_sign') %>">
+                <%= svg_icon('info_circle', class: 'w-4 h-4') %>
+              </span>
+            </div>
             <% if is_custom_template_email %>
               <label for="submitter_invitation_email_reset_link" class="label underline">
                 <%= t('reset_default') %>

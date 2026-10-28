@@ -10,8 +10,14 @@ class TemplatesDetectFieldsController < ApplicationController
 
     sse = SSE.new(response.stream)
 
-    documents = @template.schema_documents.preload(:blob)
-    documents = documents.where(uuid: params[:attachment_uuid]) if params[:attachment_uuid].present?
+    documents =
+      if params[:attachment_uuid].present?
+        @template.documents.where(uuid: params[:attachment_uuid])
+      else
+        @template.schema_documents
+      end
+
+    documents = documents.preload(:blob)
 
     page_number = params[:page].presence&.to_i
 

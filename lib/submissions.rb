@@ -3,6 +3,11 @@
 module Submissions
   DEFAULT_SUBMITTERS_ORDER = 'random'
 
+  SKIP_EMAIL_FIX_LABELS = %w[ga gami gasi gil gma gmao gmi gmsi goi ol].freeze
+
+  SKIP_EMAIL_FIX_TLDS =
+    /\.(?:gob(?:\.\w+)?|om|mm|cm|et|mo|nz|za|ie|mom|free|comsec|unicom|ed(?:\.\w+){1,2})\z/i
+
   module_function
 
   def maybe_update_completed_at(submission)
@@ -210,7 +215,7 @@ module Submissions
     return email.downcase.sub(/@gmail?\z/i, '@gmail.com') if email.match?(/@gmail?\z/i)
 
     return email.downcase if email.include?(',') ||
-                             email.match?(/\.(?:gob(?:\.\w+)?|om|mm|cm|et|mo|nz|za|ie|ed\.jp)\z/i) ||
+                             email.match?(SKIP_EMAIL_FIX_TLDS) ||
                              email.exclude?('.')
 
     fixed_email = EmailTypo.call(email.delete_prefix('<'))
@@ -220,8 +225,7 @@ module Submissions
     domain = email.split('@').last.to_s.downcase
     fixed_domain = fixed_email.to_s.split('@').last
 
-    return email.downcase if domain == fixed_domain
-    return email.downcase if fixed_domain.match?(/\Agmail\.(?!com\z)/i)
+    return email.downcase if domain == fixed_domain || skip_email_fix?(domain, fixed_domain)
 
     threshold = fixed_domain.start_with?('hotmail.') ? 2 : 3
 
@@ -234,6 +238,13 @@ module Submissions
     Rails.logger.info("Fixed email #{domain}") if fixed_email != email.downcase.delete_prefix('<').strip
 
     fixed_email
+  end
+
+  def skip_email_fix?(domain, fixed_domain)
+    return true if SKIP_EMAIL_FIX_LABELS.include?(domain.split('.').first)
+    return true if fixed_domain.match?(/\Agmail\.(?!com\z)/i)
+
+    fixed_domain.match?(/\A(?:comcast|verizon)\./i) && !domain.match?(/\A(?:comcast|verizon)\./i)
   end
 
   def filtered_conditions_schema(submission, values: nil, include_submitter_uuid: nil)

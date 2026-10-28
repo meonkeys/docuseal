@@ -15,6 +15,8 @@ module Submitters
     TRUE_VALUES = ['1', 'true', true, 'TRUE', 'True', 'yes', 'YES', 'Yes'].freeze
     FALSE_VALUES = ['0', 'false', false, 'FALSE', 'False', 'no', 'NO', 'No'].freeze
 
+    NON_PREFILLABLE_FIELD_TYPES = %w[payment kba verification].freeze
+
     module_function
 
     # rubocop:disable Metrics
@@ -66,6 +68,8 @@ module Submitters
         next if value_fields.blank?
 
         value_fields.each do |field|
+          next if NON_PREFILLABLE_FIELD_TYPES.include?(field['type'])
+
           if field['type'].in?(%w[initials signature image file stamp]) && value.present?
             new_value, new_attachments =
               normalize_attachment_value(value, field, template.account, attachments, for_submitter:, purpose:)
@@ -247,7 +251,7 @@ module Submitters
 
       detected_extensions = Marcel::TYPE_EXTS[mime_type].to_a.map(&:downcase)
 
-      if detected_extensions.any? { |e| Submitters::DANGEROUS_EXTENSIONS.include?(e) }
+      if detected_extensions.any? { |e| FilenameUtils::DANGEROUS_EXTENSIONS.include?(e) }
         raise InvalidDefaultValue, "File type '.#{detected_extensions.first}' is not allowed."
       end
 
@@ -276,11 +280,9 @@ module Submitters
 
     def find_or_create_blob_from_url(account, url)
       filename = Addressable::URI.parse(url).path.split('/').last.to_s
-      extension = File.extname(filename).delete_prefix('.').downcase
+      extension = FilenameUtils.dangerous_extension(filename)
 
-      if Submitters::DANGEROUS_EXTENSIONS.include?(extension)
-        raise InvalidDefaultValue, "File type '.#{extension}' is not allowed."
-      end
+      raise InvalidDefaultValue, "File type '.#{extension}' is not allowed." if extension
 
       cache_key = [account.id, url].join(':')
       checksum = CHECKSUM_CACHE_STORE.fetch(cache_key)
