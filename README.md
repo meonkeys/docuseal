@@ -13,9 +13,22 @@ See:
 * [Reddit r/selfhosted post: Phone home tracking image in DocuSeal, and how to remove it](https://www.reddit.com/r/selfhosted/comments/1dr2nby/phone_home_tracking_image_in_docuseal_and_how_to/)
 * [same, crossposted to Lemmy.World](https://lemmy.world/post/17046423)
 
-There are a couple ways to show how this differs from [upstream](https://github.com/docusealco/docuseal). Locally: first clone this repository, then add the upstream repository as an additional remote. Assuming they are called `origin` and `upstream` respectively, run `git log -p --stat origin/master..master`. At the time of writing I have added only two significant commits: `remove github stars badge` and `remove link in email footer`, with a total of 1 changed and 3 deleted lines of code. You can also visualize changes from upstream by clicking [x commits ahead of](https://github.com/meonkeys/docuseal/compare/docusealco%3Adocuseal%3Amaster...master) on my fork's home page at GitHub.
+My convention for releases is to create an `a` tag building on top of an official release. For example, [1.6.4](https://github.com/docusealco/docuseal/releases/tag/1.6.4) is theirs, and [1.6.4a](https://github.com/meonkeys/docuseal/releases/tag/1.6.4a) is mine.
 
-My convention for releases is to create an `a` tag building on top of an official release. For example, [1.6.4](https://github.com/docusealco/docuseal/releases/tag/1.6.4) is theirs, and [1.6.4a](https://github.com/meonkeys/docuseal/releases/tag/1.6.4a) is their 1.6.4 release plus my changes.
+To see my changes:
+
+```bash
+version=3.3.4
+
+# just the diff
+git diff ${version}..${version}a
+
+# quick summary
+git log --oneline --no-merges --grep=bump --invert-grep ${version}..${version}a
+
+# log with diffs
+git log --patch --no-merges --grep=bump --invert-grep ${version}..${version}a
+```
 
 I'll keep an eye upstream and upgrade periodically, but I really hope this isn't a long-lived fork. 
 
